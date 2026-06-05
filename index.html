@@ -208,6 +208,105 @@
       padding: .4rem 1rem; background: var(--surface);
       border-radius: 999px; align-self: center;
     }
+
+    /* ── MONITOR ELECTORAL ─────────────────────────────── */
+    #panel-monitor { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .monitor-toolbar {
+      padding: .7rem 1.2rem; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .source-btn {
+      display: flex; align-items: center; gap: .35rem; padding: .28rem .7rem;
+      border-radius: 999px; font-size: .73rem; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      transition: all .2s; user-select: none;
+    }
+    .source-btn.active-all      { border-color: var(--accent2); background: #a855f722; color: var(--accent2); }
+    .source-btn.active-x        { border-color: #aaa; background: #33333355; color: #ddd; }
+    .source-btn.active-facebook { border-color: #1877f2; background: #1877f222; color: #1877f2; }
+    .source-btn.active-tiktok   { border-color: #ff0050; background: #ff005022; color: #ff0050; }
+    .source-btn.active-noticias { border-color: #f59e0b; background: #f59e0b22; color: #f59e0b; }
+    .scan-group { display: flex; gap: .45rem; margin-left: auto; }
+    .scan-input {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: .3rem .7rem; color: var(--text); font-size: .8rem;
+      outline: none; width: 165px; transition: border .2s;
+    }
+    .scan-input:focus { border-color: var(--accent); }
+    .btn-scan {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 8px; color: #fff;
+      padding: .3rem .8rem; font-size: .78rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    .monitor-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+    /* Mapa */
+    .map-panel {
+      width: 290px; flex-shrink: 0; background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: .9rem; overflow-y: auto;
+    }
+    .map-title { font-size: .68rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-bottom: .65rem; }
+    .map-svg-wrap { position: relative; }
+    .map-svg-wrap svg { width: 100%; height: auto; display: block; }
+    .dept-path { fill: #1a1a2e; stroke: #3b3b60; stroke-width: .8; cursor: pointer; transition: fill .35s; }
+    .dept-path:hover { stroke: var(--accent2); stroke-width: 1.6; filter: brightness(1.4); }
+    .heat-0{fill:#1a1a2e} .heat-1{fill:#271760} .heat-2{fill:#3d2480}
+    .heat-3{fill:#5521a8} .heat-4{fill:#7c3aed} .heat-5{fill:#9333ea}
+    .heat-6{fill:#a855f7} .heat-7{fill:#c084fc} .heat-8{fill:#e879f9}
+    .dept-tooltip {
+      position: absolute; background: var(--card); border: 1px solid var(--accent);
+      border-radius: 6px; padding: .35rem .65rem; font-size: .73rem;
+      pointer-events: none; display: none; z-index: 10; white-space: nowrap; color: var(--text);
+    }
+    .heat-legend { display: flex; align-items: center; gap: .5rem; margin-top: .7rem; font-size: .68rem; color: var(--muted); }
+    .heat-bar { flex: 1; height: 7px; border-radius: 4px; background: linear-gradient(to right, #1a1a2e, #5521a8, #a855f7, #e879f9); }
+    .dept-stats { margin-top: .9rem; }
+    .dept-stat-item { display: flex; justify-content: space-between; align-items: center; padding: .3rem 0; border-bottom: 1px solid var(--border); font-size: .77rem; }
+    .dept-stat-item:last-child { border-bottom: none; }
+    .dept-stat-count { color: var(--accent2); font-weight: 700; }
+
+    /* Feed */
+    .feed-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .feed-header {
+      padding: .55rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .feed-header-title { font-size: .73rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+    .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: pulse-dot 1.5s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+    .feed-list { flex: 1; overflow-y: auto; padding: .45rem; display: flex; flex-direction: column; gap: .35rem; }
+    .feed-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: .55rem .8rem; display: flex; gap: .65rem; align-items: flex-start;
+      animation: slideIn .28s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-7px)} to{opacity:1;transform:translateY(0)} }
+    .feed-icon { font-size: .9rem; flex-shrink: 0; width: 18px; text-align: center; margin-top: .05rem; }
+    .feed-content { flex: 1; min-width: 0; }
+    .feed-user { font-size: .73rem; font-weight: 700; color: var(--accent2); }
+    .feed-text { font-size: .81rem; color: var(--text); margin-top: .12rem; line-height: 1.4; word-break: break-word; }
+    .feed-meta { display: flex; gap: .7rem; margin-top: .28rem; font-size: .67rem; color: var(--muted); }
+    .feed-dept { color: var(--warn); }
+    .feed-source-x        { border-left: 3px solid #888; }
+    .feed-source-facebook { border-left: 3px solid #1877f2; }
+    .feed-source-tiktok   { border-left: 3px solid #ff0050; }
+    .feed-source-noticias { border-left: 3px solid #f59e0b; }
+
+    /* Scanner bar */
+    .scanner-bar {
+      padding: .5rem 1rem; background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; min-height: 36px; flex-shrink: 0;
+    }
+    .scanner-label { font-size: .67rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+    .keyword-tag {
+      display: flex; align-items: center; gap: .25rem;
+      background: #7c3aed1a; border: 1px solid var(--accent);
+      border-radius: 999px; padding: .12rem .55rem; font-size: .71rem; color: var(--accent2);
+    }
+    .keyword-tag button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: .85rem; line-height: 1; padding: 0 0 0 .15rem; }
+    .keyword-tag button:hover { color: var(--danger); }
+    .scan-status { margin-left: auto; font-size: .71rem; color: #22c55e; display: flex; align-items: center; gap: .4rem; }
   </style>
 </head>
 <body>
@@ -272,6 +371,11 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Usuarios
       </button>
+      <div class="nav-label" style="margin-top:.6rem;">Inteligencia</div>
+      <button class="nav-btn" id="nav-monitor" onclick="showPanel('monitor')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Monitor Electoral
+      </button>
     </aside>
 
     <!-- Main -->
@@ -298,6 +402,83 @@
       <div id="panel-admin">
         <h2>GESTIÓN DE USUARIOS</h2>
         <div id="admin-content"></div>
+      </div>
+
+      <!-- Monitor Electoral -->
+      <div id="panel-monitor">
+        <div class="monitor-toolbar">
+          <button class="source-btn active-all" id="src-all"      onclick="toggleSource('all')">🌐 Todas</button>
+          <button class="source-btn"            id="src-x"        onclick="toggleSource('x')">✕ X/Twitter</button>
+          <button class="source-btn"            id="src-facebook" onclick="toggleSource('facebook')">f Facebook</button>
+          <button class="source-btn"            id="src-tiktok"   onclick="toggleSource('tiktok')">♪ TikTok</button>
+          <button class="source-btn"            id="src-noticias" onclick="toggleSource('noticias')">📰 Noticias</button>
+          <div class="scan-group">
+            <input class="scan-input" id="scan-keyword" placeholder="Agregar palabra clave…" />
+            <button class="btn-scan" onclick="addKeyword()">+ Agregar</button>
+          </div>
+        </div>
+
+        <div class="monitor-body">
+          <!-- Mapa de calor Paraguay -->
+          <div class="map-panel">
+            <div class="map-title">Actividad por departamento</div>
+            <div class="map-svg-wrap" id="map-wrap">
+              <svg viewBox="0 0 280 365" xmlns="http://www.w3.org/2000/svg" id="paraguay-map">
+                <!-- CHACO -->
+                <polygon class="dept-path" id="dept-alto-paraguay"  data-name="Alto Paraguay"   points="5,5 128,5 128,108 5,108"/>
+                <polygon class="dept-path" id="dept-boqueron"       data-name="Boquerón"         points="5,108 128,108 125,228 5,228"/>
+                <polygon class="dept-path" id="dept-pdte-hayes"     data-name="Pdte. Hayes"      points="5,228 118,228 115,282 92,308 68,318 38,312 8,296 5,268 5,228"/>
+                <!-- Río Paraguay -->
+                <polyline points="128,5 126,55 124,108 121,160 119,210 116,255 114,282" stroke="#3b82f6" stroke-width="2" fill="none" opacity="0.45"/>
+                <!-- ORIENTAL -->
+                <polygon class="dept-path" id="dept-concepcion"    data-name="Concepción"       points="128,5 176,5 198,50 202,86 172,91 138,87 128,76 128,5"/>
+                <polygon class="dept-path" id="dept-amambay"       data-name="Amambay"          points="176,5 275,5 275,88 205,88 198,50 176,5"/>
+                <polygon class="dept-path" id="dept-san-pedro"     data-name="San Pedro"        points="128,76 138,87 172,88 202,85 214,156 178,163 128,151 128,76"/>
+                <polygon class="dept-path" id="dept-caninju"       data-name="Canindeyú"        points="202,85 275,85 275,180 240,180 214,156 202,85"/>
+                <polygon class="dept-path" id="dept-cordillera"    data-name="Cordillera"       points="128,151 178,163 180,194 162,205 128,197 128,151"/>
+                <polygon class="dept-path" id="dept-caaguazu"      data-name="Caaguazú"         points="178,163 214,156 240,180 238,222 198,228 175,224 175,200 178,163"/>
+                <polygon class="dept-path" id="dept-alto-parana"   data-name="Alto Paraná"      points="240,180 275,180 275,320 262,332 248,316 236,222 240,180"/>
+                <polygon class="dept-path" id="dept-guaira"        data-name="Guairá"           points="128,197 162,205 165,230 148,240 128,233 128,197"/>
+                <polygon class="dept-path" id="dept-central"       data-name="Central"          points="112,233 140,229 142,252 126,258 110,250 112,233"/>
+                <polygon class="dept-path" id="dept-paraguari"     data-name="Paraguarí"        points="110,252 142,252 168,230 192,240 190,270 160,280 130,278 108,266 110,252"/>
+                <polygon class="dept-path" id="dept-misiones"      data-name="Misiones"         points="108,266 160,280 162,300 150,320 124,326 106,315 108,266"/>
+                <polygon class="dept-path" id="dept-caazapa"       data-name="Caazapá"          points="168,230 238,222 248,257 238,287 198,294 165,300 160,280 190,270 190,240 168,230"/>
+                <polygon class="dept-path" id="dept-neembucu"      data-name="Ñeembucú"         points="84,315 108,315 124,326 118,347 88,353 65,341 62,321 84,315"/>
+                <polygon class="dept-path" id="dept-itapua"        data-name="Itapúa"           points="150,320 162,300 165,300 198,294 238,287 248,316 262,332 248,347 196,357 155,357 150,320"/>
+                <!-- Asunción marker -->
+                <circle cx="114" cy="244" r="4.5" fill="#e879f9" stroke="#fff" stroke-width="1.5"/>
+                <text x="120" y="242" font-size="7" fill="#f0abfc" font-family="sans-serif" font-weight="bold">Asunción</text>
+              </svg>
+              <div class="dept-tooltip" id="dept-tooltip"></div>
+            </div>
+            <div class="heat-legend">
+              <span>Bajo</span><div class="heat-bar"></div><span>Alto</span>
+            </div>
+            <div class="dept-stats" id="dept-stats"></div>
+          </div>
+
+          <!-- Feed tiempo real -->
+          <div class="feed-panel">
+            <div class="feed-header">
+              <span class="feed-header-title">Feed · Tiempo real</span>
+              <div style="display:flex;align-items:center;gap:.5rem;">
+                <div class="live-dot"></div>
+                <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
+              </div>
+            </div>
+            <div class="feed-list" id="feed-list"></div>
+          </div>
+        </div>
+
+        <!-- Scanner bar -->
+        <div class="scanner-bar">
+          <span class="scanner-label">Escaneando:</span>
+          <div id="keyword-tags" style="display:flex;gap:.35rem;flex-wrap:wrap;"></div>
+          <div class="scan-status">
+            <div class="live-dot"></div>
+            <span id="scan-count">0 menciones</span>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -368,6 +549,7 @@
   function doLogout() {
     token = null; userRole = null; userName = null;
     history.length = 0;
+    if (feedInterval) { clearInterval(feedInterval); feedInterval = null; monitorInitialized = false; }
     document.getElementById('chat-messages').innerHTML = '<div class="system-msg">Sesión iniciada — ARGOS activo</div>';
     document.getElementById('screen-app').style.display  = 'none';
     document.getElementById('screen-login').style.display = 'flex';
@@ -378,7 +560,7 @@
   // ── Paneles ──────────────────────────────────────────────────────────────
   function showPanel(name) {
     if (name === 'admin' && userRole !== 'admin') return;
-    ['chat','history','admin'].forEach(p => {
+    ['chat','history','admin','monitor'].forEach(p => {
       document.getElementById(`panel-${p}`).style.display = 'none';
       document.getElementById(`nav-${p}`).classList.remove('active');
     });
@@ -388,6 +570,7 @@
 
     if (name === 'history') loadHistory();
     if (name === 'admin')   loadUsers();
+    if (name === 'monitor') initMonitor();
   }
 
   // ── Chat ─────────────────────────────────────────────────────────────────
@@ -504,6 +687,181 @@
   document.getElementById('chat-input').addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+  });
+
+  // ── MONITOR ELECTORAL ────────────────────────────────────────────────────
+
+  const DEPTS = [
+    { id:'dept-central',       name:'Central',        base:8 },
+    { id:'dept-alto-parana',   name:'Alto Paraná',    base:6 },
+    { id:'dept-itapua',        name:'Itapúa',         base:5 },
+    { id:'dept-caaguazu',      name:'Caaguazú',       base:4 },
+    { id:'dept-amambay',       name:'Amambay',        base:3 },
+    { id:'dept-cordillera',    name:'Cordillera',     base:3 },
+    { id:'dept-san-pedro',     name:'San Pedro',      base:2 },
+    { id:'dept-caninju',       name:'Canindeyú',      base:2 },
+    { id:'dept-paraguari',     name:'Paraguarí',      base:2 },
+    { id:'dept-caazapa',       name:'Caazapá',        base:2 },
+    { id:'dept-concepcion',    name:'Concepción',     base:1 },
+    { id:'dept-guaira',        name:'Guairá',         base:1 },
+    { id:'dept-misiones',      name:'Misiones',       base:1 },
+    { id:'dept-neembucu',      name:'Ñeembucú',       base:1 },
+    { id:'dept-pdte-hayes',    name:'Pdte. Hayes',    base:1 },
+    { id:'dept-boqueron',      name:'Boquerón',       base:0 },
+    { id:'dept-alto-paraguay', name:'Alto Paraguay',  base:0 },
+  ];
+
+  const FEED_POSTS = [
+    { text:'Observando el conteo de votos en tiempo real #EleccionesParaguay', src:'x' },
+    { text:'Largas filas en locales de votación de Asunción 🗳️', src:'facebook' },
+    { text:'Candidato lidera en Central según primeros resultados', src:'noticias' },
+    { text:'Así de animado está el ambiente electoral en Alto Paraná', src:'tiktok' },
+    { text:'TSJE confirma normalidad en el proceso electoral', src:'noticias' },
+    { text:'Se detectaron irregularidades en Amambay', src:'noticias' },
+    { text:'Participación histórica en Itapúa, más del 70% de electores', src:'facebook' },
+    { text:'Video viral de campaña genera debate #Paraguay2026', src:'tiktok' },
+    { text:'Denuncian actos de proselitismo prohibido en Caaguazú', src:'x' },
+    { text:'Cierre de mesas se retrasa en San Pedro por falta de material', src:'noticias' },
+    { text:'Transmisión en vivo del recuento desde Asunción', src:'tiktok' },
+    { text:'Jóvenes votando por primera vez en Cordillera 🇵🇾', src:'tiktok' },
+    { text:'Candidatos piden calma y respeto al proceso democrático', src:'x' },
+    { text:'Misiones y Ñeembucú sin incidentes hasta el momento', src:'noticias' },
+    { text:'Autoridades refuerzan seguridad en Amambay por tensiones', src:'x' },
+    { text:'Alto Paraná reporta alta concurrencia en todos los locales', src:'facebook' },
+  ];
+  const FEED_USERS = {
+    x:        ['@pynandi_py','@info_electoral','@vox_py','@ciudadano_py','@redpolitica_py'],
+    facebook: ['Juan Gómez','María López','Comité Electoral PY','Noticias PY','Votantes 2026'],
+    tiktok:   ['@pypolitica','@jovenVota','@pyTiktokNews','@electoral_py'],
+    noticias: ['ABC Color','Última Hora','La Nación PY','Paraguay.com','Radio Monumental'],
+  };
+  const SRC_ICON = { x:'✕', facebook:'f', tiktok:'♪', noticias:'📰' };
+
+  let activeSources = new Set(['all']);
+  let scanKeywords  = ['elecciones','TSJE','votación'];
+  let feedInterval  = null;
+  let heatData      = {};
+  let scanMentions  = 0;
+  let monitorInitialized = false;
+
+  function initMonitor() {
+    if (monitorInitialized) return;
+    monitorInitialized = true;
+    DEPTS.forEach(d => { heatData[d.id] = d.base; });
+    renderHeatMap();
+    renderDeptStats();
+    renderKeywordTags();
+    for (let i = 0; i < 7; i++) addFeedItem(false);
+    feedInterval = setInterval(() => {
+      addFeedItem(true);
+      DEPTS.forEach(d => {
+        const delta = (Math.random() - 0.38) * 0.6;
+        heatData[d.id] = Math.max(d.base, Math.min(8, (heatData[d.id] || d.base) + delta));
+      });
+      renderHeatMap();
+      renderDeptStats();
+      document.getElementById('scan-count').textContent = `${++scanMentions} menciones`;
+    }, 2600);
+
+    document.querySelectorAll('.dept-path').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        const tt  = document.getElementById('dept-tooltip');
+        const val = Math.round((heatData[el.id] || 0) * 14 + 8);
+        tt.textContent = `${el.dataset.name}  ·  ${val} menciones`;
+        tt.style.display = 'block';
+      });
+      el.addEventListener('mousemove', e => {
+        const rect = document.getElementById('map-wrap').getBoundingClientRect();
+        const tt   = document.getElementById('dept-tooltip');
+        tt.style.left = (e.clientX - rect.left + 10) + 'px';
+        tt.style.top  = (e.clientY - rect.top  - 30) + 'px';
+      });
+      el.addEventListener('mouseleave', () => {
+        document.getElementById('dept-tooltip').style.display = 'none';
+      });
+    });
+  }
+
+  function addFeedItem(animate) {
+    const srcKeys = [...activeSources].filter(s => s !== 'all');
+    const pool    = srcKeys.length ? srcKeys : ['x','facebook','tiktok','noticias'];
+    const src     = pool[Math.floor(Math.random() * pool.length)];
+    const post    = FEED_POSTS[Math.floor(Math.random() * FEED_POSTS.length)];
+    const user    = FEED_USERS[src][Math.floor(Math.random() * FEED_USERS[src].length)];
+    const dept    = DEPTS[Math.floor(Math.random() * 11)];
+    const time    = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const list    = document.getElementById('feed-list');
+    const el      = document.createElement('div');
+    el.className  = `feed-item feed-source-${src}`;
+    if (!animate) el.style.animation = 'none';
+    el.innerHTML  = `
+      <span class="feed-icon">${SRC_ICON[src]}</span>
+      <div class="feed-content">
+        <div class="feed-user">${escHtml(user)}</div>
+        <div class="feed-text">${escHtml(post.text)}</div>
+        <div class="feed-meta"><span>${time}</span><span class="feed-dept">📍 ${dept.name}</span><span style="text-transform:uppercase">${src}</span></div>
+      </div>`;
+    list.insertBefore(el, list.firstChild);
+    while (list.children.length > 60) list.removeChild(list.lastChild);
+    heatData[dept.id] = Math.min(8, (heatData[dept.id] || dept.base) + 0.25);
+    renderHeatMap();
+  }
+
+  function renderHeatMap() {
+    DEPTS.forEach(d => {
+      const el = document.getElementById(d.id);
+      if (el) el.className = `dept-path heat-${Math.round(heatData[d.id] || 0)}`;
+    });
+  }
+
+  function renderDeptStats() {
+    const top = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0,5);
+    document.getElementById('dept-stats').innerHTML =
+      '<div class="map-title" style="margin-bottom:.45rem;">Top departamentos</div>' +
+      top.map(d => `<div class="dept-stat-item"><span>${d.name}</span><span class="dept-stat-count">${Math.round((heatData[d.id]||0)*15+8)}</span></div>`).join('');
+  }
+
+  function toggleSource(src) {
+    if (src === 'all') {
+      activeSources = new Set(['all']);
+      document.querySelectorAll('.source-btn').forEach(b => b.className = 'source-btn');
+      document.getElementById('src-all').className = 'source-btn active-all';
+      return;
+    }
+    activeSources.delete('all');
+    document.getElementById('src-all').className = 'source-btn';
+    if (activeSources.has(src)) {
+      activeSources.delete(src);
+      document.getElementById(`src-${src}`).className = 'source-btn';
+      if (!activeSources.size) { activeSources.add('all'); document.getElementById('src-all').className = 'source-btn active-all'; }
+    } else {
+      activeSources.add(src);
+      document.getElementById(`src-${src}`).className = `source-btn active-${src}`;
+    }
+  }
+
+  function addKeyword() {
+    const input = document.getElementById('scan-keyword');
+    const kw = input.value.trim();
+    if (!kw || scanKeywords.includes(kw)) { input.value=''; return; }
+    scanKeywords.push(kw);
+    input.value = '';
+    renderKeywordTags();
+  }
+
+  function removeKeyword(kw) {
+    scanKeywords = scanKeywords.filter(k => k !== kw);
+    renderKeywordTags();
+  }
+
+  function renderKeywordTags() {
+    document.getElementById('keyword-tags').innerHTML = scanKeywords
+      .map(k => `<span class="keyword-tag">${escHtml(k)}<button onclick="removeKeyword('${escHtml(k)}')" title="Quitar">×</button></span>`)
+      .join('');
+  }
+
+  document.getElementById('scan-keyword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addKeyword();
   });
 </script>
 </body>
