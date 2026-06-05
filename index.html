@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OJO DE DIOS · Monitor Electoral Paraguay</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👁</text></svg>"/>
+
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+
+  <!-- D3 + TopoJSON -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #07090f;
+      --bg2: #0e1117;
+      --bg3: #151a24;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #e2e8f0;
+      --text2: #8892a4;
+      --text3: #4b5563;
+      --blue: #378ADD;
+      --blue-light: #85B7EB;
+      --blue-dark: #042C53;
+      --red: #e24b4a;
+      --green: #639922;
+      --amber: #ba7517;
+      --purple: #534AB7;
+      --purple-light: #AFA9EC;
+      --teal: #1D9E75;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --font-mono: 'JetBrains Mono', 'Fira Mono', 'Courier New', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 15% 0%, rgba(55,138,221,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 100%, rgba(99,153,34,0.04) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.012) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.012) 40px);
+    }
+
+    /* ── API KEY SCREEN ── */
+    #key-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .key-card {
+      background: var(--bg2); border: 0.5px solid var(--border2);
+      border-top: 2px solid var(--blue); border-radius: var(--radius);
+      padding: 36px 40px; max-width: 480px; width: 100%; text-align: center;
+    }
+    .key-card h1 { font-size: 22px; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 6px; }
+    .key-card p { font-size: 12px; color: var(--text2); margin-bottom: 24px; line-height: 1.7; }
+    .key-card input {
+      width: 100%; padding: 10px 14px; background: var(--bg3);
+      border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--font-mono); font-size: 13px;
+      outline: none; margin-bottom: 12px; letter-spacing: 0.04em;
+    }
+    .key-card input:focus { border-color: var(--blue); }
+    .key-card button {
+      width: 100%; padding: 10px; background: rgba(55,138,221,0.12);
+      border: 0.5px solid rgba(55,138,221,0.5); border-radius: var(--radius-sm);
+      color: var(--blue); font-family: var(--font-mono); font-size: 13px;
+      cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em;
+    }
+    .key-card button:hover { background: rgba(55,138,221,0.2); }
+    .key-note { font-size: 11px; color: var(--text3); margin-top: 16px; line-height: 1.6; }
+    .key-note a { color: var(--blue-light); }
+    #key-error { font-size: 11px; color: var(--red); margin-top: 8px; display: none; }
+
+    /* ── MAIN APP ── */
+    #app { display: none; padding: 16px 20px 40px; max-width: 1400px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 0.5px solid var(--border);
+      margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-title { font-size: 20px; font-weight: 700; letter-spacing: 0.1em; color: var(--blue); }
+    .logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.12em; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* Pulse dot */
+    .pd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; position: relative; }
+    .pd::after { content:''; position:absolute; inset:-3px; border-radius:50%; animation: pR 1.5s ease-out infinite; }
+    .pd-live { background: var(--green); } .pd-live::after { border: 1.5px solid var(--green); }
+    .pd-alert { background: var(--red); } .pd-alert::after { border: 1.5px solid var(--red); }
+    @keyframes pR { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(2.5);opacity:0} }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card {
+      background: var(--bg2); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px; text-align: center;
+    }
+    .stat-n { font-size: 24px; font-weight: 700; line-height: 1; }
+    .stat-l { font-size: 11px; color: var(--text2); margin-top: 4px; letter-spacing: 0.05em; }
+
+    /* Main grid */
+    .main-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+
+    /* Panels */
+    .panel {
+      background: var(--bg2); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .panel-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 12px; color: var(--text); }
+
+    /* Map */
+    #map-container { width: 100%; position: relative; }
+    #map-container svg { display: block; width: 100%; }
+    .dept { cursor: pointer; transition: opacity 0.15s; }
+    .dept:hover { opacity: 0.7; }
+    .map-tooltip {
+      position: absolute; background: var(--bg2); border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px;
+      pointer-events: none; display: none; z-index: 20; min-width: 150px;
+    }
+    .heat-legend { display: flex; gap: 5px; align-items: center; font-size: 10px; color: var(--text3); margin-bottom: 10px; }
+
+    /* Buttons */
+    .btn-scan {
+      width: 100%; padding: 10px; margin-top: 10px;
+      background: rgba(55,138,221,0.1); border: 0.5px solid rgba(55,138,221,0.4);
+      border-radius: var(--radius-sm); color: var(--blue);
+      font-family: var(--font-mono); font-size: 13px; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.04em;
+    }
+    .btn-scan:hover:not(:disabled) { background: rgba(55,138,221,0.18); }
+    .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Topic buttons */
+    .topic-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tpb {
+      font-size: 11px; padding: 4px 12px; border-radius: 99px; cursor: pointer;
+      border: 0.5px solid var(--border); background: var(--bg3); color: var(--text2);
+      transition: all 0.15s; font-family: var(--font-mono);
+    }
+    .tpb.active { background: rgba(55,138,221,0.15); color: var(--blue-light); border-color: rgba(55,138,221,0.5); font-weight: 700; }
+
+    /* Source toggles */
+    .src-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+    .stb {
+      font-size: 11px; padding: 3px 10px; border-radius: 99px; cursor: pointer;
+      border: 0.5px solid var(--border); background: var(--bg3); color: var(--text2);
+      transition: all 0.15s; font-family: var(--font-mono);
+    }
+    .stb.a-tw { background: var(--blue-dark); color: var(--blue-light); border-color: var(--blue); font-weight: 700; }
+    .stb.a-fb { background: #0C447C; color: #B5D4F4; border-color: #378ADD; font-weight: 700; }
+    .stb.a-tt { background: #1a1040; color: var(--purple-light); border-color: var(--purple); font-weight: 700; }
+    .stb.a-ny { background: rgba(29,158,117,0.15); color: #5DCAA5; border-color: var(--teal); font-weight: 700; }
+
+    /* Feed */
+    .feed-container { max-height: 320px; overflow-y: auto; }
+    .feed-empty { text-align: center; padding: 36px 0; color: var(--text3); font-size: 12px; }
+    .feed-empty i { font-size: 32px; display: block; margin-bottom: 10px; opacity: 0.35; }
+    .fi {
+      border-left: 2px solid var(--border2); padding: 8px 12px; margin-bottom: 8px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: var(--bg3); font-size: 12px; line-height: 1.5;
+      animation: sIn 0.3s ease;
+    }
+    .fi.alerta { border-left-color: var(--red); background: rgba(226,75,74,0.07); }
+    .fi.positivo { border-left-color: var(--green); }
+    .fi.negativo { border-left-color: var(--amber); }
+    @keyframes sIn { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 700; display: inline-block; margin-right: 3px; }
+    .b-al { background: rgba(226,75,74,0.15); color: #f87171; border: 0.5px solid rgba(226,75,74,0.4); }
+    .b-po { background: rgba(99,153,34,0.15); color: #86efac; border: 0.5px solid rgba(99,153,34,0.4); }
+    .b-ne { background: rgba(186,117,23,0.15); color: #fcd34d; border: 0.5px solid rgba(186,117,23,0.4); }
+    .b-nu { background: var(--bg2); color: var(--text2); border: 0.5px solid var(--border); }
+    .b-tw { background: var(--blue-dark); color: var(--blue-light); }
+    .b-fb { background: #0C447C; color: #B5D4F4; }
+    .b-tt { background: #1a1040; color: var(--purple-light); }
+    .b-ny { background: rgba(29,158,117,0.15); color: #5DCAA5; }
+
+    /* Alert log */
+    .alert-log { max-height: 100px; overflow-y: auto; font-size: 11px; color: var(--text2); }
+    .alert-entry { padding: 4px 0; border-bottom: 0.5px solid var(--border); color: #f87171; line-height: 1.5; }
+
+    /* Auto refresh + footer */
+    .footer-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
+    .footer-label { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; }
+    label.auto-lbl { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    label.auto-lbl input { cursor: pointer; accent-color: var(--blue); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* Spinner */
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .sp { animation: spin 0.8s linear infinite; display: inline-block; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── API KEY SCREEN ── -->
+<div id="key-screen">
+  <div class="key-card">
+    <div style="font-size:32px;margin-bottom:12px;">👁</div>
+    <h1>OJO DE DIOS</h1>
+    <p>Sistema de monitoreo electoral en tiempo real<br/>Internas Paraguay · 7 de junio 2026</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false"/>
+    <button onclick="initApp()"><i class="ti ti-radar"></i> ACTIVAR SISTEMA</button>
+    <div id="key-error">API key inválida o error de conexión. Verificá el formato sk-ant-...</div>
+    <div class="key-note">
+      Necesitás una API key de Anthropic.<br/>
+      Obtenela en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br/>
+      La clave se usa solo en tu navegador y no se guarda.
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <span style="font-size:22px;">👁</span>
+      <div>
+        <div class="logo-title">OJO DE DIOS</div>
+        <div class="logo-sub">MONITOR ELECTORAL · REDES SOCIALES · TIEMPO REAL</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="sd" class="pd pd-live"></span>
+      <span id="st" style="font-size:12px;color:var(--text2);">en espera</span>
+      <span id="ck" style="font-size:13px;font-weight:700;color:var(--blue);"></span>
+      <button onclick="logout()" style="font-size:10px;padding:3px 10px;border-radius:99px;cursor:pointer;border:0.5px solid var(--border);background:var(--bg3);color:var(--text3);font-family:var(--font-mono);">
+        <i class="ti ti-logout"></i> cambiar key
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="stat-n" id="sm">0</div><div class="stat-l">MENCIONES</div></div>
+    <div class="stat-card"><div class="stat-n" id="sa" style="color:var(--red);">0</div><div class="stat-l">ALERTAS</div></div>
+    <div class="stat-card"><div class="stat-n" id="sdd" style="color:var(--blue);">0</div><div class="stat-l">DPTOS. ACTIVOS</div></div>
+    <div class="stat-card"><div class="stat-n" id="sf">4</div><div class="stat-l">FUENTES</div></div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+
+    <!-- LEFT: Map -->
+    <div>
+      <div class="panel" style="margin-bottom:14px; border-top: 2px solid var(--blue);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="panel-title">PARAGUAY · ACTIVIDAD POR DEPARTAMENTO</div>
+          <div class="heat-legend">
+            sin datos
+            <div style="width:60px;height:5px;border-radius:3px;background:linear-gradient(to right,#1e2d42,#378ADD,#e24b4a);"></div>
+            alerta
+          </div>
+        </div>
+        <div id="map-wrap" style="position:relative;">
+          <div id="map-container"></div>
+          <div id="map-tip" class="map-tooltip"></div>
+        </div>
+        <button id="scan-btn" class="btn-scan" onclick="startScan()">
+          <i class="ti ti-radar"></i> INICIAR ESCANEO ELECTORAL
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Controls + Feed + Alerts -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Controls -->
+      <div class="panel" style="border-top:2px solid var(--text3);">
+        <div class="panel-title">CONFIGURACIÓN DE MONITOREO</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:0.08em;">TEMA</div>
+        <div class="topic-row">
+          <button class="tpb active" data-t="electoral" onclick="selT(this)">🗳 ELECTORAL</button>
+          <button class="tpb" data-t="incidentes" onclick="selT(this)">⚠️ INCIDENTES</button>
+          <button class="tpb" data-t="futbol" onclick="selT(this)">⚽ FÚTBOL</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;margin-top:8px;letter-spacing:0.08em;">FUENTES ACTIVAS</div>
+        <div class="src-row">
+          <button class="stb a-tw" data-s="tw" onclick="togS(this)">𝕏 Twitter</button>
+          <button class="stb a-fb" data-s="fb" onclick="togS(this)">fb Facebook</button>
+          <button class="stb a-tt" data-s="tt" onclick="togS(this)">♪ TikTok</button>
+          <button class="stb a-ny" data-s="ny" onclick="togS(this)"><i class="ti ti-news"></i> Noticias</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;">TikTok: hashtags y descripciones de videos indexados públicamente.</div>
+      </div>
+
+      <!-- Feed -->
+      <div class="panel" style="border-top:2px solid var(--blue);flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="panel-title" style="margin:0;">FEED EN TIEMPO REAL</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="fs" style="display:none;" class="sp">⟳</span>
+            <span id="fc" style="font-size:11px;color:var(--text2);">0 resultados</span>
+          </div>
+        </div>
+        <div id="feed" class="feed-container">
+          <div class="feed-empty">
+            <i class="ti ti-radar"></i>
+            Presioná INICIAR ESCANEO para activar
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="panel" style="border-top:2px solid var(--red);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span id="adot" class="pd pd-live" style="opacity:0.3;"></span>
+          <div class="panel-title" style="margin:0;">REGISTRO DE ALERTAS</div>
+          <span id="ab" style="display:none;font-size:10px;background:rgba(226,75,74,0.15);color:#f87171;padding:2px 8px;border-radius:99px;border:0.5px solid rgba(226,75,74,0.4);font-weight:700;"></span>
+        </div>
+        <div id="al" class="alert-log">
+          <span style="font-size:11px;color:var(--text3);">Sin alertas activas</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    <div class="footer-label">X/TWITTER · FACEBOOK · TIKTOK · NOTICIAS PY · POWERED BY CLAUDE AI</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <label class="auto-lbl">
+        <input type="checkbox" id="ac" onchange="togAuto(this)"/>
+        auto-refresh c/2 min
+      </label>
+      <span id="upd" style="font-size:11px;color:var(--text3);"></span>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+// ── STATE ──
+let API_KEY = '';
+let actS = new Set(['tw','fb','tt','ny']);
+let curT = 'electoral';
+let allP = [], alertN = 0, totalM = 0, activeDepts = new Set();
+let autoI = null, scanning = false;
+let proj, svgEl, gHot;
+
+const isDark = true; // always dark
+const DFILL = '#1a2540';
+const DSTROKE = 'rgba(255,255,255,0.15)';
+
+// ── CLOCK ──
+setInterval(()=>{
+  document.getElementById('ck').textContent =
+    new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// ── API KEY ──
+function initApp() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('key-error').style.display = 'block';
+    return;
+  }
+  API_KEY = key;
+  document.getElementById('key-error').style.display = 'none';
+  document.getElementById('key-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildMap();
+}
+
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') initApp();
+});
+
+function logout() {
+  API_KEY = '';
+  allP = []; alertN = 0; totalM = 0; activeDepts = new Set();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('key-screen').style.display = 'flex';
+  document.getElementById('api-key-input').value = '';
+}
+
+// ── MAP ──
+const ABBR = {
+  "Alto Paraguay":"Alto Py.","Boquerón":"Boquerón","Pdte. Hayes":"P.Hayes",
+  "Concepción":"Concep.","Amambay":"Amambay","Canindeyú":"Canindeyú",
+  "San Pedro":"S.Pedro","Cordillera":"Cordill.","Caaguazú":"Caaguazú",
+  "Central":"Central","Asunción":"ASU","Paraguarí":"Paraguarí",
+  "Guairá":"Guairá","Caazapá":"Caazapá","Misiones":"Misiones",
+  "Itapúa":"Itapúa","Ñeembucú":"Ñeembucú","Alto Paraná":"A.Paraná"
+};
+
+const CENTROIDS = {
+  "Alto Paraguay":[-59.5,-20.5],"Boquerón":[-61.5,-22.0],"Pdte. Hayes":[-59.0,-23.5],
+  "Concepción":[-57.5,-22.5],"Amambay":[-56.0,-22.5],"Canindeyú":[-55.2,-24.0],
+  "San Pedro":[-56.8,-23.8],"Cordillera":[-57.0,-25.0],"Caaguazú":[-56.0,-25.2],
+  "Central":[-57.5,-25.3],"Asunción":[-57.65,-25.28],"Paraguarí":[-57.2,-25.9],
+  "Guairá":[-56.1,-25.8],"Caazapá":[-56.0,-26.2],"Misiones":[-57.2,-27.0],
+  "Itapúa":[-55.8,-27.0],"Ñeembucú":[-58.2,-27.0],"Alto Paraná":[-54.8,-25.5]
+};
+
+function norm(raw) {
+  if(!raw) return '';
+  const m = {
+    'Alto Paraguay':'Alto Paraguay','Boqueron':'Boquerón','Boquerón':'Boquerón',
+    'Presidente Hayes':'Pdte. Hayes','Concepcion':'Concepción','Concepción':'Concepción',
+    'Amambay':'Amambay','Canindeyu':'Canindeyú','Canindeyú':'Canindeyú',
+    'San Pedro':'San Pedro','Cordillera':'Cordillera','Caaguazu':'Caaguazú','Caaguazú':'Caaguazú',
+    'Central':'Central','Asuncion':'Asunción','Asunción':'Asunción',
+    'Paraguari':'Paraguarí','Paraguarí':'Paraguarí','Guaira':'Guairá','Guairá':'Guairá',
+    'Caazapa':'Caazapá','Caazapá':'Caazapá','Misiones':'Misiones',
+    'Itapua':'Itapúa','Itapúa':'Itapúa','Neembucu':'Ñeembucú','Ñeembucú':'Ñeembucú',
+    'Alto Parana':'Alto Paraná','Alto Paraná':'Alto Paraná'
+  };
+  return m[raw.trim()] || raw.trim();
+}
+
+async function buildMap() {
+  const cont = document.getElementById('map-container');
+  const W = cont.offsetWidth || 560;
+  const H = Math.round(W * 1.3);
+
+  const svg = d3.select('#map-container').append('svg')
+    .attr('viewBox',`0 0 ${W} ${H}`)
+    .attr('width','100%')
+    .style('display','block');
+  svgEl = svg;
+
+  proj = d3.geoMercator()
+    .center([-58.2,-23.8])
+    .scale(W * 3.9)
+    .translate([W * 0.44, H * 0.44]);
+
+  const path = d3.geoPath(proj);
+
+  try {
+    const topo = await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/pry.topo.json');
+    const key = Object.keys(topo.objects)[0];
+    const features = topojson.feature(topo, topo.objects[key]).features;
+
+    svg.selectAll('.dept')
+      .data(features).join('path')
+      .attr('class','dept')
+      .attr('d', path)
+      .attr('fill', DFILL)
+      .attr('stroke', DSTROKE)
+      .attr('stroke-width', 1)
+      .attr('data-name', d => norm(d.properties.name || d.properties.NAME || ''))
+      .on('mousemove', function(ev,d) {
+        const name = d3.select(this).attr('data-name');
+        const dp = allP.filter(p=>p.dept===name);
+        const al = dp.filter(p=>p.sentiment==='alerta').length;
+        const tt = dp.filter(p=>p.platform==='tiktok').length;
+        const tip = document.getElementById('map-tip');
+        tip.style.display='block';
+        tip.style.left=(ev.offsetX+12)+'px';
+        tip.style.top=Math.max(0,ev.offsetY-12)+'px';
+        tip.innerHTML=`<div style="font-weight:700;font-size:12px;margin-bottom:3px;color:var(--blue-light);">${name||'—'}</div>
+          <div style="font-size:11px;color:var(--text2);">menciones: <strong style="color:var(--text);">${dp.length}</strong></div>
+          ${tt?`<div style="font-size:11px;color:var(--purple-light);">♪ TikTok: ${tt}</div>`:''}
+          ${al?`<div style="font-size:11px;color:var(--red);">⚠️ alertas: ${al}</div>`:''}`;
+      })
+      .on('mouseleave',()=>{ document.getElementById('map-tip').style.display='none'; });
+
+    // Asunción dot
+    const axy = proj([-57.65,-25.28]);
+    svg.append('circle').attr('cx',axy[0]).attr('cy',axy[1]).attr('r',4)
+      .attr('fill','#378ADD').attr('stroke','#07090f').attr('stroke-width',1.5)
+      .style('pointer-events','none');
+
+    // Labels
+    features.forEach(f => {
+      const c = path.centroid(f);
+      if(!c||isNaN(c[0])) return;
+      const name = norm(f.properties.name||f.properties.NAME||'');
+      svg.append('text')
+        .attr('x',c[0]).attr('y',c[1])
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-size', W > 500 ? 8.5 : 7)
+        .attr('fill','rgba(180,200,230,0.65)')
+        .attr('font-family',"'JetBrains Mono', monospace")
+        .attr('pointer-events','none')
+        .text(ABBR[name]||name.substring(0,8));
+    });
+
+    gHot = svg.append('g');
+
+  } catch(e) {
+    svg.append('text').attr('x',W/2).attr('y',H/2)
+      .attr('text-anchor','middle').attr('font-size',13)
+      .attr('fill','#4b5563').text('Error cargando mapa');
+  }
+}
+
+function updateHeatmap(posts) {
+  if(!gHot||!proj) return;
+  gHot.selectAll('*').remove();
+  const act={};
+  posts.forEach(p=>{ if(p.dept) act[p.dept]=(act[p.dept]||0)+1; });
+  const maxA=Math.max(...Object.values(act),1);
+  Object.entries(act).forEach(([dept,count])=>{
+    const ll=CENTROIDS[dept]; if(!ll) return;
+    const [px,py]=proj(ll);
+    activeDepts.add(dept);
+    const intensity=count/maxA;
+    const isAlert=posts.filter(p=>p.dept===dept).some(p=>p.sentiment==='alerta');
+    const color=isAlert?'#e24b4a':intensity>0.6?'#378ADD':'#85B7EB';
+    const r=10+intensity*14;
+    for(let i=0;i<2;i++){
+      const c=gHot.append('circle').attr('cx',px).attr('cy',py)
+        .attr('r',r+7+i*8).attr('fill',color).attr('opacity',0.1).style('pointer-events','none');
+      c.append('animate').attr('attributeName','r').attr('values',`${r+7+i*8};${r+20+i*8};${r+7+i*8}`).attr('dur',`${1.8+i*0.4}s`).attr('repeatCount','indefinite');
+      c.append('animate').attr('attributeName','opacity').attr('values','0.1;0.02;0.1').attr('dur',`${1.8+i*0.4}s`).attr('repeatCount','indefinite');
+    }
+    gHot.append('circle').attr('cx',px).attr('cy',py).attr('r',r).attr('fill',color).attr('opacity',0.4).style('pointer-events','none');
+    gHot.append('circle').attr('cx',px).attr('cy',py).attr('r',5).attr('fill',color).attr('opacity',0.95).style('pointer-events','none');
+  });
+  document.getElementById('sdd').textContent=activeDepts.size;
+}
+
+function updateFills(posts){
+  if(!svgEl) return;
+  const act={};
+  posts.forEach(p=>{ if(p.dept) act[p.dept]=(act[p.dept]||0)+1; });
+  const maxA=Math.max(...Object.values(act),1);
+  svgEl.selectAll('.dept').attr('fill',function(){
+    const n=d3.select(this).attr('data-name');
+    if(!act[n]) return DFILL;
+    const i=act[n]/maxA;
+    const isAlert=posts.filter(p=>p.dept===n).some(p=>p.sentiment==='alerta');
+    return isAlert?d3.interpolateRgb(DFILL,'#e24b4a')(i):d3.interpolateRgb(DFILL,'#378ADD')(i);
+  });
+}
+
+// ── TOPICS ──
+const TOPICS = {
+  electoral: (ss) => `Buscá menciones de HOY 7 de junio de 2026 sobre las elecciones internas de Paraguay en: ${ss.join(', ')}. Temas: #Internas2026, TSJE, candidatos a intendente, ANR, PLRA. Devolvé exactamente 6 ítems en lista con viñeta "-" con: texto, plataforma, departamento o ciudad si aparece, y ⚠️ si hay incidente.`,
+  incidentes: (ss) => `Buscá reportes de HOY 7 de junio 2026 sobre incidentes electorales en Paraguay en: ${ss.join(', ')}. Irregularidades, fraude, violencia en urnas, conflictos. ${ss.includes('TikTok')?'Incluí videos TikTok con situaciones irregulares.':''} Devolvé 6 ítems en lista "-" con plataforma, departamento y ⚠️ en alertas.`,
+  futbol: (ss) => `Buscá menciones de HOY 7 junio 2026 sobre partidos de fútbol en Paraguay en: ${ss.join(', ')}. Equipos: Olimpia, Cerro, Guaraní, Libertad, APF. Devolvé 6 ítems en lista "-" con texto, plataforma, ⚠️ si hay incidentes.`
+};
+
+const SN={tw:'X/Twitter',fb:'Facebook',tt:'TikTok',ny:'Noticias PY'};
+const PL={twitter:'X/Twitter',facebook:'Facebook',tiktok:'TikTok',noticias:'Noticias PY'};
+const PC={twitter:'b-tw',facebook:'b-fb',tiktok:'b-tt',noticias:'b-ny'};
+
+// ── UI CONTROLS ──
+function togS(btn){
+  const s=btn.dataset.s;
+  const cls={tw:'a-tw',fb:'a-fb',tt:'a-tt',ny:'a-ny'}[s];
+  if(actS.has(s)){ if(actS.size===1) return; actS.delete(s); btn.classList.remove(cls); }
+  else { actS.add(s); btn.classList.add(cls); }
+  document.getElementById('sf').textContent=actS.size;
+}
+function selT(btn){
+  curT=btn.dataset.t;
+  document.querySelectorAll('.tpb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── PARSING ──
+function detSent(t){
+  const tx=t.toLowerCase();
+  if(['⚠️','alerta','incidente','violencia','fraude','irregularidad','denuncia','pelea','agresión'].some(w=>tx.includes(w))) return 'alerta';
+  if(['problema','falla','demora','error','crítica','queja','caos'].some(w=>tx.includes(w))) return 'negativo';
+  if(['bien','tranquilo','orden','éxito','ganó','victoria','positivo','excelente'].some(w=>tx.includes(w))) return 'positivo';
+  return 'neutro';
+}
+function detPlat(t){
+  const tx=t.toLowerCase();
+  if(tx.includes('tiktok')) return 'tiktok';
+  if(tx.includes('twitter')||tx.includes('tweet')||tx.includes('x.com')) return 'twitter';
+  if(tx.includes('facebook')||tx.includes('fb.com')) return 'facebook';
+  return 'noticias';
+}
+function detDept(t){
+  const tx=t.toLowerCase();
+  for(const d of Object.keys(CENTROIDS)) if(tx.includes(d.toLowerCase())) return d;
+  const map={
+    'Asunción':['asunción','asuncion'],'Central':['luque','san lorenzo','lambaré','capiatá','fernando de la mora'],
+    'Alto Paraná':['ciudad del este','hernandarias'],'Itapúa':['encarnación','encarnacion'],
+    'Concepción':['concepción '],'Amambay':['pedro juan','pjc'],
+    'Caaguazú':['coronel oviedo'],'Cordillera':['caacupé'],
+    'Paraguarí':['carapeguá'],'Guairá':['villarrica'],
+    'Alto Paraguay':['fuerte olimpo'],'Boquerón':['filadelfia','mariscal estigarribia'],
+    'Canindeyú':['salto del guairá'],'Misiones':['san juan bautista']
+  };
+  for(const [d,cs] of Object.entries(map)) if(cs.some(c=>tx.includes(c.toLowerCase()))) return d;
+  return null;
+}
+function parsePosts(text){
+  const posts=[];
+  text.split('\n').filter(l=>l.trim().match(/^[-•*]/)).forEach(line=>{
+    const c=line.replace(/^[-•*]\s*/,'').trim();
+    if(c.length>14) posts.push({id:Date.now()+Math.random(),text:c,platform:detPlat(c),sentiment:detSent(c),dept:detDept(c),time:new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'})});
+  });
+  if(posts.length<2)(text.match(/[^.!?\n]{30,}/g)||[]).slice(0,6).forEach(s=>{
+    const c=s.trim();
+    if(c.length>20) posts.push({id:Date.now()+Math.random(),text:c,platform:detPlat(c),sentiment:detSent(c),dept:detDept(c),time:new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'})});
+  });
+  return posts.slice(0,6);
+}
+
+// ── RENDER ──
+function renderFeed(posts){
+  const c=document.getElementById('feed');
+  if(!posts.length){ c.innerHTML='<div class="feed-empty"><i class="ti ti-search-off"></i>Sin resultados para esta búsqueda</div>'; return; }
+  c.innerHTML=posts.map(p=>{
+    const sc={alerta:'alerta',positivo:'positivo',negativo:'negativo'}[p.sentiment]||'';
+    const sb={alerta:'b-al',positivo:'b-po',negativo:'b-ne'}[p.sentiment]||'b-nu';
+    return `<div class="fi ${sc}">
+      <div style="margin-bottom:5px;color:${p.sentiment==='alerta'?'#fca5a5':'var(--text)'};">${p.sentiment==='alerta'?'⚠️ ':''}${p.text}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+        <span class="badge ${PC[p.platform]||'b-nu'}">${p.platform==='tiktok'?'♪ ':''}${PL[p.platform]||'Web'}</span>
+        <span class="badge ${sb}">${p.sentiment}</span>
+        ${p.dept?`<span class="badge b-nu">${p.dept}</span>`:''}
+        <span style="font-size:10px;color:var(--text3);margin-left:auto;">${p.time}</span>
+      </div></div>`;
+  }).join('');
+}
+
+function updateStats(posts){
+  totalM+=posts.length;
+  const na=posts.filter(p=>p.sentiment==='alerta').length;
+  alertN+=na;
+  document.getElementById('sm').textContent=totalM;
+  document.getElementById('sa').textContent=alertN;
+  if(na>0){
+    document.getElementById('adot').className='pd pd-alert';
+    document.getElementById('adot').style.opacity='1';
+    const b=document.getElementById('ab');
+    b.style.display='inline'; b.textContent=alertN+' ALERTA'+(alertN!==1?'S':'');
+    const log=document.getElementById('al');
+    const items=posts.filter(p=>p.sentiment==='alerta').map(p=>
+      `<div class="alert-entry">⚠️ [${p.time}] ${PL[p.platform]||'Web'} · ${p.dept||'N/A'} — ${p.text.substring(0,80)}${p.text.length>80?'...':''}</div>`
+    ).join('');
+    if(log.querySelector('span')) log.innerHTML=items; else log.innerHTML=items+log.innerHTML;
+  }
+}
+
+// ── SCAN ──
+async function startScan(){
+  if(scanning||!API_KEY) return;
+  scanning=true;
+  const btn=document.getElementById('scan-btn');
+  btn.disabled=true; btn.innerHTML='<span class="sp">⟳</span> ESCANEANDO REDES...';
+  document.getElementById('fs').style.display='inline-block';
+  document.getElementById('st').textContent='escaneando...';
+  document.getElementById('sd').className='pd pd-alert';
+
+  const srcs=[...actS].map(s=>SN[s]);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:TOPICS[curT](srcs)}]
+      })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    const text=data.content.map(i=>i.type==='text'?i.text:'').filter(Boolean).join('\n');
+    const posts=parsePosts(text);
+    allP=[...posts,...allP].slice(0,50);
+    renderFeed(posts); updateHeatmap(allP); updateFills(allP); updateStats(posts);
+    document.getElementById('upd').textContent='Última actualización: '+new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('fc').textContent=posts.length+' resultados';
+  }catch(e){
+    document.getElementById('feed').innerHTML=`<div class="feed-empty" style="color:var(--red);"><i class="ti ti-alert-circle"></i>Error: ${e.message}<br/><small>Verificá tu API key y conexión</small></div>`;
+  }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-radar"></i> ESCANEAR DE NUEVO';
+  document.getElementById('fs').style.display='none';
+  document.getElementById('st').textContent='activo';
+  document.getElementById('sd').className='pd pd-live';
+  scanning=false;
+}
+
+function togAuto(el){
+  if(el.checked){ startScan(); autoI=setInterval(startScan,120000); }
+  else { clearInterval(autoI); autoI=null; }
+}
+</script>
+</body>
+</html>
