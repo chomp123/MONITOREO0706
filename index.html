@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ARGOS · Monitor Electoral Paraguay</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
   <style>
     :root {
       --bg:        #0a0a0f;
@@ -423,32 +425,6 @@
           <div class="map-panel">
             <div class="map-title">Actividad por departamento</div>
             <div class="map-svg-wrap" id="map-wrap">
-              <svg viewBox="0 0 280 365" xmlns="http://www.w3.org/2000/svg" id="paraguay-map">
-                <!-- CHACO -->
-                <polygon class="dept-path" id="dept-alto-paraguay"  data-name="Alto Paraguay"   points="5,5 128,5 128,108 5,108"/>
-                <polygon class="dept-path" id="dept-boqueron"       data-name="Boquerón"         points="5,108 128,108 125,228 5,228"/>
-                <polygon class="dept-path" id="dept-pdte-hayes"     data-name="Pdte. Hayes"      points="5,228 118,228 115,282 92,308 68,318 38,312 8,296 5,268 5,228"/>
-                <!-- Río Paraguay -->
-                <polyline points="128,5 126,55 124,108 121,160 119,210 116,255 114,282" stroke="#3b82f6" stroke-width="2" fill="none" opacity="0.45"/>
-                <!-- ORIENTAL -->
-                <polygon class="dept-path" id="dept-concepcion"    data-name="Concepción"       points="128,5 176,5 198,50 202,86 172,91 138,87 128,76 128,5"/>
-                <polygon class="dept-path" id="dept-amambay"       data-name="Amambay"          points="176,5 275,5 275,88 205,88 198,50 176,5"/>
-                <polygon class="dept-path" id="dept-san-pedro"     data-name="San Pedro"        points="128,76 138,87 172,88 202,85 214,156 178,163 128,151 128,76"/>
-                <polygon class="dept-path" id="dept-caninju"       data-name="Canindeyú"        points="202,85 275,85 275,180 240,180 214,156 202,85"/>
-                <polygon class="dept-path" id="dept-cordillera"    data-name="Cordillera"       points="128,151 178,163 180,194 162,205 128,197 128,151"/>
-                <polygon class="dept-path" id="dept-caaguazu"      data-name="Caaguazú"         points="178,163 214,156 240,180 238,222 198,228 175,224 175,200 178,163"/>
-                <polygon class="dept-path" id="dept-alto-parana"   data-name="Alto Paraná"      points="240,180 275,180 275,320 262,332 248,316 236,222 240,180"/>
-                <polygon class="dept-path" id="dept-guaira"        data-name="Guairá"           points="128,197 162,205 165,230 148,240 128,233 128,197"/>
-                <polygon class="dept-path" id="dept-central"       data-name="Central"          points="112,233 140,229 142,252 126,258 110,250 112,233"/>
-                <polygon class="dept-path" id="dept-paraguari"     data-name="Paraguarí"        points="110,252 142,252 168,230 192,240 190,270 160,280 130,278 108,266 110,252"/>
-                <polygon class="dept-path" id="dept-misiones"      data-name="Misiones"         points="108,266 160,280 162,300 150,320 124,326 106,315 108,266"/>
-                <polygon class="dept-path" id="dept-caazapa"       data-name="Caazapá"          points="168,230 238,222 248,257 238,287 198,294 165,300 160,280 190,270 190,240 168,230"/>
-                <polygon class="dept-path" id="dept-neembucu"      data-name="Ñeembucú"         points="84,315 108,315 124,326 118,347 88,353 65,341 62,321 84,315"/>
-                <polygon class="dept-path" id="dept-itapua"        data-name="Itapúa"           points="150,320 162,300 165,300 198,294 238,287 248,316 262,332 248,347 196,357 155,357 150,320"/>
-                <!-- Asunción marker -->
-                <circle cx="114" cy="244" r="4.5" fill="#e879f9" stroke="#fff" stroke-width="1.5"/>
-                <text x="120" y="242" font-size="7" fill="#f0abfc" font-family="sans-serif" font-weight="bold">Asunción</text>
-              </svg>
               <div class="dept-tooltip" id="dept-tooltip"></div>
             </div>
             <div class="heat-legend">
@@ -763,23 +739,113 @@
       document.getElementById('scan-count').textContent = `${++scanMentions} menciones`;
     }, 2600);
 
-    document.querySelectorAll('.dept-path').forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        const tt  = document.getElementById('dept-tooltip');
-        const val = Math.round((heatData[el.id] || 0) * 14 + 8);
-        tt.textContent = `${el.dataset.name}  ·  ${val} menciones`;
-        tt.style.display = 'block';
+    initD3Map();
+  }
+
+  // ── Mapeo nombre TopoJSON → ID interno ──────────────────────────────────
+  const DEPT_ID_FROM_NAME = {
+    'alto paraguay':    'dept-alto-paraguay',
+    'boqueron':         'dept-boqueron',
+    'boqueron':         'dept-boqueron',
+    'presidente hayes': 'dept-pdte-hayes',
+    'concepcion':       'dept-concepcion',
+    'amambay':          'dept-amambay',
+    'san pedro':        'dept-san-pedro',
+    'canindeyu':        'dept-caninju',
+    'cordillera':       'dept-cordillera',
+    'caaguazu':         'dept-caaguazu',
+    'caaguazo':         'dept-caaguazu',
+    'alto parana':      'dept-alto-parana',
+    'guaira':           'dept-guaira',
+    'central':          'dept-central',
+    'paraguari':        'dept-paraguari',
+    'misiones':         'dept-misiones',
+    'caazapa':          'dept-caazapa',
+    'neembucu':         'dept-neembucu',
+    'itapua':           'dept-itapua',
+    'asuncion':         'dept-central',
+  };
+
+  function normName(s) {
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .trim();
+  }
+
+  function initD3Map() {
+    const wrap = document.getElementById('map-wrap');
+    const W    = wrap.clientWidth  || 260;
+    const H    = Math.round(W * 1.35);
+
+    d3.select('#map-wrap svg').remove();
+
+    const svg = d3.select('#map-wrap')
+      .insert('svg', ':first-child')
+      .attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('width', '100%')
+      .style('display', 'block');
+
+    const projection = d3.geoMercator()
+      .center([-58.2, -23.8])
+      .scale(W * 3.9)
+      .translate([W * 0.44, H * 0.44]);
+
+    const pathGen = d3.geoPath().projection(projection);
+    const tt      = document.getElementById('dept-tooltip');
+
+    fetch('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/pry.topo.json')
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(topo => {
+        const objKey = Object.keys(topo.objects)[0];
+        const geo    = topojson.feature(topo, topo.objects[objKey]);
+
+        svg.selectAll('path')
+          .data(geo.features)
+          .enter()
+          .append('path')
+          .attr('class', 'dept-path heat-0')
+          .attr('d', pathGen)
+          .attr('id', d => {
+            const raw  = d.properties.name || d.properties.NAME || d.properties.ADM1_EN || '';
+            const norm = normName(raw);
+            return DEPT_ID_FROM_NAME[norm] || ('dept-' + norm.replace(/\s+/g, '-'));
+          })
+          .attr('data-name', d =>
+            d.properties.name || d.properties.NAME || d.properties.ADM1_EN || ''
+          )
+          .on('mouseenter', function(event) {
+            const id  = this.getAttribute('id');
+            const nm  = this.getAttribute('data-name');
+            const val = Math.round((heatData[id] || 0) * 14 + 8);
+            tt.textContent = `${nm}  ·  ${val} menciones`;
+            tt.style.display = 'block';
+          })
+          .on('mousemove', function(event) {
+            const rect = wrap.getBoundingClientRect();
+            tt.style.left = (event.clientX - rect.left + 12) + 'px';
+            tt.style.top  = (event.clientY - rect.top  - 32) + 'px';
+          })
+          .on('mouseleave', () => { tt.style.display = 'none'; });
+
+        // Marcador Asunción
+        const [ax, ay] = projection([-57.63, -25.29]);
+        svg.append('circle')
+          .attr('cx', ax).attr('cy', ay).attr('r', 4)
+          .attr('fill', '#e879f9').attr('stroke', '#fff').attr('stroke-width', 1.5)
+          .style('pointer-events', 'none');
+        svg.append('text')
+          .attr('x', ax + 6).attr('y', ay + 3)
+          .attr('font-size', 7).attr('fill', '#f0abfc')
+          .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
+          .style('pointer-events', 'none')
+          .text('Asunción');
+
+        renderHeatMap();
+      })
+      .catch(err => {
+        wrap.insertAdjacentHTML('beforeend',
+          `<div style="color:#f87171;font-size:.75rem;padding:.6rem">Error cargando mapa: ${escHtml(err.message)}</div>`);
       });
-      el.addEventListener('mousemove', e => {
-        const rect = document.getElementById('map-wrap').getBoundingClientRect();
-        const tt   = document.getElementById('dept-tooltip');
-        tt.style.left = (e.clientX - rect.left + 10) + 'px';
-        tt.style.top  = (e.clientY - rect.top  - 30) + 'px';
-      });
-      el.addEventListener('mouseleave', () => {
-        document.getElementById('dept-tooltip').style.display = 'none';
-      });
-    });
   }
 
   function addFeedItem(animate) {
@@ -810,7 +876,7 @@
   function renderHeatMap() {
     DEPTS.forEach(d => {
       const el = document.getElementById(d.id);
-      if (el) el.className = `dept-path heat-${Math.round(heatData[d.id] || 0)}`;
+      if (el) el.setAttribute('class', `dept-path heat-${Math.round(heatData[d.id] || 0)}`);
     });
   }
 
