@@ -110,6 +110,48 @@
       font-size: .8rem; cursor: pointer; transition: all .2s;
     }
     .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-account {
+      background: none; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--muted); padding: .35rem .6rem;
+      font-size: .85rem; cursor: pointer; transition: all .2s; line-height: 1;
+    }
+    .btn-account:hover { border-color: var(--accent); color: var(--accent2); }
+
+    /* Modal cambio de contraseña */
+    .modal-overlay {
+      position: fixed; inset: 0; background: #00000088; backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--card); border: 1px solid var(--accent);
+      border-radius: 14px; padding: 2rem 1.75rem; width: 100%; max-width: 360px;
+      box-shadow: 0 0 48px #7c3aed33; display: flex; flex-direction: column; gap: 1rem;
+    }
+    .modal-title {
+      font-size: 1rem; font-weight: 700; color: var(--accent2);
+      letter-spacing: .1em; text-align: center;
+    }
+    .modal-field { display: flex; flex-direction: column; gap: .35rem; }
+    .modal-field label { font-size: .72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .modal-field input {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: .6rem .9rem; color: var(--text); font-size: .92rem; outline: none; transition: border .2s;
+    }
+    .modal-field input:focus { border-color: var(--accent); }
+    .modal-msg {
+      font-size: .82rem; text-align: center; min-height: 1.2rem; padding: .2rem 0;
+    }
+    .modal-msg.ok  { color: #4ade80; }
+    .modal-msg.err { color: #f87171; }
+    .modal-actions { display: flex; gap: .75rem; }
+    .modal-actions .btn-primary { flex: 1; margin-top: 0; }
+    .btn-cancel {
+      flex: 1; padding: .68rem; background: none; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted); font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
 
     /* Layout */
     .app-body { flex: 1; display: flex; overflow: hidden; height: calc(100vh - 57px); }
@@ -405,8 +447,33 @@
     <h1>ARGOS</h1>
     <span id="user-info"></span>
     <span id="role-badge" class="badge"></span>
+    <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
     <button class="btn-logout" id="btn-logout">Salir</button>
   </header>
+
+  <!-- Modal cambio de contraseña -->
+  <div class="modal-overlay" id="modal-password">
+    <div class="modal-box">
+      <div class="modal-title">🔑 CAMBIAR CONTRASEÑA</div>
+      <div class="modal-field">
+        <label>Contraseña actual</label>
+        <input type="password" id="pwd-actual" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="modal-field">
+        <label>Contraseña nueva (mín. 8 caracteres)</label>
+        <input type="password" id="pwd-nueva" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <div class="modal-field">
+        <label>Confirmar contraseña nueva</label>
+        <input type="password" id="pwd-confirmar" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <div class="modal-msg" id="pwd-msg"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePasswordModal()">CANCELAR</button>
+        <button class="btn-primary" id="btn-cambiar-pwd" onclick="doChangePassword()">CAMBIAR</button>
+      </div>
+    </div>
+  </div>
 
   <div class="app-body">
     <!-- Sidebar -->
@@ -661,6 +728,69 @@
         </table>`;
     } catch (e) { el.textContent = `Error: ${e.message}`; }
   }
+
+  // ── Cambio de contraseña ─────────────────────────────────────────────────
+  function openPasswordModal() {
+    document.getElementById('pwd-actual').value    = '';
+    document.getElementById('pwd-nueva').value     = '';
+    document.getElementById('pwd-confirmar').value = '';
+    const msg = document.getElementById('pwd-msg');
+    msg.textContent = ''; msg.className = 'modal-msg';
+    document.getElementById('btn-cambiar-pwd').disabled = false;
+    document.getElementById('modal-password').classList.add('open');
+    document.getElementById('pwd-actual').focus();
+  }
+
+  function closePasswordModal() {
+    document.getElementById('modal-password').classList.remove('open');
+  }
+
+  async function doChangePassword() {
+    const actual    = document.getElementById('pwd-actual').value;
+    const nueva     = document.getElementById('pwd-nueva').value;
+    const confirmar = document.getElementById('pwd-confirmar').value;
+    const msg       = document.getElementById('pwd-msg');
+    const btn       = document.getElementById('btn-cambiar-pwd');
+
+    msg.textContent = ''; msg.className = 'modal-msg';
+
+    if (nueva !== confirmar) {
+      msg.textContent = '❌ Las contraseñas no coinciden';
+      msg.className = 'modal-msg err'; return;
+    }
+    if (nueva.length < 8) {
+      msg.textContent = '❌ La contraseña nueva debe tener al menos 8 caracteres';
+      msg.className = 'modal-msg err'; return;
+    }
+    if (nueva === 'PNP2026*') {
+      msg.textContent = '❌ No puede usar la contraseña inicial como nueva contraseña';
+      msg.className = 'modal-msg err'; return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Cambiando…';
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/cambiar-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ passwordActual: actual, passwordNueva: nueva }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error del servidor');
+      msg.textContent = '✅ Contraseña actualizada correctamente';
+      msg.className = 'modal-msg ok';
+      setTimeout(closePasswordModal, 1800);
+    } catch (e) {
+      msg.textContent = `❌ ${e.message}`;
+      msg.className = 'modal-msg err';
+    } finally {
+      btn.disabled = false; btn.textContent = 'CAMBIAR';
+    }
+  }
+
+  // Cerrar modal al hacer click fuera
+  document.getElementById('modal-password').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closePasswordModal();
+  });
 
   // ── Utils ────────────────────────────────────────────────────────────────
   function escHtml(s) {
