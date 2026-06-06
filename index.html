@@ -295,6 +295,37 @@
       padding: .5rem 1rem; background: var(--surface); border-top: 1px solid var(--border);
       display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; min-height: 36px; flex-shrink: 0;
     }
+
+    /* Búsqueda rápida en redes */
+    .search-panel {
+      padding: .45rem 1rem; background: #0d0d16; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .sp-label { font-size: .63rem; color: var(--muted); letter-spacing: .1em;
+                text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+    .sp-kw    { font-size: .63rem; color: var(--accent2); flex-shrink: 0; }
+    .sp-divider { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+    .sp-btn {
+      display: flex; align-items: center; gap: .3rem;
+      padding: .28rem .7rem; border-radius: 6px; border: 1px solid;
+      font-size: .73rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: opacity .15s; flex-shrink: 0; letter-spacing: .03em;
+    }
+    .sp-btn:hover { opacity: .78; }
+    .sp-fb  { background:#1877f218; border-color:#1877f2; color:#60a5fa; }
+    .sp-tt  { background:#ff005018; border-color:#ff0050; color:#ff6b8a; }
+    .sp-yt  { background:#ff000018; border-color:#ff0000; color:#f87171; }
+    .sp-x   { background:#ffffff10; border-color:#888;    color:#d1d5db; }
+    .sp-emerg {
+      display: flex; align-items: center; gap: .25rem;
+      padding: .26rem .6rem; border-radius: 6px; border: 1px solid;
+      font-size: .68rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: opacity .15s; flex-shrink: 0;
+    }
+    .sp-emerg:hover { opacity: .75; }
+    .sp-critico { background:#e24b4a18; border-color:#e24b4a66; color:#fca5a5; }
+    .sp-alto    { background:#f9731618; border-color:#f9731666; color:#fdba74; }
+    .sp-medio   { background:#eab30818; border-color:#eab30866; color:#fde047; }
     .scanner-label { font-size: .67rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
     .keyword-tag {
       display: flex; align-items: center; gap: .25rem;
@@ -621,6 +652,22 @@
             <div class="live-dot"></div>
             <span id="scan-count">0 menciones</span>
           </div>
+        </div>
+
+        <!-- Búsqueda rápida en redes -->
+        <div class="search-panel">
+          <span class="sp-label">🔍 Buscar en:</span>
+          <button class="sp-btn sp-fb" onclick="searchSocial('facebook')" title="Buscar keywords en Facebook">f&nbsp;Facebook</button>
+          <button class="sp-btn sp-tt" onclick="searchSocial('tiktok')"   title="Buscar keywords en TikTok">♪&nbsp;TikTok</button>
+          <button class="sp-btn sp-yt" onclick="searchSocial('youtube')"  title="Buscar keywords en YouTube Live">▶&nbsp;YouTube Live</button>
+          <button class="sp-btn sp-x"  onclick="searchSocial('x')"        title="Buscar keywords en X/Twitter">✕&nbsp;X</button>
+          <span class="sp-kw" id="sp-kw-display"></span>
+          <div class="sp-divider"></div>
+          <span class="sp-label">Emergencia:</span>
+          <button class="sp-emerg sp-critico" onclick="searchEmergency('pelea')"            title="Abrir en las 4 redes">🔴 PELEA</button>
+          <button class="sp-emerg sp-alto"    onclick="searchEmergency('fraude electoral')" title="Abrir en las 4 redes">🟠 FRAUDE ELECTORAL</button>
+          <button class="sp-emerg sp-alto"    onclick="searchEmergency('acarreo')"          title="Abrir en las 4 redes">🟠 ACARREO</button>
+          <button class="sp-emerg sp-medio"   onclick="searchEmergency('irregularidad')"    title="Abrir en las 4 redes">🟡 IRREGULARIDAD</button>
         </div>
       </div>
 
@@ -1406,6 +1453,45 @@
     document.getElementById('keyword-tags').innerHTML = scanKeywords
       .map(k => `<span class="keyword-tag">${escHtml(k)}<button onclick="removeKeyword('${escHtml(k)}')" title="Quitar">×</button></span>`)
       .join('');
+    updateSearchPanelDisplay();
+  }
+
+  // ── Búsqueda rápida en redes ──────────────────────────────────────────────
+  function updateSearchPanelDisplay() {
+    const el = document.getElementById('sp-kw-display');
+    if (!el) return;
+    const shown = scanKeywords.slice(0, 3);
+    el.textContent = shown.length
+      ? '→ "' + shown.join(' | ') + (scanKeywords.length > 3 ? ' …"' : '"')
+      : '';
+  }
+
+  function getSocialQuery() {
+    return scanKeywords.length
+      ? scanKeywords.slice(0, 4).join(' ')
+      : 'elecciones paraguay 2026';
+  }
+
+  function searchSocial(platform) {
+    const q  = getSocialQuery();
+    const qP = q + ' paraguay';
+    const urls = {
+      facebook: `https://www.facebook.com/search/posts?q=${encodeURIComponent(q)}`,
+      tiktok:   `https://www.tiktok.com/search?q=${encodeURIComponent(q)}`,
+      youtube:  `https://www.youtube.com/results?search_query=${encodeURIComponent(qP)}&sp=EgJAAQ%3D%3D`,
+      x:        `https://twitter.com/search?q=${encodeURIComponent(qP)}&f=live`,
+    };
+    window.open(urls[platform], '_blank', 'noopener,noreferrer');
+  }
+
+  function searchEmergency(keyword) {
+    const qP = keyword + ' paraguay hoy';
+    [
+      `https://www.facebook.com/search/posts?q=${encodeURIComponent(qP)}`,
+      `https://www.tiktok.com/search?q=${encodeURIComponent(qP)}`,
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(qP)}&sp=EgJAAQ%3D%3D`,
+      `https://twitter.com/search?q=${encodeURIComponent(keyword + ' paraguay')}&f=live`,
+    ].forEach(url => window.open(url, '_blank', 'noopener,noreferrer'));
   }
 
   document.getElementById('scan-keyword').addEventListener('keydown', e => {
