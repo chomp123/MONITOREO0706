@@ -386,6 +386,16 @@
     .tl-icon        { flex-shrink:0; font-size:.72rem; }
     .tl-text        { color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Facebook status badge */
+    .fb-badge      { display:flex; align-items:center; gap:.32rem; padding:.22rem .55rem;
+                     border-radius:999px; font-size:.68rem; font-weight:600; cursor:default;
+                     border:1px solid; white-space:nowrap; flex-shrink:0; }
+    .fb-badge-icon { font-family:sans-serif; font-weight:900; }
+    .fb-badge-init { background:#1a1a2e; border-color:#2a2a3d; color:var(--muted); }
+    .fb-badge-ok   { background:#1e3a5a; border-color:#1877f2; color:#60a5fa; }
+    .fb-badge-blocked { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
+    .fb-badge-error   { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
   </style>
 </head>
 <body>
@@ -494,6 +504,10 @@
           <div class="scan-group">
             <input class="scan-input" id="scan-keyword" placeholder="Agregar palabra clave…" />
             <button class="btn-scan" onclick="addKeyword()">+ Agregar</button>
+          </div>
+          <div id="fb-status-badge" class="fb-badge fb-badge-init" title="Estado scraping Facebook">
+            <span class="fb-badge-icon">f</span>
+            <span id="fb-badge-text">FB…</span>
           </div>
         </div>
 
@@ -651,7 +665,8 @@
   function doLogout() {
     token = null; userRole = null; userName = null;
     history.length = 0;
-    if (feedInterval) { clearInterval(feedInterval); feedInterval = null; monitorInitialized = false; }
+    if (feedInterval)   { clearInterval(feedInterval);   feedInterval   = null; monitorInitialized = false; }
+    if (fbPollInterval) { clearInterval(fbPollInterval); fbPollInterval = null; }
     document.getElementById('chat-messages').innerHTML = '<div class="system-msg">Sesión iniciada — ARGOS activo</div>';
     document.getElementById('screen-app').style.display  = 'none';
     document.getElementById('screen-login').style.display = 'flex';
@@ -921,6 +936,10 @@
     }, 2600);
 
     initD3Map();
+
+    // Arrancar polling de Facebook scraping
+    fetchFacebookPosts();
+    fbPollInterval = setInterval(fetchFacebookPosts, 60000);
   }
 
   // ── Alerta crítica → pausa radar ──────────────────────────────────────────
@@ -1294,6 +1313,76 @@
   document.getElementById('scan-keyword').addEventListener('keydown', e => {
     if (e.key === 'Enter') addKeyword();
   });
+
+  // ── Facebook scraping (backend poll) ─────────────────────────────────────
+  //
+  // Consulta el endpoint /api/facebook del backend cada 60 s.
+  // Si hay posts reales los inyecta en el feed general.
+  // Actualiza el badge de estado para que los operadores sepan si el scraping
+  // está activo o pausado por login wall / rate limit.
+
+  let fbPollInterval = null;
+
+  async function fetchFacebookPosts() {
+    if (!token) return;
+    const badge    = document.getElementById('fb-status-badge');
+    const badgeTxt = document.getElementById('fb-badge-text');
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/facebook`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Actualizar badge
+      badge.className = `fb-badge fb-badge-${data.status === 'ok' ? 'ok' : 'blocked'}`;
+      if (data.status === 'ok') {
+        badgeTxt.textContent = `f EN VIVO (${data.total})`;
+      } else if (data.status === 'login_wall') {
+        badgeTxt.textContent = 'FB pausado — sin sesión';
+        badge.title = data.blockReason || 'Sesión de Facebook requerida';
+      } else if (data.status === 'blocked') {
+        const mins = data.blockedUntil
+          ? Math.max(0, Math.ceil((data.blockedUntil - Date.now()) / 60000))
+          : '?';
+        badgeTxt.textContent = `FB pausado (${mins}m)`;
+        badge.title = data.blockReason || 'Bloqueado temporalmente';
+      } else {
+        badgeTxt.textContent = 'FB pausado';
+        badge.title = data.blockReason || '';
+      }
+
+      // Inyectar posts reales en el feed si hay
+      if (data.posts && data.posts.length > 0) {
+        const list = document.getElementById('feed-list');
+        data.posts.slice(0, 5).forEach(post => {
+          const alMap = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
+          const alIcon = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
+          const color  = alMap[post.alertLevel]  || '#378ADD';
+          const icon   = alIcon[post.alertLevel] || '🔵';
+          const label  = (post.alertLevel||'info').charAt(0).toUpperCase() + (post.alertLevel||'info').slice(1);
+          const time   = new Date(post.time).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+          const el     = document.createElement('div');
+          el.className = 'feed-item feed-source-facebook';
+          el.style.borderLeftColor = color;
+          el.innerHTML = `
+            <span class="feed-icon">f</span>
+            <div class="feed-content">
+              <div class="feed-user">${escHtml(post.user || 'Facebook público')} <span style="font-size:.64rem;color:${color};font-weight:600;margin-left:.3rem">${icon} ${label}</span> <span style="font-size:.6rem;color:#1877f2;font-weight:700;margin-left:.2rem">● REAL</span></div>
+              <div class="feed-text">${escHtml(post.text)}</div>
+              <div class="feed-meta"><span>${time}</span><span style="color:#1877f2">Facebook scraping</span><span>${escHtml(post.query || '')}</span></div>
+            </div>`;
+          if (list.firstChild) list.insertBefore(el, list.firstChild);
+          else list.appendChild(el);
+        });
+        while (list.children.length > 80) list.removeChild(list.lastChild);
+      }
+    } catch {
+      // Error de red — mantener badge como está
+    }
+  }
+
+  // El polling de FB se arranca desde initMonitor() — ver llamada allí abajo.
 </script>
 </body>
 </html>
