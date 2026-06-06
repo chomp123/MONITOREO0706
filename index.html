@@ -563,8 +563,15 @@
                 <div class="feed-list" id="feed-list"></div>
               </div>
 
-              <!-- Columna: sentimiento + tendencias -->
+              <!-- Columna: OSINT + sentimiento + tendencias -->
               <div class="widgets-col">
+                <div class="widget-block">
+                  <div class="widget-title" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Indicadores OSINT</span>
+                    <span style="font-size:.58rem;color:var(--muted);">10 min</span>
+                  </div>
+                  <div id="osint-indicators"></div>
+                </div>
                 <div class="widget-block">
                   <div class="widget-title">Sentimiento</div>
                   <div class="s-row">
@@ -841,7 +848,11 @@
   }
 
   let activeSources      = new Set(['all']);
-  let scanKeywords       = ['elecciones','TSJE','votación'];
+  let scanKeywords       = [
+    'internas','fraude electoral','acarreo','compra de votos',
+    'mesa electoral','apoderado','seccional','irregularidad',
+    'urnas','denuncia electoral','tiros','pelea','agresión','TSJE','ANR internas',
+  ];
   let feedInterval       = null;
   let heatData           = {};
   let monitorInitialized = false;
@@ -849,6 +860,24 @@
   let trendingWords      = {};
   let hasCritical        = false;
   let geoFeatures        = null;
+
+  // ── Municipios estratégicos ────────────────────────────────────────────────
+  const STRATEGIC_CITIES = [
+    { name:'Asunción',          lon:-57.63, lat:-25.29, deptId:'dept-central'       },
+    { name:'Ciudad del Este',   lon:-54.62, lat:-25.51, deptId:'dept-alto-parana'   },
+    { name:'Encarnación',       lon:-55.84, lat:-27.33, deptId:'dept-itapua'        },
+    { name:'Pedro Juan Cab.',   lon:-55.73, lat:-22.55, deptId:'dept-amambay'       },
+    { name:'Luque',             lon:-57.48, lat:-25.27, deptId:'dept-central'       },
+    { name:'San Lorenzo',       lon:-57.50, lat:-25.34, deptId:'dept-central'       },
+  ];
+
+  // ── Indicadores OSINT ─────────────────────────────────────────────────────
+  const OSINT_KWS       = ['fraude','acarreo','pelea','denuncia','compra de votos'];
+  const OSINT_WINDOW_MS = 10 * 60 * 1000;  // 10 minutos
+  const OSINT_THRESHOLD = 5;
+  const osintLog        = {};   // keyword → [timestamp, ...]
+  const osintAlertSent  = {};   // keyword → bool (anti-duplicado por ventana)
+  OSINT_KWS.forEach(k => { osintLog[k] = []; osintAlertSent[k] = false; });
 
   function initMonitor() {
     if (monitorInitialized) return;
@@ -1099,18 +1128,23 @@
             );
           });
 
-        // Marcador Asunción
-        const [ax, ay] = projection([-57.63, -25.29]);
-        mapG.append('circle')
-          .attr('cx', ax).attr('cy', ay).attr('r', 3.5)
-          .attr('fill', '#e879f9').attr('stroke', '#fff').attr('stroke-width', 1.2)
-          .style('pointer-events', 'none');
-        mapG.append('text')
-          .attr('x', ax + 5).attr('y', ay + 3)
-          .attr('font-size', 6.5).attr('fill', '#f0abfc')
-          .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
-          .style('pointer-events', 'none')
-          .text('Asunción');
+        // Municipios estratégicos — puntos actualizables por renderStrategicCityDots()
+        STRATEGIC_CITIES.forEach(city => {
+          const [cx_, cy_] = projection([city.lon, city.lat]);
+          const slug = city.name.replace(/[\s.]/g,'');
+          mapG.append('circle')
+            .attr('id', `city-dot-${slug}`)
+            .attr('cx', cx_).attr('cy', cy_).attr('r', 3.5)
+            .attr('fill', '#4b5563').attr('stroke', '#fff').attr('stroke-width', .9)
+            .style('pointer-events', 'none');
+          mapG.append('text')
+            .attr('id', `city-lbl-${slug}`)
+            .attr('x', cx_ + 5).attr('y', cy_ + 3)
+            .attr('font-size', 5.8).attr('fill', '#6b7280')
+            .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
+            .style('pointer-events', 'none')
+            .text(city.name);
+        });
 
         // ── Radar overlay ──────────────────────────────────────────────────
         const radarSvg = d3.select('#map-wrap')
@@ -1226,11 +1260,91 @@
   }
 
   // ── Mapa de calor ─────────────────────────────────────────────────────────
+  // ── Puntos de municipios estratégicos ────────────────────────────────────
+  function renderStrategicCityDots() {
+    STRATEGIC_CITIES.forEach(city => {
+      const heat  = heatData[city.deptId] || 0;
+      const al    = alertLevel(heat);
+      const slug  = city.name.replace(/[\s.]/g,'');
+      const dot   = document.getElementById(`city-dot-${slug}`);
+      const label = document.getElementById(`city-lbl-${slug}`);
+      if (dot) {
+        dot.setAttribute('fill',   heat >= 2 ? al.color : '#4b5563');
+        dot.setAttribute('r',      heat >= 3 ? '4.5' : '3.5');
+        dot.style.animation = heat >= 5 ? 'pulse-crit .9s infinite' : 'none';
+      }
+      if (label) {
+        label.setAttribute('fill', heat >= 2 ? '#e2e8f0' : '#6b7280');
+      }
+    });
+  }
+
   function renderHeatMap() {
     DEPTS.forEach(d => {
       const el = document.getElementById(d.id);
       if (el) el.setAttribute('class', `dept-path heat-${Math.round(heatData[d.id] || 0)}`);
     });
+    renderStrategicCityDots();
+  }
+
+  // ── Indicadores OSINT ─────────────────────────────────────────────────────
+  function trackOSINT(items) {
+    const now = Date.now();
+    items.forEach(item => {
+      const t = ((item.title||'')+(item.description||'')).toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      OSINT_KWS.forEach(kw => {
+        const kwn = kw.normalize('NFD').replace(/[̀-ͯ]/g,'');
+        if (t.includes(kwn)) osintLog[kw].push(now);
+      });
+    });
+    // Purgar entradas fuera de la ventana de 10 min
+    OSINT_KWS.forEach(kw => {
+      osintLog[kw] = osintLog[kw].filter(ts => now - ts < OSINT_WINDOW_MS);
+    });
+    // Disparar alertas si se supera el umbral
+    OSINT_KWS.forEach(kw => {
+      const cnt = osintLog[kw].length;
+      if (cnt >= OSINT_THRESHOLD && !osintAlertSent[kw]) {
+        osintAlertSent[kw] = true;
+        fireOSINTAlert(kw, cnt);
+        setTimeout(() => { osintAlertSent[kw] = false; }, OSINT_WINDOW_MS);
+      }
+    });
+    renderOSINTIndicators();
+  }
+
+  function fireOSINTAlert(kw, cnt) {
+    const list = document.getElementById('tl-list');
+    if (list) {
+      const time = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+      const el = document.createElement('div');
+      el.className = 'tl-item';
+      el.style.cssText = 'animation:slideIn .25s ease;background:#e24b4a11;border-radius:4px;padding:.15rem .4rem;';
+      el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">🔴</span>`
+                   + `<span class="tl-text" style="color:#f87171;font-weight:600;">OSINT ALERTA: "${kw}" — ${cnt} menciones en 10 min</span>`;
+      list.insertBefore(el, list.firstChild);
+      while (list.children.length > 20) list.removeChild(list.lastChild);
+    }
+    hasCritical = true;
+    checkCritical();
+  }
+
+  function renderOSINTIndicators() {
+    const el = document.getElementById('osint-indicators');
+    if (!el) return;
+    el.innerHTML = OSINT_KWS.map(kw => {
+      const cnt    = osintLog[kw].length;
+      const color  = cnt >= OSINT_THRESHOLD ? '#e24b4a'
+                   : cnt >= 3              ? '#f97316'
+                   : cnt >= 1              ? '#eab308'
+                   : 'var(--muted)';
+      const flag   = cnt >= OSINT_THRESHOLD ? ' 🔴' : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.22rem 0;border-bottom:1px solid #ffffff08;">
+        <span style="font-size:.67rem;color:${color};font-weight:${cnt>=OSINT_THRESHOLD?700:400};">${kw}</span>
+        <span style="font-size:.69rem;color:${color};font-weight:700;flex-shrink:0;">${cnt}${flag}</span>
+      </div>`;
+    }).join('');
   }
 
   // ── Ranking con badges de alerta ─────────────────────────────────────────
@@ -1463,11 +1577,12 @@
       });
       while (list.children.length > 90) list.removeChild(list.lastChild);
 
-      // Actualizar mapa de calor, timeline, sentimiento y tendencias con datos reales
+      // Actualizar mapa de calor, timeline, sentimiento, tendencias e indicadores OSINT
       updateHeatFromRSS(newItems);
       newItems.slice(0, 5).forEach(item => addRSSToTimeline(item));
       updateSentimentFromRSS(data.items || []);
       updateTrendingFromRSS(newItems);
+      trackOSINT(newItems);
 
     } catch {
       if (statusEl) { statusEl.className = 'rss-status-badge rss-error'; }
