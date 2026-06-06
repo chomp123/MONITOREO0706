@@ -1711,12 +1711,10 @@
     const min  = Math.floor(diff / 60000);
     const hrs  = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    if (min  <  2) return 'hace un momento';
-    if (min  < 60) return `hace ${min} min`;
-    if (hrs  <  2) return 'hace 1 hora';
-    if (hrs  < 24) return `hace ${hrs} horas`;
-    if (days <  2) return 'ayer';
-    return `hace ${days} días`;
+    if (min  <  1) return 'hace un momento';
+    if (min  < 60) return `hace ${min} minuto${min === 1 ? '' : 's'}`;
+    if (hrs  < 24) return `hace ${hrs} hora${hrs === 1 ? '' : 's'}`;
+    return `hace ${days} día${days === 1 ? '' : 's'}`;
   }
 
   function formatFeedDate(iso) {
@@ -1767,6 +1765,7 @@
   //  - Click abre el artículo en nueva pestaña
 
   const rssSeenTitles = new Set();
+  let   rssAllItems   = [];  // master array, kept sorted descending
   let rssInterval     = null;
 
   // Mapa portal → clase CSS de badge (basado en portalColor del backend)
@@ -1806,22 +1805,25 @@
         return;
       }
 
-      // Quitar el mensaje de carga cuando lleguen los primeros artículos
       removeFeedLoading();
 
+      // Agregar al master array, deduplicar, limitar a 90, ordenar descendente
+      newItems.forEach(item => {
+        rssSeenTitles.add(item.title);
+        rssAllItems.push(item);
+      });
+      rssAllItems.sort((a, b) =>
+        new Date(b.fecha||b.pubDate||0) - new Date(a.fecha||a.pubDate||0)
+      );
+      if (rssAllItems.length > 90) rssAllItems = rssAllItems.slice(0, 90);
+
+      // Re-renderizar todo el feed desde el master array ordenado
       const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
       const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
       const ALERT_LABELS = { critico:'Crítico', alto:'Alto', medio:'Medio', info:'Informativo' };
 
-      // Ordenar más reciente primero; insertar en orden inverso para que quede
-      // correcto al hacer insertBefore(el, firstChild)
-      const toRender = [...newItems]
-        .sort((a, b) => new Date(b.fecha||b.pubDate||0) - new Date(a.fecha||a.pubDate||0))
-        .slice(0, 10);
-
-      toRender.forEach(item => rssSeenTitles.add(item.title));
-
-      [...toRender].reverse().forEach(item => {
+      const frag = document.createDocumentFragment();
+      rssAllItems.forEach(item => {
         const alIcon  = ALERT_ICONS[item.alertLevel]  || '🔵';
         const alColor = ALERT_COLORS[item.alertLevel] || '#378ADD';
         const alLabel = ALERT_LABELS[item.alertLevel] || 'Informativo';
@@ -1830,7 +1832,6 @@
         const fullDt  = formatFullDate(iso);
         const location = detectLocation((item.title||'')+' '+(item.description||''));
 
-        // Badge 🔍 BÚSQUEDA si el título coincide con alguna keyword activa
         const titleLow = (item.title || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
         const isMatch  = scanKeywords.some(kw =>
           titleLow.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
@@ -1861,11 +1862,10 @@
               ${item.url ? '<span style="color:#4ade80;font-size:.62rem;flex-shrink:0;">↗ Ver artículo</span>' : ''}
             </div>
           </div>`;
-
-        if (list.firstChild) list.insertBefore(el, list.firstChild);
-        else list.appendChild(el);
+        frag.appendChild(el);
       });
-      while (list.children.length > 90) list.removeChild(list.lastChild);
+      list.innerHTML = '';
+      list.appendChild(frag);
 
       // Actualizar mapa de calor, timeline, sentimiento, tendencias e indicadores OSINT
       updateHeatFromRSS(newItems);
