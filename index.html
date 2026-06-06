@@ -365,8 +365,8 @@
 
     /* Radar overlay SVG */
     .map-svg-wrap { position:relative; overflow:hidden; }
-    #radar-svg   { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
-    @keyframes radar-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    /* #radar-svg removed — radar is now inline in main SVG */
+    /* radar-spin handled by D3 timer */
     @keyframes pulse-sweep-crit { 0%,100%{opacity:1}50%{opacity:.3} }
 
     /* Right panel layout */
@@ -961,15 +961,13 @@
   // ── Alerta crítica → pausa radar ──────────────────────────────────────────
   function checkCritical() {
     hasCritical = DEPTS.some(d => (heatData[d.id] || 0) >= 7);
-    const sweepEl = document.getElementById('radar-sweep-g');
-    const lineEl  = document.getElementById('radar-sweep-line');
-    if (sweepEl) {
-      sweepEl.style.animationPlayState = hasCritical ? 'paused' : 'running';
-    }
+    const lineEl = document.getElementById('radar-sweep-line');
     if (lineEl) {
-      lineEl.setAttribute('stroke', hasCritical ? '#e24b4a' : 'rgba(55,138,221,0.65)');
-      lineEl.style.animation = hasCritical ? 'pulse-sweep-crit .7s infinite' : 'none';
+      lineEl.setAttribute('stroke', hasCritical ? '#ff3333' : '#e24b4a');
+      lineEl.setAttribute('opacity', hasCritical ? '1' : '0.8');
     }
+    if (hasCritical && window._radarPause)  window._radarPause();
+    if (!hasCritical && window._radarResume) window._radarResume();
   }
 
   // ── Timeline ─────────────────────────────────────────────────────────────
@@ -1097,7 +1095,7 @@
     const cy   = H * 0.44;
 
     d3.select('#map-wrap svg').remove();
-    d3.select('#radar-svg').remove();
+    if (window._radarTimer) { window._radarTimer.stop(); window._radarTimer = null; }
 
     const svg = d3.select('#map-wrap')
       .insert('svg', ':first-child')
@@ -1195,39 +1193,58 @@
         });
 
         // ── Radar overlay ──────────────────────────────────────────────────
-        const radarSvg = d3.select('#map-wrap')
-          .append('svg')
-          .attr('id', 'radar-svg')
-          .attr('viewBox', `0 0 ${W} ${H}`)
-          .attr('width', '100%').attr('height', '100%')
-          .style('position', 'absolute').style('top','0').style('left','0')
-          .style('pointer-events','none');
+        // Centro geográfico de Paraguay en coordenadas SVG
+        const [rcx, rcy] = projection([-58.2, -23.5]);
+        const radioMaximo = Math.min(W, H) * 0.45;
 
-        // Anillos de rango (decorativos)
-        [0.17, 0.30, 0.43].forEach(r => {
-          radarSvg.append('circle')
-            .attr('cx', cx).attr('cy', cy)
-            .attr('r', r * Math.min(W, H))
+        // ClipPath para que el radar no salga del mapa
+        svg.append('defs').append('clipPath')
+          .attr('id', 'map-clip')
+          .append('rect')
+          .attr('width', W).attr('height', H);
+
+        // Anillos concéntricos
+        [0.25, 0.5, 0.75, 1.0].forEach(r => {
+          svg.append('circle')
+            .attr('cx', rcx).attr('cy', rcy)
+            .attr('r', radioMaximo * r)
             .attr('fill', 'none')
-            .attr('stroke', '#378ADD').attr('stroke-width', 0.4).attr('opacity', 0.13);
+            .attr('stroke', '#e24b4a')
+            .attr('stroke-width', 0.3)
+            .attr('opacity', 0.2)
+            .attr('clip-path', 'url(#map-clip)')
+            .style('pointer-events', 'none');
         });
 
-        // Línea de barrido con animateTransform (más compatible que CSS en SVG)
-        const sweepG = radarSvg.append('g').attr('id', 'radar-sweep-g')
-          .style('transform-origin', `${cx}px ${cy}px`)
-          .style('animation', 'radar-spin 4s linear infinite');
+        // Grupo radar con D3 timer
+        const radarGroup = svg.append('g')
+          .attr('id', 'radar-sweep-g')
+          .attr('clip-path', 'url(#map-clip)')
+          .style('pointer-events', 'none');
 
-        sweepG.append('line')
+        radarGroup.append('line')
           .attr('id', 'radar-sweep-line')
-          .attr('x1', cx).attr('y1', cy)
-          .attr('x2', cx).attr('y2', cy - H * 0.46)
-          .attr('stroke', 'rgba(55,138,221,0.65)')
-          .attr('stroke-width', 1.6);
+          .attr('x1', rcx).attr('y1', rcy)
+          .attr('x2', rcx).attr('y2', rcy - radioMaximo)
+          .attr('stroke', '#e24b4a')
+          .attr('stroke-width', 1.5)
+          .attr('opacity', 0.8);
 
         // Estela semitransparente
-        sweepG.append('path')
-          .attr('d', `M ${cx},${cy} L ${cx-20},${cy-H*0.46} L ${cx+2},${cy-H*0.46} Z`)
-          .attr('fill', 'rgba(55,138,221,0.12)');
+        radarGroup.append('path')
+          .attr('id', 'radar-trail')
+          .attr('d', `M ${rcx},${rcy} L ${rcx-12},${rcy-radioMaximo} L ${rcx+4},${rcy-radioMaximo} Z`)
+          .attr('fill', 'rgba(226,75,74,0.10)');
+
+        let radarAngulo = 0;
+        let radarPaused = false;
+        window._radarTimer = d3.timer(() => {
+          if (radarPaused) return;
+          radarAngulo = (radarAngulo + 1) % 360;
+          radarGroup.attr('transform', `rotate(${radarAngulo}, ${rcx}, ${rcy})`);
+        });
+        window._radarPause  = () => { radarPaused = true; };
+        window._radarResume = () => { radarPaused = false; };
 
         renderHeatMap();
         checkCritical();
