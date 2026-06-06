@@ -555,6 +555,7 @@
                 <div class="feed-header">
                   <span class="feed-header-title">Feed · Tiempo real</span>
                   <div style="display:flex;align-items:center;gap:.5rem;">
+                    <span style="font-size:.65rem;color:var(--muted);letter-spacing:.02em;">📅 Noticias: 7 — 9 jun 2026</span>
                     <div class="live-dot"></div>
                     <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
                   </div>
@@ -1219,6 +1220,16 @@
     if (el) el.remove();
   }
 
+  function showNoNewsInRange() {
+    const list = document.getElementById('feed-list');
+    if (!list || list.querySelector('#feed-no-range-msg') || list.children.length > 0) return;
+    const el = document.createElement('div');
+    el.id = 'feed-no-range-msg';
+    el.style.cssText = 'text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.85rem;';
+    el.textContent = 'Sin noticias en el período seleccionado';
+    list.appendChild(el);
+  }
+
   // ── Calor desde noticias reales ───────────────────────────────────────────
   function updateHeatFromRSS(items) {
     if (!items || !items.length) return;
@@ -1421,7 +1432,12 @@
       const countEl = document.getElementById('scan-count');
       if (countEl) countEl.textContent = `${data.total || 0} noticias`;
 
-      if (!newItems.length) return;
+      // Sin noticias en el rango → mostrar mensaje vacío
+      if (!newItems.length) {
+        removeFeedLoading();
+        if ((data.total || 0) === 0) showNoNewsInRange();
+        return;
+      }
 
       // Quitar el mensaje de carga cuando lleguen los primeros artículos
       removeFeedLoading();
