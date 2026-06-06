@@ -1158,34 +1158,48 @@
           });
 
         // Municipios estratégicos — puntos actualizables por renderStrategicCityDots()
-        const CITY_LBL_CFG = {
-          'Asunción':        { dx: -6,  dy: -6,  anchor: 'end'   },
-          'Ciudad del Este': { dx:  10, dy:  3,  anchor: 'start' },
-          'Encarnación':     { dx:   5, dy:  14, anchor: 'start' },
-          'Pedro Juan Cab.': { dx:   5, dy: -12, anchor: 'start' },
-          'Luque':           { dx: -6,  dy:  10, anchor: 'end'   },
-          'San Lorenzo':     { dx: -6,  dy:  -4, anchor: 'end'   },
+        const METRO_CITIES = ['Asunción', 'Luque', 'San Lorenzo'];
+        const NON_METRO_CFG = {
+          'Ciudad del Este': { dx: 10, dy:   0, anchor: 'start' },
+          'Pedro Juan Cab.': { dx: 10, dy: -10, anchor: 'start' },
+          'Encarnación':     { dx: 10, dy:  12, anchor: 'start' },
         };
         STRATEGIC_CITIES.forEach(city => {
           const [px, py] = projection([city.lon, city.lat]);
-          const slug = city.name.replace(/[\s.]/g,'');
-          const cfg = CITY_LBL_CFG[city.name] || { dx: 5, dy: 3, anchor: 'start' };
+          const slug     = city.name.replace(/[\s.]/g,'');
+          const isMetro  = METRO_CITIES.includes(city.name);
           mapG.append('circle')
             .attr('id', `city-dot-${slug}`)
-            .attr('cx', px).attr('cy', py).attr('r', 3.5)
+            .attr('cx', px).attr('cy', py)
+            .attr('r', city.name === 'Asunción' ? 5 : 3.5)
             .attr('fill', '#4b5563').attr('stroke', '#fff').attr('stroke-width', .9)
             .style('pointer-events', 'none');
-          mapG.append('text')
-            .attr('id', `city-lbl-${slug}`)
-            .attr('x', px + cfg.dx).attr('y', py + cfg.dy)
-            .attr('font-size', 9).attr('fill', '#e5e7eb')
-            .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
-            .attr('text-anchor', cfg.anchor)
-            .attr('stroke', '#07090f').attr('stroke-width', 2.5)
-            .attr('paint-order', 'stroke')
-            .style('pointer-events', 'none')
-            .text(city.name);
+          if (!isMetro) {
+            const cfg = NON_METRO_CFG[city.name] || { dx: 5, dy: 3, anchor: 'start' };
+            mapG.append('text')
+              .attr('id', `city-lbl-${slug}`)
+              .attr('x', px + cfg.dx).attr('y', py + cfg.dy)
+              .attr('font-size', 9).attr('fill', '#e5e7eb')
+              .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
+              .attr('text-anchor', cfg.anchor)
+              .attr('stroke', '#07090f').attr('stroke-width', 2.5)
+              .attr('paint-order', 'stroke')
+              .style('pointer-events', 'none')
+              .text(city.name);
+          }
         });
+        // Label único área metropolitana (anclado a Asunción)
+        const [asuX, asuY] = projection([-57.63, -25.29]);
+        mapG.append('text')
+          .attr('id', 'city-lbl-metro')
+          .attr('x', asuX - 60).attr('y', asuY - 15)
+          .attr('font-size', 9).attr('fill', '#e5e7eb')
+          .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
+          .attr('text-anchor', 'start')
+          .attr('stroke', '#07090f').attr('stroke-width', 2.5)
+          .attr('paint-order', 'stroke')
+          .style('pointer-events', 'none')
+          .text('Área Metropolitana');
 
         renderHeatMap();
   
@@ -1268,20 +1282,25 @@
   // ── Puntos de municipios estratégicos ────────────────────────────────────
   function renderStrategicCityDots() {
     STRATEGIC_CITIES.forEach(city => {
-      const heat  = heatData[city.deptId] || 0;
-      const al    = alertLevel(heat);
-      const slug  = city.name.replace(/[\s.]/g,'');
-      const dot   = document.getElementById(`city-dot-${slug}`);
-      const label = document.getElementById(`city-lbl-${slug}`);
+      const heat = heatData[city.deptId] || 0;
+      const al   = alertLevel(heat);
+      const slug = city.name.replace(/[\s.]/g,'');
+      const dot  = document.getElementById(`city-dot-${slug}`);
       if (dot) {
-        dot.setAttribute('fill',   heat >= 2 ? al.color : '#4b5563');
-        dot.setAttribute('r',      heat >= 3 ? '4.5' : '3.5');
+        dot.setAttribute('fill', heat >= 2 ? al.color : '#4b5563');
+        const baseR = city.name === 'Asunción' ? 5 : 3.5;
+        dot.setAttribute('r', heat >= 3 ? (baseR + 1) : baseR);
         dot.style.animation = heat >= 5 ? 'pulse-crit .9s infinite' : 'none';
       }
-      if (label) {
-        label.setAttribute('fill', heat >= 2 ? '#e2e8f0' : '#6b7280');
-      }
+      const lbl = document.getElementById(`city-lbl-${slug}`);
+      if (lbl) lbl.setAttribute('fill', heat >= 2 ? '#e2e8f0' : '#6b7280');
     });
+    // Metro label: Central dept heat
+    const metroLbl  = document.getElementById('city-lbl-metro');
+    if (metroLbl) {
+      const metroHeat = heatData['dept-central'] || 0;
+      metroLbl.setAttribute('fill', metroHeat >= 2 ? '#e2e8f0' : '#6b7280');
+    }
   }
 
   function renderHeatMap() {
