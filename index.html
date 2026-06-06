@@ -430,6 +430,28 @@
                         background:#1a200a; border:1px solid #22c55e44; color:#4ade80; }
     .rss-status-badge.rss-init   { background:#1a1a2e; border-color:#2a2a3d; color:var(--muted); }
     .rss-status-badge.rss-error  { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
+
+    /* ── OSINT-PY panel ─────────────────────────────────────── */
+    #panel-osint { padding:1rem 1.2rem; overflow-y:auto; gap:1rem; }
+    .osint-notice { background:rgba(55,138,221,0.08); border:1px solid rgba(55,138,221,0.3);
+                    border-radius:6px; padding:.65rem 1rem; font-size:.75rem; color:#93c5fd;
+                    line-height:1.5; margin-bottom:.25rem; }
+    .osint-search { width:100%; padding:.5rem .85rem; border-radius:6px;
+                    background:var(--bg3); border:1px solid var(--border);
+                    color:var(--text); font-size:.8rem; outline:none; }
+    .osint-search:focus { border-color:#378ADD66; }
+    .osint-category-title { font-size:.62rem; font-weight:700; letter-spacing:.1em;
+                             color:var(--muted); text-transform:uppercase; margin:.9rem 0 .45rem; }
+    .osint-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:.5rem; }
+    .osint-card { background:var(--bg3); border:0.5px solid var(--border); border-radius:6px;
+                  padding:.6rem .75rem; cursor:pointer; text-decoration:none; display:flex;
+                  flex-direction:column; gap:.3rem; transition:border-color .15s, box-shadow .15s; }
+    .osint-card:hover { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)22; }
+    .osint-card-top { display:flex; align-items:center; justify-content:space-between; }
+    .osint-card-name { font-size:.78rem; font-weight:600; color:var(--text); }
+    .osint-card-ext  { font-size:.7rem; color:var(--muted); }
+    .osint-badge { font-size:.58rem; font-weight:700; padding:.1rem .35rem; border-radius:4px;
+                   background:#052e16; color:#4ade80; border:1px solid #166534; }
   </style>
 </head>
 <body>
@@ -510,6 +532,10 @@
       <button class="nav-btn" id="nav-monitor" onclick="showPanel('monitor')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Monitor Electoral
+      </button>
+      <button class="nav-btn" id="nav-osint" onclick="showPanel('osint')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        OSINT-PY
       </button>
       <button class="nav-btn" id="nav-history" onclick="showPanel('history')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -668,6 +694,134 @@
         </div>
       </div>
 
+      <!-- OSINT-PY -->
+      <div id="panel-osint">
+        <div class="osint-notice">
+          ℹ️ Todos los recursos enlazados son fuentes oficiales y públicas. Su uso debe ser ético, legal e investigativo.
+        </div>
+        <input class="osint-search" id="osint-search" placeholder="🔍 Buscar herramienta…" oninput="filterOsintCards(this.value)" />
+
+        <div class="osint-category-title">── Identidad y Personas ──</div>
+        <div class="osint-grid" data-cat="identidad">
+          <a class="osint-card" href="https://tsje.gov.py/consulta-padron.html" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
+            <div class="osint-card-top"><span class="osint-card-name">Padrón Electoral</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://mec.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
+            <div class="osint-card-top"><span class="osint-card-name">Identidad Alumno</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://epieos.com" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
+            <div class="osint-card-top"><span class="osint-card-name">Epieos</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://pimeyes.com" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
+            <div class="osint-card-top"><span class="osint-card-name">ProFaceFinder</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+
+        <div class="osint-category-title">── Registros Oficiales ──</div>
+        <div class="osint-grid" data-cat="registros">
+          <a class="osint-card" href="https://www.set.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #378ADD">
+            <div class="osint-card-top"><span class="osint-card-name">Registro de Automotores</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.dnit.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #378ADD">
+            <div class="osint-card-top"><span class="osint-card-name">Registro de Empresas</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.policia.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #378ADD">
+            <div class="osint-card-top"><span class="osint-card-name">Antecedentes Policiales</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.mj.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #378ADD">
+            <div class="osint-card-top"><span class="osint-card-name">Órdenes de Captura</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+
+        <div class="osint-category-title">── Fuentes Electorales ──</div>
+        <div class="osint-grid" data-cat="electoral">
+          <a class="osint-card" href="https://tsje.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
+            <div class="osint-card-top"><span class="osint-card-name">TSJE Resultados</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.anr.org.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
+            <div class="osint-card-top"><span class="osint-card-name">Padrón ANR</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.cde.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
+            <div class="osint-card-top"><span class="osint-card-name">Registro Civil</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+
+        <div class="osint-category-title">── Inteligencia OSINT ──</div>
+        <div class="osint-grid" data-cat="inteligencia">
+          <a class="osint-card" href="https://www.maltego.com" target="_blank" rel="noopener" style="border-top:2px solid #f97316">
+            <div class="osint-card-top"><span class="osint-card-name">Maltego CE</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.spiderfoot.net" target="_blank" rel="noopener" style="border-top:2px solid #f97316">
+            <div class="osint-card-top"><span class="osint-card-name">SpiderFoot</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.shodan.io" target="_blank" rel="noopener" style="border-top:2px solid #f97316">
+            <div class="osint-card-top"><span class="osint-card-name">Shodan</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://osintframework.com" target="_blank" rel="noopener" style="border-top:2px solid #f97316">
+            <div class="osint-card-top"><span class="osint-card-name">OSINT Framework</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+
+        <div class="osint-category-title">── Redes Sociales ──</div>
+        <div class="osint-grid" data-cat="redes">
+          <a class="osint-card" href="https://twitter.com/search-advanced" target="_blank" rel="noopener" style="border-top:2px solid #e24b4a">
+            <div class="osint-card-top"><span class="osint-card-name">Twitter Advanced Search</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.facebook.com/search" target="_blank" rel="noopener" style="border-top:2px solid #e24b4a">
+            <div class="osint-card-top"><span class="osint-card-name">Facebook Search</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.tiktok.com/search" target="_blank" rel="noopener" style="border-top:2px solid #e24b4a">
+            <div class="osint-card-top"><span class="osint-card-name">TikTok Search</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://tgsearch.org" target="_blank" rel="noopener" style="border-top:2px solid #e24b4a">
+            <div class="osint-card-top"><span class="osint-card-name">Telegram Search</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+
+        <div class="osint-category-title">── Paraguay Específico ──</div>
+        <div class="osint-grid" data-cat="paraguay">
+          <a class="osint-card" href="https://osintpy.com.py" target="_blank" rel="noopener" style="border-top:2px solid #eab308">
+            <div class="osint-card-top"><span class="osint-card-name">OSINT-PY</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.set.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #eab308">
+            <div class="osint-card-top"><span class="osint-card-name">SET Paraguay</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.pj.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #eab308">
+            <div class="osint-card-top"><span class="osint-card-name">Poder Judicial</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.ministeriopublico.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #eab308">
+            <div class="osint-card-top"><span class="osint-card-name">Ministerio Público</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+          <a class="osint-card" href="https://www.senad.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #eab308">
+            <div class="osint-card-top"><span class="osint-card-name">SENAD</span><span class="osint-card-ext">↗</span></div>
+            <span class="osint-badge">Público</span>
+          </a>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -737,7 +891,7 @@
   // ── Paneles ──────────────────────────────────────────────────────────────
   function showPanel(name) {
     if (name === 'admin' && userRole !== 'admin') return;
-    ['history','admin','monitor'].forEach(p => {
+    ['history','admin','monitor','osint'].forEach(p => {
       document.getElementById(`panel-${p}`).style.display = 'none';
       const navEl = document.getElementById(`nav-${p}`);
       if (navEl) navEl.classList.remove('active');
@@ -749,6 +903,14 @@
     if (name === 'history') loadHistory();
     if (name === 'admin')   loadUsers();
     if (name === 'monitor') initMonitor();
+  }
+
+  function filterOsintCards(q) {
+    const term = q.toLowerCase().trim();
+    document.querySelectorAll('#panel-osint .osint-card').forEach(card => {
+      const text = card.querySelector('.osint-card-name').textContent.toLowerCase();
+      card.style.display = (!term || text.includes(term)) ? '' : 'none';
+    });
   }
 
   // ── Historia ─────────────────────────────────────────────────────────────
