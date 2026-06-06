@@ -1023,18 +1023,41 @@
 
     btn.disabled = true; btn.textContent = 'Cambiando…';
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cambiar-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      const res  = await fetch(`${BACKEND_URL}/api/cambiar-password`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + token,
+        },
         body: JSON.stringify({ passwordActual: actual, passwordNueva: nueva }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error del servidor');
-      msg.textContent = '✅ Contraseña actualizada correctamente';
-      msg.className = 'modal-msg ok';
-      setTimeout(closePasswordModal, 1800);
+      let data = {};
+      try { data = await res.json(); } catch { /* respuesta no-JSON */ }
+
+      if (res.ok && data.ok) {
+        msg.textContent = '✅ Contraseña actualizada correctamente';
+        msg.className = 'modal-msg ok';
+        setTimeout(closePasswordModal, 1800);
+        return;
+      }
+
+      // Error con mensaje específico por código HTTP
+      if (res.status === 401) {
+        msg.textContent = '❌ Contraseña actual incorrecta';
+      } else if (res.status === 400) {
+        msg.textContent = `❌ ${data.error || 'Datos inválidos'}`;
+      } else if (res.status === 403) {
+        msg.textContent = '❌ Sin permisos para esta acción';
+      } else if (res.status === 404) {
+        msg.textContent = '❌ Usuario no encontrado — reconectá sesión';
+      } else if (res.status >= 500) {
+        msg.textContent = '❌ Error del servidor — contactar admin';
+      } else {
+        msg.textContent = `❌ ${data.error || 'Error desconocido (HTTP ' + res.status + ')'}`;
+      }
+      msg.className = 'modal-msg err';
     } catch (e) {
-      msg.textContent = `❌ ${e.message}`;
+      msg.textContent = '❌ Sin conexión con el servidor';
       msg.className = 'modal-msg err';
     } finally {
       btn.disabled = false; btn.textContent = 'CAMBIAR';
