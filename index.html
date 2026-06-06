@@ -884,6 +884,7 @@
     if (userRole !== 'admin') navAdmin.style.display = 'none';
 
     loadKeywords();
+    loadSources();
     showPanel('monitor');
   }
 
@@ -1698,6 +1699,7 @@
       activeSources = new Set(['all']);
       document.querySelectorAll('.source-btn').forEach(b => b.className = 'source-btn');
       document.getElementById('src-all').className = 'source-btn active-all';
+      saveSources();
       return;
     }
     activeSources.delete('all');
@@ -1710,6 +1712,7 @@
       activeSources.add(src);
       document.getElementById(`src-${src}`).className = `source-btn active-${src}`;
     }
+    saveSources();
   }
 
   // ── Scanner keywords ──────────────────────────────────────────────────────
@@ -1726,6 +1729,29 @@
 
   function saveKeywords() {
     localStorage.setItem('argos_keywords', JSON.stringify(scanKeywords));
+  }
+
+  function saveSources() {
+    localStorage.setItem('argos_sources', JSON.stringify([...activeSources]));
+  }
+
+  function loadSources() {
+    const saved = localStorage.getItem('argos_sources');
+    if (!saved) return;
+    try {
+      const arr = JSON.parse(saved);
+      if (!Array.isArray(arr) || !arr.length) return;
+      activeSources = new Set(arr);
+      document.querySelectorAll('.source-btn').forEach(b => b.className = 'source-btn');
+      if (activeSources.has('all')) {
+        document.getElementById('src-all').className = 'source-btn active-all';
+      } else {
+        ['x','facebook','tiktok','noticias'].forEach(src => {
+          if (activeSources.has(src))
+            document.getElementById(`src-${src}`).className = `source-btn active-${src}`;
+        });
+      }
+    } catch(e) { /* usar defaults */ }
   }
 
   function addKeyword() {
