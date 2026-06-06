@@ -430,6 +430,13 @@
                         background:#1a200a; border:1px solid #22c55e44; color:#4ade80; }
     .rss-status-badge.rss-init   { background:#1a1a2e; border-color:#2a2a3d; color:var(--muted); }
     .rss-status-badge.rss-error  { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
+    .btn-reset-pwd { background:rgba(234,179,8,0.10); border:1px solid rgba(234,179,8,0.40);
+                     color:#eab308; font-size:10px; font-weight:600; padding:.25rem .55rem;
+                     border-radius:4px; cursor:pointer; transition:background .15s, border-color .15s; }
+    .btn-reset-pwd:hover { background:rgba(234,179,8,0.22); border-color:rgba(234,179,8,0.70); }
+    .admin-msg { font-size:.78rem; margin-top:.8rem; padding:.4rem .7rem; border-radius:5px; display:none; }
+    .admin-msg.ok  { background:#052e1644; color:#4ade80; border:1px solid #166534; display:block; }
+    .admin-msg.err { background:#3f0f0f44; color:#f87171; border:1px solid #7f1d1d; display:block; }
 
     /* ── OSINT-PY panel ─────────────────────────────────────── */
     #panel-osint { padding:1rem 1.2rem; overflow-y:auto; gap:1rem; }
@@ -934,12 +941,46 @@
       const roleColor = r => ({ admin: 'admin', operador: 'operador', visualizador: 'visualizador' }[r] || '');
       el.innerHTML = `
         <table class="users-table">
-          <thead><tr><th>Usuario</th><th>Rol</th></tr></thead>
+          <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead>
           <tbody>
-            ${users.map(u => `<tr><td>${escHtml(u.username)}</td><td><span class="badge badge-${roleColor(u.role)}">${escHtml(u.role)}</span></td></tr>`).join('')}
+            ${users.map(u => `
+              <tr>
+                <td>${escHtml(u.username)}</td>
+                <td style="color:var(--muted);font-size:.82rem;">${escHtml(u.name||'')}</td>
+                <td><span class="badge badge-${roleColor(u.role)}">${escHtml(u.role)}</span></td>
+                <td>${u.username !== 'jblanco'
+                  ? `<button class="btn-reset-pwd" onclick="resetPassword('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🔑 Resetear</button>`
+                  : '<span style="color:var(--muted);font-size:.75rem;">—</span>'
+                }</td>
+              </tr>`).join('')}
           </tbody>
-        </table>`;
+        </table>
+        <div class="admin-msg" id="admin-msg"></div>`;
     } catch (e) { el.textContent = `Error: ${e.message}`; }
+  }
+
+  async function resetPassword(username, nombre) {
+    const msg = document.getElementById('admin-msg');
+    if (msg) { msg.className = 'admin-msg'; msg.textContent = ''; }
+
+    const ok = confirm(`¿Resetear contraseña de ${nombre} a PNP2026*?`);
+    if (!ok) return;
+
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/reset-password`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body:    JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        if (msg) { msg.className = 'admin-msg ok'; msg.textContent = `✅ Contraseña de ${nombre} reseteada a PNP2026*`; }
+      } else {
+        if (msg) { msg.className = 'admin-msg err'; msg.textContent = `❌ Error: ${data.error || 'Error al resetear contraseña'}`; }
+      }
+    } catch (e) {
+      if (msg) { msg.className = 'admin-msg err'; msg.textContent = '❌ Error al resetear contraseña'; }
+    }
   }
 
   // ── Cambio de contraseña ─────────────────────────────────────────────────
