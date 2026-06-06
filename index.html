@@ -365,10 +365,6 @@
 
     /* Radar overlay SVG */
     .map-svg-wrap { position:relative; overflow:hidden; }
-    /* #radar-svg removed — radar is now inline in main SVG */
-    @keyframes radarSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    #radar-line-group { animation: radarSweep 4s linear infinite; }
-    @keyframes pulse-sweep-crit { 0%,100%{opacity:1}50%{opacity:.3} }
 
     /* Right panel layout */
     .right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
@@ -906,7 +902,6 @@
   let monitorInitialized = false;
   let sentiment          = { pos:0, neu:0, neg:0 };
   let trendingWords      = {};
-  let hasCritical        = false;
   let geoFeatures        = null;
 
   // ── Municipios estratégicos ────────────────────────────────────────────────
@@ -946,7 +941,6 @@
       });
       renderHeatMap();
       renderDeptStats();
-      checkCritical();
     }, 5000);
 
     initD3Map();
@@ -959,14 +953,6 @@
     rssInterval = setInterval(fetchRSSNews, 60000);
   }
 
-  // ── Alerta crítica → pausa radar ──────────────────────────────────────────
-  function checkCritical() {
-    hasCritical = DEPTS.some(d => (heatData[d.id] || 0) >= 7);
-    const groupEl = document.getElementById('radar-line-group');
-    const lineEl  = document.getElementById('radar-sweep-line');
-    if (groupEl) groupEl.style.animationPlayState = hasCritical ? 'paused' : 'running';
-    if (lineEl)  lineEl.setAttribute('stroke', hasCritical ? '#ff3333' : '#e24b4a');
-  }
 
   // ── Timeline ─────────────────────────────────────────────────────────────
   function addRSSToTimeline(item) {
@@ -1201,39 +1187,8 @@
             .text(city.name);
         });
 
-        // ── Radar CSS puro ────────────────────────────────────────────────
-        const [rcx, rcy] = projection([-58.2, -23.5]);
-        const rMax = Math.min(W, H) * 0.42;
-
-        const radarBase = svg.append('g').attr('id', 'radar-base')
-          .style('pointer-events', 'none');
-        [0.25, 0.5, 0.75, 1.0].forEach(r => {
-          radarBase.append('circle')
-            .attr('cx', rcx).attr('cy', rcy)
-            .attr('r', rMax * r)
-            .attr('fill', 'none')
-            .attr('stroke', 'rgba(226,75,74,0.12)')
-            .attr('stroke-width', 0.8);
-        });
-
-        const sweepGroup = svg.append('g')
-          .attr('id', 'radar-line-group')
-          .style('pointer-events', 'none');
-        sweepGroup.append('line')
-          .attr('id', 'radar-sweep-line')
-          .attr('x1', rcx).attr('y1', rcy)
-          .attr('x2', rcx).attr('y2', rcy - rMax)
-          .attr('stroke', '#e24b4a')
-          .attr('stroke-width', 1.5)
-          .attr('opacity', 0.85);
-
-        // transform-origin must be set via JS (CSS can't reference dynamic SVG coords)
-        document.getElementById('radar-line-group').style.transformOrigin =
-          rcx + 'px ' + rcy + 'px';
-
         renderHeatMap();
-        checkCritical();
-
+  
         // Ondas de propagación desde depts activos cada 3 s
         setInterval(() => {
           if (!geoFeatures) return;
@@ -1376,8 +1331,6 @@
       list.insertBefore(el, list.firstChild);
       while (list.children.length > 20) list.removeChild(list.lastChild);
     }
-    hasCritical = true;
-    checkCritical();
   }
 
   function renderOSINTIndicators() {
