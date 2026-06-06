@@ -883,6 +883,7 @@
     const navAdmin = document.getElementById('nav-admin');
     if (userRole !== 'admin') navAdmin.style.display = 'none';
 
+    loadKeywords();
     showPanel('monitor');
   }
 
@@ -1193,11 +1194,13 @@
   }
 
   let activeSources      = new Set(['all']);
-  let scanKeywords       = [
+
+  const DEFAULT_KEYWORDS = [
     'internas','fraude electoral','acarreo','compra de votos',
     'mesa electoral','apoderado','seccional','irregularidad',
     'urnas','denuncia electoral','tiros','pelea','agresión','TSJE','ANR internas',
   ];
+  let scanKeywords = [];
   let feedInterval       = null;
   let heatData           = {};
   let monitorInitialized = false;
@@ -1339,7 +1342,7 @@
 
   function addKeywordFromTrend(kw) {
     const clean = kw.replace(/^#/, '');
-    if (!scanKeywords.includes(clean)) { scanKeywords.push(clean); renderKeywordTags(); }
+    if (!scanKeywords.includes(clean)) { scanKeywords.push(clean); renderKeywordTags(); saveKeywords(); }
   }
 
   // ── Mapeo nombre TopoJSON → ID interno ──────────────────────────────────
@@ -1710,6 +1713,21 @@
   }
 
   // ── Scanner keywords ──────────────────────────────────────────────────────
+  function loadKeywords() {
+    const saved = localStorage.getItem('argos_keywords');
+    if (saved) {
+      try { scanKeywords = JSON.parse(saved); }
+      catch(e) { scanKeywords = [...DEFAULT_KEYWORDS]; }
+    } else {
+      scanKeywords = [...DEFAULT_KEYWORDS];
+    }
+    renderKeywordTags();
+  }
+
+  function saveKeywords() {
+    localStorage.setItem('argos_keywords', JSON.stringify(scanKeywords));
+  }
+
   function addKeyword() {
     const input = document.getElementById('scan-keyword');
     const kw = input.value.trim();
@@ -1717,11 +1735,13 @@
     scanKeywords.push(kw);
     input.value = '';
     renderKeywordTags();
+    saveKeywords();
   }
 
   function removeKeyword(kw) {
     scanKeywords = scanKeywords.filter(k => k !== kw);
     renderKeywordTags();
+    saveKeywords();
   }
 
   function renderKeywordTags() {
