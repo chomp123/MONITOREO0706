@@ -930,8 +930,9 @@
     const list = document.getElementById('tl-list');
     if (!list) return;
     const al   = ALERT_LEVELS.find(a => a.key === item.alertLevel) || ALERT_LEVELS[0];
-    const time = item.pubDate
-      ? new Date(item.pubDate).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
+    const iso  = item.fecha || item.pubDate;
+    const time = iso
+      ? new Date(iso).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
       : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
     const el   = document.createElement('div');
     el.className = 'tl-item';
@@ -1481,6 +1482,61 @@
 
   // El polling de FB y RSS se arrancan desde initMonitor() — ver llamada allí abajo.
 
+  // ── Helpers de fecha para el feed ────────────────────────────────────────
+  function formatTimeAgo(iso) {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    const min  = Math.floor(diff / 60000);
+    const hrs  = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (min  <  2) return 'hace un momento';
+    if (min  < 60) return `hace ${min} min`;
+    if (hrs  <  2) return 'hace 1 hora';
+    if (hrs  < 24) return `hace ${hrs} horas`;
+    if (days <  2) return 'ayer';
+    return `hace ${days} días`;
+  }
+
+  function formatFeedDate(iso) {
+    if (!iso) return '';
+    const d    = new Date(iso);
+    const now  = new Date();
+    const hhmm = d.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'});
+    if (d.toDateString() === now.toDateString()) return `Hoy ${hhmm}`;
+    const ayer = new Date(now); ayer.setDate(ayer.getDate() - 1);
+    if (d.toDateString() === ayer.toDateString()) return `Ayer ${hhmm}`;
+    if ((now - d) < 7 * 86400000) {
+      const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      return `${DIAS[d.getDay()]} ${hhmm}`;
+    }
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    return `${dd}/${mm} ${hhmm}`;
+  }
+
+  function formatFullDate(iso) {
+    if (!iso) return '';
+    const d  = new Date(iso);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mn = String(d.getMinutes()).padStart(2,'0');
+    return `${dd}/${mm}/${yy} ${hh}:${mn}`;
+  }
+
+  function detectLocation(text) {
+    const t = (text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    for (const city of STRATEGIC_CITIES) {
+      if (t.includes(city.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')))
+        return city.name;
+    }
+    for (const d of DEPTS) {
+      if (t.includes(normName(d.name))) return d.name;
+    }
+    return null;
+  }
+
   // ── RSS noticias reales (portales PY via Google News) ────────────────────
   //
   // Consulta /api/rss cada 60 s. Inyecta noticias nuevas en el feed con:
@@ -1535,14 +1591,22 @@
       const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
       const ALERT_LABELS = { critico:'Crítico', alto:'Alto', medio:'Medio', info:'Informativo' };
 
-      newItems.slice(0, 10).forEach(item => {
-        rssSeenTitles.add(item.title);
+      // Ordenar más reciente primero; insertar en orden inverso para que quede
+      // correcto al hacer insertBefore(el, firstChild)
+      const toRender = [...newItems]
+        .sort((a, b) => new Date(b.fecha||b.pubDate||0) - new Date(a.fecha||a.pubDate||0))
+        .slice(0, 10);
+
+      toRender.forEach(item => rssSeenTitles.add(item.title));
+
+      [...toRender].reverse().forEach(item => {
         const alIcon  = ALERT_ICONS[item.alertLevel]  || '🔵';
         const alColor = ALERT_COLORS[item.alertLevel] || '#378ADD';
         const alLabel = ALERT_LABELS[item.alertLevel] || 'Informativo';
-        const time    = item.pubDate
-          ? new Date(item.pubDate).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
-          : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+        const iso     = item.fecha || item.pubDate || null;
+        const timeAgo = formatTimeAgo(iso);
+        const fullDt  = formatFullDate(iso);
+        const location = detectLocation((item.title||'')+' '+(item.description||''));
 
         // Badge 🔍 BÚSQUEDA si el título coincide con alguna keyword activa
         const titleLow = (item.title || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -1558,17 +1622,21 @@
         el.innerHTML = `
           <span class="feed-icon">📰</span>
           <div class="feed-content">
-            <div class="feed-user" style="display:flex;align-items:center;gap:.32rem;flex-wrap:wrap;">
-              <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
-              <span class="rss-real">● REAL</span>
-              ${isMatch ? '<span style="font-size:.63rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍 BÚSQUEDA</span>' : ''}
-              <span style="font-size:.63rem;color:${alColor};font-weight:600;">${alIcon} ${alLabel}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.3rem;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;">
+                <span style="font-size:.68rem;color:${alColor};font-weight:700;">${alIcon}</span>
+                <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
+                <span class="rss-real">● REAL</span>
+                ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
+                <span style="font-size:.62rem;color:${alColor};font-weight:600;">${alLabel}</span>
+              </div>
+              <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;flex-shrink:0;">${timeAgo}</span>
             </div>
-            <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.18rem;">${escHtml(item.title)}</div>
-            ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.72rem;margin-top:.1rem;">${escHtml(item.description)}</div>` : ''}
-            <div class="feed-meta" style="margin-top:.2rem;">
-              <span>${time}</span>
-              ${item.url ? '<span style="color:#4ade80;font-size:.63rem;">↗ Ver artículo</span>' : ''}
+            <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
+            ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;margin-top:.1rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
+            <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
+              ${item.url ? '<span style="color:#4ade80;font-size:.62rem;flex-shrink:0;">↗ Ver artículo</span>' : ''}
             </div>
           </div>`;
 
