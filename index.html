@@ -253,9 +253,13 @@
     .map-svg-wrap svg { width: 100%; height: auto; display: block; }
     .dept-path { fill: #1a1a2e; stroke: #3b3b60; stroke-width: .8; cursor: pointer; transition: fill .35s; }
     .dept-path:hover { stroke: var(--accent2); stroke-width: 1.6; filter: brightness(1.4); }
-    .heat-0{fill:#1a1a2e} .heat-1{fill:#271760} .heat-2{fill:#3d2480}
-    .heat-3{fill:#5521a8} .heat-4{fill:#7c3aed} .heat-5{fill:#9333ea}
-    .heat-6{fill:#a855f7} .heat-7{fill:#c084fc} .heat-8{fill:#e879f9}
+    /* Heat = niveles de alerta: azul → amarillo → naranja → rojo */
+    .heat-0{fill:#0d1520} .heat-1{fill:#0f2235} .heat-2{fill:#163258}
+    .heat-3{fill:#2a2000} .heat-4{fill:#4a3b00}
+    .heat-5{fill:#3d1600} .heat-6{fill:#6b2600}
+    .heat-7{fill:#520c0c;animation:pulse-crit 1.1s infinite}
+    .heat-8{fill:#820f0f;animation:pulse-crit  .7s infinite}
+    @keyframes pulse-crit{0%,100%{opacity:1}50%{opacity:.6}}
     .dept-tooltip {
       position: absolute; background: var(--card); border: 1px solid var(--accent);
       border-radius: 6px; padding: .35rem .65rem; font-size: .73rem;
@@ -309,6 +313,79 @@
     .keyword-tag button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: .85rem; line-height: 1; padding: 0 0 0 .15rem; }
     .keyword-tag button:hover { color: var(--danger); }
     .scan-status { margin-left: auto; font-size: .71rem; color: #22c55e; display: flex; align-items: center; gap: .4rem; }
+
+    /* ── ALERT LEVELS ────────────────────────────────────── */
+    :root {
+      --al-info:    #378ADD;
+      --al-medio:   #eab308;
+      --al-alto:    #f97316;
+      --al-critico: #e24b4a;
+    }
+    .rank-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; display:inline-block; }
+    .rd-info    { background:var(--al-info);    box-shadow:0 0 5px var(--al-info); }
+    .rd-medio   { background:var(--al-medio);   box-shadow:0 0 5px var(--al-medio); }
+    .rd-alto    { background:var(--al-alto);    box-shadow:0 0 5px var(--al-alto); }
+    .rd-critico { background:var(--al-critico); box-shadow:0 0 6px var(--al-critico);
+                  animation:pulse-dot-crit .8s infinite; }
+    @keyframes pulse-dot-crit{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+    /* Alert legend */
+    .alert-legend { display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.5rem; }
+    .al-legend-item { display:flex; align-items:center; gap:.28rem; font-size:.62rem; color:var(--muted); }
+    .al-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+    /* Dept ranking rows */
+    .dept-stat-item  { display:flex; justify-content:space-between; align-items:center;
+                       padding:.28rem 0; border-bottom:1px solid var(--border); font-size:.76rem; gap:.38rem; }
+    .dept-stat-left  { display:flex; align-items:center; gap:.4rem; flex:1; min-width:0; overflow:hidden; }
+    .dept-stat-name  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dept-stat-count { font-weight:700; flex-shrink:0; }
+
+    /* Radar overlay SVG */
+    .map-svg-wrap { position:relative; overflow:hidden; }
+    #radar-svg   { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+    @keyframes radar-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes pulse-sweep-crit { 0%,100%{opacity:1}50%{opacity:.3} }
+
+    /* Right panel layout */
+    .right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .right-top   { flex:1; display:flex; overflow:hidden; min-height:0; }
+    .feed-panel  { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .widgets-col { width:200px; flex-shrink:0; display:flex; flex-direction:column;
+                   border-left:1px solid var(--border); overflow-y:auto; background:var(--surface); }
+
+    /* Sentiment */
+    .widget-block  { padding:.55rem .7rem; border-bottom:1px solid var(--border); }
+    .widget-title  { font-size:.62rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:.4rem; }
+    .s-row         { display:flex; align-items:center; gap:.4rem; margin-bottom:.28rem; }
+    .s-label       { font-size:.7rem; width:20px; flex-shrink:0; }
+    .s-bar-wrap    { flex:1; height:5px; background:#ffffff0e; border-radius:3px; overflow:hidden; }
+    .s-bar         { height:100%; border-radius:3px; transition:width .7s ease; }
+    .s-pos { background:#22c55e; }
+    .s-neu { background:#64748b; }
+    .s-neg { background:var(--al-critico); }
+    .s-pct { font-size:.67rem; color:var(--muted); min-width:26px; text-align:right; }
+
+    /* Trending */
+    .trend-item  { display:flex; align-items:center; justify-content:space-between;
+                   padding:.26rem .38rem; border-radius:5px; cursor:pointer; transition:background .15s; }
+    .trend-item:hover { background:var(--card); }
+    .trend-kw    { font-size:.73rem; color:var(--accent2); font-weight:600;
+                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:115px; }
+    .trend-count { font-size:.67rem; color:var(--muted); flex-shrink:0; }
+
+    /* Timeline panel */
+    .timeline-panel { height:148px; flex-shrink:0; border-top:1px solid var(--border); display:flex; flex-direction:column; }
+    .timeline-hdr   { padding:.32rem .8rem; display:flex; align-items:center; justify-content:space-between;
+                      border-bottom:1px solid var(--border); flex-shrink:0; background:var(--surface); }
+    .tl-hdr-title   { font-size:.62rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+    .tl-list        { flex:1; overflow-y:auto; padding:.28rem .65rem; display:flex; flex-direction:column;
+                      gap:.2rem; background:var(--bg); }
+    .tl-item        { display:flex; align-items:center; gap:.4rem; font-size:.7rem; }
+    .tl-time        { color:var(--muted); flex-shrink:0; font-family:monospace; font-size:.65rem; min-width:40px; }
+    .tl-icon        { flex-shrink:0; font-size:.72rem; }
+    .tl-text        { color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
@@ -421,30 +498,79 @@
         </div>
 
         <div class="monitor-body">
-          <!-- Mapa de calor Paraguay -->
+          <!-- Mapa con radar -->
           <div class="map-panel">
-            <div class="map-title">Actividad por departamento</div>
+            <div class="map-title">Actividad · Tiempo real</div>
             <div class="map-svg-wrap" id="map-wrap">
               <div class="dept-tooltip" id="dept-tooltip"></div>
             </div>
-            <div class="heat-legend">
-              <span>Bajo</span><div class="heat-bar"></div><span>Alto</span>
+            <div class="alert-legend">
+              <span class="al-legend-item"><span class="al-dot" style="background:#378ADD"></span>Informativo</span>
+              <span class="al-legend-item"><span class="al-dot" style="background:#eab308"></span>Medio</span>
+              <span class="al-legend-item"><span class="al-dot" style="background:#f97316"></span>Alto</span>
+              <span class="al-legend-item"><span class="al-dot" style="background:#e24b4a"></span>Crítico</span>
             </div>
             <div class="dept-stats" id="dept-stats"></div>
           </div>
 
-          <!-- Feed tiempo real -->
-          <div class="feed-panel">
-            <div class="feed-header">
-              <span class="feed-header-title">Feed · Tiempo real</span>
-              <div style="display:flex;align-items:center;gap:.5rem;">
-                <div class="live-dot"></div>
-                <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
+          <!-- Panel derecho: feed + widgets + timeline -->
+          <div class="right-panel">
+            <div class="right-top">
+
+              <!-- Feed -->
+              <div class="feed-panel">
+                <div class="feed-header">
+                  <span class="feed-header-title">Feed · Tiempo real</span>
+                  <div style="display:flex;align-items:center;gap:.5rem;">
+                    <div class="live-dot"></div>
+                    <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
+                  </div>
+                </div>
+                <div class="feed-list" id="feed-list"></div>
               </div>
+
+              <!-- Columna: sentimiento + tendencias -->
+              <div class="widgets-col">
+                <div class="widget-block">
+                  <div class="widget-title">Sentimiento</div>
+                  <div class="s-row">
+                    <span class="s-label">🟢</span>
+                    <div class="s-bar-wrap"><div class="s-bar s-pos" id="s-pos" style="width:52%"></div></div>
+                    <span class="s-pct" id="s-pos-pct">52%</span>
+                  </div>
+                  <div class="s-row">
+                    <span class="s-label">⚪</span>
+                    <div class="s-bar-wrap"><div class="s-bar s-neu" id="s-neu" style="width:31%"></div></div>
+                    <span class="s-pct" id="s-neu-pct">31%</span>
+                  </div>
+                  <div class="s-row">
+                    <span class="s-label">🔴</span>
+                    <div class="s-bar-wrap"><div class="s-bar s-neg" id="s-neg" style="width:17%"></div></div>
+                    <span class="s-pct" id="s-neg-pct">17%</span>
+                  </div>
+                </div>
+                <div class="widget-block" style="flex:1;">
+                  <div class="widget-title">Tendencias</div>
+                  <div id="trending-list"></div>
+                </div>
+              </div>
+
+            </div><!-- right-top -->
+
+            <!-- Timeline de eventos -->
+            <div class="timeline-panel">
+              <div class="timeline-hdr">
+                <span class="tl-hdr-title">Timeline de eventos</span>
+                <div style="display:flex;align-items:center;gap:.4rem;">
+                  <div class="live-dot"></div>
+                  <span style="font-size:.67rem;color:#22c55e">EN VIVO</span>
+                </div>
+              </div>
+              <div class="tl-list" id="tl-list"></div>
             </div>
-            <div class="feed-list" id="feed-list"></div>
-          </div>
-        </div>
+
+          </div><!-- right-panel -->
+        </div><!-- monitor-body -->
 
         <!-- Scanner bar -->
         <div class="scanner-bar">
@@ -687,24 +813,47 @@
     { id:'dept-alto-paraguay', name:'Alto Paraguay',  base:0 },
   ];
 
-  const FEED_POSTS = [
-    { text:'Observando el conteo de votos en tiempo real #EleccionesParaguay', src:'x' },
-    { text:'Largas filas en locales de votación de Asunción 🗳️', src:'facebook' },
-    { text:'Candidato lidera en Central según primeros resultados', src:'noticias' },
-    { text:'Así de animado está el ambiente electoral en Alto Paraná', src:'tiktok' },
-    { text:'TSJE confirma normalidad en el proceso electoral', src:'noticias' },
-    { text:'Se detectaron irregularidades en Amambay', src:'noticias' },
-    { text:'Participación histórica en Itapúa, más del 70% de electores', src:'facebook' },
-    { text:'Video viral de campaña genera debate #Paraguay2026', src:'tiktok' },
-    { text:'Denuncian actos de proselitismo prohibido en Caaguazú', src:'x' },
-    { text:'Cierre de mesas se retrasa en San Pedro por falta de material', src:'noticias' },
-    { text:'Transmisión en vivo del recuento desde Asunción', src:'tiktok' },
-    { text:'Jóvenes votando por primera vez en Cordillera 🇵🇾', src:'tiktok' },
-    { text:'Candidatos piden calma y respeto al proceso democrático', src:'x' },
-    { text:'Misiones y Ñeembucú sin incidentes hasta el momento', src:'noticias' },
-    { text:'Autoridades refuerzan seguridad en Amambay por tensiones', src:'x' },
-    { text:'Alto Paraná reporta alta concurrencia en todos los locales', src:'facebook' },
+  // Niveles de alerta mapeados al valor de heat (0-8)
+  const ALERT_LEVELS = [
+    { key:'info',    min:0, max:2, color:'#378ADD', icon:'🔵', label:'Informativo' },
+    { key:'medio',   min:3, max:4, color:'#eab308', icon:'🟡', label:'Medio'       },
+    { key:'alto',    min:5, max:6, color:'#f97316', icon:'🟠', label:'Alto'        },
+    { key:'critico', min:7, max:8, color:'#e24b4a', icon:'🔴', label:'Crítico'     },
   ];
+
+  function alertLevel(heatVal) {
+    const v = Math.round(heatVal || 0);
+    if (v >= 7) return ALERT_LEVELS[3];
+    if (v >= 5) return ALERT_LEVELS[2];
+    if (v >= 3) return ALERT_LEVELS[1];
+    return ALERT_LEVELS[0];
+  }
+
+  const FEED_POSTS = [
+    { text:'Observando el conteo de votos en tiempo real #EleccionesParaguay', al:'info' },
+    { text:'Largas filas en locales de votación de Asunción 🗳️',              al:'info' },
+    { text:'Candidato lidera en Central según primeros resultados',             al:'info' },
+    { text:'Así de animado está el ambiente electoral en Alto Paraná',          al:'info' },
+    { text:'TSJE confirma normalidad en el proceso electoral',                  al:'info' },
+    { text:'Participación histórica en Itapúa, más del 70% de electores',      al:'info' },
+    { text:'Jóvenes votando por primera vez en Cordillera 🇵🇾',                 al:'info' },
+    { text:'Candidatos piden calma y respeto al proceso democrático',           al:'info' },
+    { text:'Misiones y Ñeembucú sin incidentes hasta el momento',              al:'info' },
+    { text:'Alto Paraná reporta alta concurrencia en todos los locales',        al:'info' },
+    { text:'Video viral de campaña genera debate #Paraguay2026',                al:'medio' },
+    { text:'Cierre de mesas se retrasa en San Pedro por falta de material',     al:'medio' },
+    { text:'Transmisión en vivo del recuento desde Asunción',                   al:'medio' },
+    { text:'#Internas2026 es tendencia con 45k menciones en la última hora',    al:'medio' },
+    { text:'Incremento de menciones en Central +34% en 10 minutos',             al:'medio' },
+    { text:'Se detectaron irregularidades en Amambay — investigando',           al:'alto' },
+    { text:'Denuncian actos de proselitismo prohibido en Caaguazú',             al:'alto' },
+    { text:'Autoridades refuerzan seguridad en Amambay por tensiones',          al:'alto' },
+    { text:'Candidato acusa fraude — revisión urgente solicitada al TSJE',      al:'alto' },
+    { text:'Denuncia de compra de votos confirmada en zona Central',            al:'critico' },
+    { text:'Incidente violento registrado en local de votación de Caaguazú',    al:'critico' },
+    { text:'Múltiples reportes de irregularidades — TSJE emite alerta máxima',  al:'critico' },
+  ];
+
   const FEED_USERS = {
     x:        ['@pynandi_py','@info_electoral','@vox_py','@ciudadano_py','@redpolitica_py'],
     facebook: ['Juan Gómez','María López','Comité Electoral PY','Noticias PY','Votantes 2026'],
@@ -713,12 +862,36 @@
   };
   const SRC_ICON = { x:'✕', facebook:'f', tiktok:'♪', noticias:'📰' };
 
-  let activeSources = new Set(['all']);
-  let scanKeywords  = ['elecciones','TSJE','votación'];
-  let feedInterval  = null;
-  let heatData      = {};
-  let scanMentions  = 0;
+  const TL_POOL = [
+    { al:'info',    text:'Publicación detectada — #Internas2026' },
+    { al:'info',    text:'TSJE emite comunicado oficial de normalidad' },
+    { al:'info',    text:'Alta concurrencia confirmada en Alto Paraná' },
+    { al:'medio',   text:'Viralización — 45 compartidos en 10 min' },
+    { al:'medio',   text:'Tendencia en alza detectada — Canindeyú' },
+    { al:'medio',   text:'Incremento de menciones +34% — Central' },
+    { al:'alto',    text:'Denuncia ingresada — irregularidad electoral' },
+    { al:'alto',    text:'Compartido por cuenta verificada de alto alcance' },
+    { al:'alto',    text:'Múltiples reportes simultáneos — Amambay' },
+    { al:'critico', text:'Alerta máxima — posible irregularidad confirmada' },
+    { al:'critico', text:'Violencia verbal reportada — Caaguazú' },
+    { al:'critico', text:'Compra de votos denunciada — TSJE notificado' },
+  ];
+
+  const HASHTAGS = {
+    '#EleccionesPY':  234, '#Votacion2026': 187, '#TSJE':        143,
+    '#Internas2026':  121, '#VotoLibre':     98, '#Paraguay2026': 87,
+    '#CiberelectPY':   65, '#ResultadosPY':  54, '#DemocraciaPY': 42,
+  };
+
+  let activeSources      = new Set(['all']);
+  let scanKeywords       = ['elecciones','TSJE','votación'];
+  let feedInterval       = null;
+  let heatData           = {};
+  let scanMentions       = 0;
   let monitorInitialized = false;
+  let sentiment          = { pos:52, neu:31, neg:17 };
+  let hasCritical        = false;
+  let geoFeatures        = null;  // referencia a los features para pulse rings
 
   function initMonitor() {
     if (monitorInitialized) return;
@@ -727,25 +900,106 @@
     renderHeatMap();
     renderDeptStats();
     renderKeywordTags();
+    renderTrending();
+    renderSentiment();
     for (let i = 0; i < 7; i++) addFeedItem(false);
+    for (let i = 0; i < 5; i++) addTimelineEvent(false);
+
     feedInterval = setInterval(() => {
       addFeedItem(true);
+      addTimelineEvent(true);
       DEPTS.forEach(d => {
         const delta = (Math.random() - 0.38) * 0.6;
         heatData[d.id] = Math.max(d.base, Math.min(8, (heatData[d.id] || d.base) + delta));
       });
       renderHeatMap();
       renderDeptStats();
+      updateSentiment();
+      updateTrending();
+      checkCritical();
       document.getElementById('scan-count').textContent = `${++scanMentions} menciones`;
     }, 2600);
 
     initD3Map();
   }
 
+  // ── Alerta crítica → pausa radar ──────────────────────────────────────────
+  function checkCritical() {
+    hasCritical = DEPTS.some(d => (heatData[d.id] || 0) >= 7);
+    const sweepEl = document.getElementById('radar-sweep-g');
+    const lineEl  = document.getElementById('radar-sweep-line');
+    if (sweepEl) {
+      sweepEl.style.animationPlayState = hasCritical ? 'paused' : 'running';
+    }
+    if (lineEl) {
+      lineEl.setAttribute('stroke', hasCritical ? '#e24b4a' : 'rgba(55,138,221,0.65)');
+      lineEl.style.animation = hasCritical ? 'pulse-sweep-crit .7s infinite' : 'none';
+    }
+  }
+
+  // ── Timeline ─────────────────────────────────────────────────────────────
+  function addTimelineEvent(animate) {
+    const ev   = TL_POOL[Math.floor(Math.random() * TL_POOL.length)];
+    const al   = ALERT_LEVELS.find(a => a.key === ev.al) || ALERT_LEVELS[0];
+    const time = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+    const list = document.getElementById('tl-list');
+    if (!list) return;
+    const el = document.createElement('div');
+    el.className = 'tl-item';
+    if (animate) el.style.animation = 'slideIn .25s ease';
+    el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">${al.icon}</span><span class="tl-text">${escHtml(ev.text)}</span>`;
+    list.insertBefore(el, list.firstChild);
+    while (list.children.length > 20) list.removeChild(list.lastChild);
+  }
+
+  // ── Sentimiento ───────────────────────────────────────────────────────────
+  function updateSentiment() {
+    const shift = (Math.random() - 0.48) * 5;
+    sentiment.neg = Math.max(5,  Math.min(45, sentiment.neg + shift));
+    sentiment.pos = Math.max(20, Math.min(65, sentiment.pos - shift * 0.6));
+    sentiment.neu = Math.max(5,  100 - sentiment.pos - sentiment.neg);
+    renderSentiment();
+  }
+
+  function renderSentiment() {
+    const pos = Math.round(sentiment.pos);
+    const neu = Math.round(sentiment.neu);
+    const neg = Math.round(100 - pos - neu);
+    const set = (barId, pctId, v) => {
+      const b = document.getElementById(barId); if (b) b.style.width = v + '%';
+      const p = document.getElementById(pctId); if (p) p.textContent  = v + '%';
+    };
+    set('s-pos','s-pos-pct', pos);
+    set('s-neu','s-neu-pct', neu);
+    set('s-neg','s-neg-pct', neg);
+  }
+
+  // ── Tendencias ────────────────────────────────────────────────────────────
+  function updateTrending() {
+    const keys = Object.keys(HASHTAGS);
+    HASHTAGS[keys[Math.floor(Math.random() * keys.length)]] += Math.floor(Math.random() * 8) + 1;
+    renderTrending();
+  }
+
+  function renderTrending() {
+    const sorted = Object.entries(HASHTAGS).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const el = document.getElementById('trending-list');
+    if (!el) return;
+    el.innerHTML = sorted.map(([kw, n]) =>
+      `<div class="trend-item" onclick="addKeywordFromTrend('${escHtml(kw)}')">
+         <span class="trend-kw">${escHtml(kw)}</span>
+         <span class="trend-count">${n}</span>
+       </div>`).join('');
+  }
+
+  function addKeywordFromTrend(kw) {
+    const clean = kw.replace(/^#/, '');
+    if (!scanKeywords.includes(clean)) { scanKeywords.push(clean); renderKeywordTags(); }
+  }
+
   // ── Mapeo nombre TopoJSON → ID interno ──────────────────────────────────
   const DEPT_ID_FROM_NAME = {
     'alto paraguay':    'dept-alto-paraguay',
-    'boqueron':         'dept-boqueron',
     'boqueron':         'dept-boqueron',
     'presidente hayes': 'dept-pdte-hayes',
     'concepcion':       'dept-concepcion',
@@ -772,12 +1026,16 @@
       .trim();
   }
 
+  // ── Mapa D3 + zoom + radar ────────────────────────────────────────────────
   function initD3Map() {
     const wrap = document.getElementById('map-wrap');
     const W    = wrap.clientWidth  || 260;
     const H    = Math.round(W * 1.35);
+    const cx   = W * 0.44;
+    const cy   = H * 0.44;
 
     d3.select('#map-wrap svg').remove();
+    d3.select('#radar-svg').remove();
 
     const svg = d3.select('#map-wrap')
       .insert('svg', ':first-child')
@@ -785,21 +1043,38 @@
       .attr('width', '100%')
       .style('display', 'block');
 
+    const mapG = svg.append('g').attr('id', 'map-g');
+
     const projection = d3.geoMercator()
       .center([-58.2, -23.8])
       .scale(W * 3.9)
-      .translate([W * 0.44, H * 0.44]);
+      .translate([cx, cy]);
 
     const pathGen = d3.geoPath().projection(projection);
     const tt      = document.getElementById('dept-tooltip');
+
+    // Zoom
+    const zoomBehavior = d3.zoom()
+      .scaleExtent([1, 7])
+      .on('zoom', event => { mapG.attr('transform', event.transform); });
+
+    svg.call(zoomBehavior);
+
+    svg.on('click', function(event) {
+      if (event.target === this || event.target.nodeName === 'g') {
+        svg.transition().duration(600)
+          .call(zoomBehavior.transform, d3.zoomIdentity);
+      }
+    });
 
     fetch('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/pry.topo.json')
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(topo => {
         const objKey = Object.keys(topo.objects)[0];
         const geo    = topojson.feature(topo, topo.objects[objKey]);
+        geoFeatures  = geo.features;
 
-        svg.selectAll('path')
+        mapG.selectAll('path')
           .data(geo.features)
           .enter()
           .append('path')
@@ -814,33 +1089,104 @@
             d.properties.name || d.properties.NAME || d.properties.ADM1_EN || ''
           )
           .on('mouseenter', function(event) {
-            const id  = this.getAttribute('id');
-            const nm  = this.getAttribute('data-name');
-            const val = Math.round((heatData[id] || 0) * 14 + 8);
-            tt.textContent = `${nm}  ·  ${val} menciones`;
+            const id = this.getAttribute('id');
+            const nm = this.getAttribute('data-name');
+            const al = alertLevel(heatData[id]);
+            const cnt = Math.round((heatData[id]||0)*14+8);
+            tt.innerHTML = `<b>${nm}</b> &nbsp;${al.icon} ${al.label}<br><span style="color:var(--muted)">${cnt} menciones</span>`;
             tt.style.display = 'block';
           })
           .on('mousemove', function(event) {
             const rect = wrap.getBoundingClientRect();
             tt.style.left = (event.clientX - rect.left + 12) + 'px';
-            tt.style.top  = (event.clientY - rect.top  - 32) + 'px';
+            tt.style.top  = (event.clientY - rect.top  - 52) + 'px';
           })
-          .on('mouseleave', () => { tt.style.display = 'none'; });
+          .on('mouseleave', () => { tt.style.display = 'none'; })
+          .on('click', function(event, d) {
+            event.stopPropagation();
+            const [[x0,y0],[x1,y1]] = pathGen.bounds(d);
+            const scale = Math.min(6, 0.85 / Math.max((x1-x0)/W, (y1-y0)/H));
+            svg.transition().duration(650).call(
+              zoomBehavior.transform,
+              d3.zoomIdentity
+                .translate(cx - scale*(x0+x1)/2, cy - scale*(y0+y1)/2)
+                .scale(scale)
+            );
+          });
 
         // Marcador Asunción
         const [ax, ay] = projection([-57.63, -25.29]);
-        svg.append('circle')
-          .attr('cx', ax).attr('cy', ay).attr('r', 4)
-          .attr('fill', '#e879f9').attr('stroke', '#fff').attr('stroke-width', 1.5)
+        mapG.append('circle')
+          .attr('cx', ax).attr('cy', ay).attr('r', 3.5)
+          .attr('fill', '#e879f9').attr('stroke', '#fff').attr('stroke-width', 1.2)
           .style('pointer-events', 'none');
-        svg.append('text')
-          .attr('x', ax + 6).attr('y', ay + 3)
-          .attr('font-size', 7).attr('fill', '#f0abfc')
+        mapG.append('text')
+          .attr('x', ax + 5).attr('y', ay + 3)
+          .attr('font-size', 6.5).attr('fill', '#f0abfc')
           .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
           .style('pointer-events', 'none')
           .text('Asunción');
 
+        // ── Radar overlay ──────────────────────────────────────────────────
+        const radarSvg = d3.select('#map-wrap')
+          .append('svg')
+          .attr('id', 'radar-svg')
+          .attr('viewBox', `0 0 ${W} ${H}`)
+          .attr('width', '100%').attr('height', '100%')
+          .style('position', 'absolute').style('top','0').style('left','0')
+          .style('pointer-events','none');
+
+        // Anillos de rango (decorativos)
+        [0.17, 0.30, 0.43].forEach(r => {
+          radarSvg.append('circle')
+            .attr('cx', cx).attr('cy', cy)
+            .attr('r', r * Math.min(W, H))
+            .attr('fill', 'none')
+            .attr('stroke', '#378ADD').attr('stroke-width', 0.4).attr('opacity', 0.13);
+        });
+
+        // Línea de barrido con animateTransform (más compatible que CSS en SVG)
+        const sweepG = radarSvg.append('g').attr('id', 'radar-sweep-g')
+          .style('transform-origin', `${cx}px ${cy}px`)
+          .style('animation', 'radar-spin 4s linear infinite');
+
+        sweepG.append('line')
+          .attr('id', 'radar-sweep-line')
+          .attr('x1', cx).attr('y1', cy)
+          .attr('x2', cx).attr('y2', cy - H * 0.46)
+          .attr('stroke', 'rgba(55,138,221,0.65)')
+          .attr('stroke-width', 1.6);
+
+        // Estela semitransparente
+        sweepG.append('path')
+          .attr('d', `M ${cx},${cy} L ${cx-20},${cy-H*0.46} L ${cx+2},${cy-H*0.46} Z`)
+          .attr('fill', 'rgba(55,138,221,0.12)');
+
         renderHeatMap();
+        checkCritical();
+
+        // Ondas de propagación desde depts activos cada 3 s
+        setInterval(() => {
+          if (!geoFeatures) return;
+          const active = DEPTS.filter(d => (heatData[d.id]||0) >= 3);
+          if (!active.length) return;
+          const dept = active[Math.floor(Math.random() * active.length)];
+          const feat = geoFeatures.find(f => {
+            const nm = normName(f.properties.name || f.properties.NAME || '');
+            return (DEPT_ID_FROM_NAME[nm] || 'dept-'+nm.replace(/\s+/g,'-')) === dept.id;
+          });
+          if (!feat) return;
+          const [px, py] = pathGen.centroid(feat);
+          const al = alertLevel(heatData[dept.id]);
+          // Pulse ring dentro de mapG (se transforma con zoom)
+          const ring = mapG.append('circle')
+            .attr('cx', px).attr('cy', py).attr('r', 0)
+            .attr('fill', 'none')
+            .attr('stroke', al.color).attr('stroke-width', 1.3).attr('opacity', .9)
+            .style('pointer-events', 'none');
+          ring.transition().duration(1700).ease(d3.easeLinear)
+            .attr('r', 20).attr('opacity', 0).remove();
+        }, 2900);
       })
       .catch(err => {
         wrap.insertAdjacentHTML('beforeend',
@@ -848,6 +1194,7 @@
       });
   }
 
+  // ── Feed ──────────────────────────────────────────────────────────────────
   function addFeedItem(animate) {
     const srcKeys = [...activeSources].filter(s => s !== 'all');
     const pool    = srcKeys.length ? srcKeys : ['x','facebook','tiktok','noticias'];
@@ -855,24 +1202,28 @@
     const post    = FEED_POSTS[Math.floor(Math.random() * FEED_POSTS.length)];
     const user    = FEED_USERS[src][Math.floor(Math.random() * FEED_USERS[src].length)];
     const dept    = DEPTS[Math.floor(Math.random() * 11)];
+    const al      = ALERT_LEVELS.find(a => a.key === post.al) || ALERT_LEVELS[0];
     const time    = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
     const list    = document.getElementById('feed-list');
     const el      = document.createElement('div');
     el.className  = `feed-item feed-source-${src}`;
+    el.style.borderLeftColor = al.color;
     if (!animate) el.style.animation = 'none';
     el.innerHTML  = `
       <span class="feed-icon">${SRC_ICON[src]}</span>
       <div class="feed-content">
-        <div class="feed-user">${escHtml(user)}</div>
+        <div class="feed-user">${escHtml(user)} <span style="font-size:.64rem;color:${al.color};font-weight:600;margin-left:.3rem">${al.icon} ${al.label}</span></div>
         <div class="feed-text">${escHtml(post.text)}</div>
         <div class="feed-meta"><span>${time}</span><span class="feed-dept">📍 ${dept.name}</span><span style="text-transform:uppercase">${src}</span></div>
       </div>`;
     list.insertBefore(el, list.firstChild);
     while (list.children.length > 60) list.removeChild(list.lastChild);
-    heatData[dept.id] = Math.min(8, (heatData[dept.id] || dept.base) + 0.25);
+    const boost = post.al === 'critico' ? 1.2 : post.al === 'alto' ? 0.8 : post.al === 'medio' ? 0.5 : 0.25;
+    heatData[dept.id] = Math.min(8, (heatData[dept.id] || dept.base) + boost);
     renderHeatMap();
   }
 
+  // ── Mapa de calor ─────────────────────────────────────────────────────────
   function renderHeatMap() {
     DEPTS.forEach(d => {
       const el = document.getElementById(d.id);
@@ -880,13 +1231,26 @@
     });
   }
 
+  // ── Ranking con badges de alerta ─────────────────────────────────────────
   function renderDeptStats() {
-    const top = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0,5);
+    const top = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0,6);
     document.getElementById('dept-stats').innerHTML =
-      '<div class="map-title" style="margin-bottom:.45rem;">Top departamentos</div>' +
-      top.map(d => `<div class="dept-stat-item"><span>${d.name}</span><span class="dept-stat-count">${Math.round((heatData[d.id]||0)*15+8)}</span></div>`).join('');
+      '<div class="map-title" style="margin-bottom:.4rem;">Ranking</div>' +
+      top.map((d,i) => {
+        const al  = alertLevel(heatData[d.id]);
+        const cnt = Math.round((heatData[d.id]||0)*15+8);
+        return `<div class="dept-stat-item">
+          <div class="dept-stat-left">
+            <span style="color:var(--muted);font-size:.63rem;min-width:11px">${i+1}</span>
+            <span class="rank-dot rd-${al.key}"></span>
+            <span class="dept-stat-name">${d.name}</span>
+          </div>
+          <span class="dept-stat-count" style="color:${al.color}">${cnt}</span>
+        </div>`;
+      }).join('');
   }
 
+  // ── Fuentes ───────────────────────────────────────────────────────────────
   function toggleSource(src) {
     if (src === 'all') {
       activeSources = new Set(['all']);
@@ -906,6 +1270,7 @@
     }
   }
 
+  // ── Scanner keywords ──────────────────────────────────────────────────────
   function addKeyword() {
     const input = document.getElementById('scan-keyword');
     const kw = input.value.trim();
