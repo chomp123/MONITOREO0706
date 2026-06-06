@@ -405,6 +405,7 @@
     .tl-icon        { flex-shrink:0; font-size:.72rem; }
     .tl-text        { color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin    { to { transform: rotate(360deg); } }
 
     /* Facebook status badge */
     .fb-badge      { display:flex; align-items:center; gap:.32rem; padding:.22rem .55rem;
@@ -859,6 +860,7 @@
       token    = data.token;
       userRole = data.role;
       userName = data.username;
+      localStorage.setItem('argos_token', token);
       initApp();
     } catch (e) {
       errEl.textContent = e.message;
@@ -885,6 +887,7 @@
   }
 
   function doLogout() {
+    localStorage.removeItem('argos_token');
     token = null; userRole = null; userName = null;
     if (feedInterval)   { clearInterval(feedInterval);   feedInterval   = null; monitorInitialized = false; }
     if (fbPollInterval) { clearInterval(fbPollInterval); fbPollInterval = null; }
@@ -893,6 +896,78 @@
     document.getElementById('screen-login').style.display = 'flex';
     document.getElementById('login-pass').value = '';
     document.getElementById('login-error').style.display = 'none';
+  }
+
+  // ── Reconexión F5 ────────────────────────────────────────────────────────
+  function showReconnecting(intento) {
+    document.getElementById('screen-login').style.display = 'none';
+    document.getElementById('screen-app').style.display  = 'none';
+    let div = document.getElementById('reconnect-screen');
+    if (!div) {
+      div = document.createElement('div');
+      div.id = 'reconnect-screen';
+      div.style.cssText = [
+        'position:fixed;inset:0;background:#07090f;',
+        'display:flex;flex-direction:column;',
+        'align-items:center;justify-content:center;',
+        'font-family:var(--mono);color:#e2e8f0;z-index:9999;',
+      ].join('');
+      div.innerHTML = `
+        <div style="font-size:36px;margin-bottom:16px;">👁</div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:0.1em;
+          color:#378ADD;margin-bottom:8px;">ARGOS</div>
+        <div style="font-size:12px;color:#8892a4;margin-bottom:24px;">
+          Reconectando al servidor...</div>
+        <div style="width:32px;height:32px;border:2px solid #1e2d42;
+          border-top:2px solid #378ADD;border-radius:50%;
+          animation:spin 0.8s linear infinite;margin-bottom:16px;"></div>
+        <div id="reconnect-msg" style="font-size:11px;color:#4b5563;">
+          Intento 1 de 5...</div>`;
+      document.body.appendChild(div);
+    }
+    div.style.display = 'flex';
+    document.getElementById('reconnect-msg').textContent =
+      'Intento ' + intento + ' de 5...';
+  }
+
+  function hideReconnecting() {
+    const div = document.getElementById('reconnect-screen');
+    if (div) div.style.display = 'none';
+  }
+
+  async function verifyToken() {
+    const saved = localStorage.getItem('argos_token');
+    if (!saved) return;
+    token = saved;
+
+    for (let i = 1; i <= 5; i++) {
+      showReconnecting(i);
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/me`, {
+          headers: { 'Authorization': 'Bearer ' + saved },
+          signal:  AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          userRole = data.role;
+          userName = data.username || data.name;
+          hideReconnecting();
+          initApp();
+          return;
+        }
+        // Token inválido/expirado: no reintentar
+        if (res.status === 401 || res.status === 403) break;
+      } catch (e) {
+        console.log('[reconexión] Intento', i, 'fallido:', e.message);
+      }
+      if (i < 5) await new Promise(r => setTimeout(r, 3000));
+    }
+
+    // 5 intentos fallidos → limpiar y mostrar login
+    hideReconnecting();
+    localStorage.removeItem('argos_token');
+    token = null;
+    document.getElementById('screen-login').style.display = 'flex';
   }
 
   // ── Paneles ──────────────────────────────────────────────────────────────
@@ -1943,6 +2018,9 @@
       if (textEl)   { textEl.textContent = 'RSS error'; }
     }
   }
+
+  // ── Restaurar sesión al cargar la página (F5) ─────────────────────────────
+  verifyToken();
 </script>
 </body>
 </html>
