@@ -864,69 +864,15 @@
     return ALERT_LEVELS[0];
   }
 
-  const FEED_POSTS = [
-    { text:'Observando el conteo de votos en tiempo real #EleccionesParaguay', al:'info' },
-    { text:'Largas filas en locales de votación de Asunción 🗳️',              al:'info' },
-    { text:'Candidato lidera en Central según primeros resultados',             al:'info' },
-    { text:'Así de animado está el ambiente electoral en Alto Paraná',          al:'info' },
-    { text:'TSJE confirma normalidad en el proceso electoral',                  al:'info' },
-    { text:'Participación histórica en Itapúa, más del 70% de electores',      al:'info' },
-    { text:'Jóvenes votando por primera vez en Cordillera 🇵🇾',                 al:'info' },
-    { text:'Candidatos piden calma y respeto al proceso democrático',           al:'info' },
-    { text:'Misiones y Ñeembucú sin incidentes hasta el momento',              al:'info' },
-    { text:'Alto Paraná reporta alta concurrencia en todos los locales',        al:'info' },
-    { text:'Video viral de campaña genera debate #Paraguay2026',                al:'medio' },
-    { text:'Cierre de mesas se retrasa en San Pedro por falta de material',     al:'medio' },
-    { text:'Transmisión en vivo del recuento desde Asunción',                   al:'medio' },
-    { text:'#Internas2026 es tendencia con 45k menciones en la última hora',    al:'medio' },
-    { text:'Incremento de menciones en Central +34% en 10 minutos',             al:'medio' },
-    { text:'Se detectaron irregularidades en Amambay — investigando',           al:'alto' },
-    { text:'Denuncian actos de proselitismo prohibido en Caaguazú',             al:'alto' },
-    { text:'Autoridades refuerzan seguridad en Amambay por tensiones',          al:'alto' },
-    { text:'Candidato acusa fraude — revisión urgente solicitada al TSJE',      al:'alto' },
-    { text:'Denuncia de compra de votos confirmada en zona Central',            al:'critico' },
-    { text:'Incidente violento registrado en local de votación de Caaguazú',    al:'critico' },
-    { text:'Múltiples reportes de irregularidades — TSJE emite alerta máxima',  al:'critico' },
-  ];
-
-  const FEED_USERS = {
-    x:        ['@pynandi_py','@info_electoral','@vox_py','@ciudadano_py','@redpolitica_py'],
-    facebook: ['Juan Gómez','María López','Comité Electoral PY','Noticias PY','Votantes 2026'],
-    tiktok:   ['@pypolitica','@jovenVota','@pyTiktokNews','@electoral_py'],
-    noticias: ['ABC Color','Última Hora','La Nación PY','Paraguay.com','Radio Monumental'],
-  };
-  const SRC_ICON = { x:'✕', facebook:'f', tiktok:'♪', noticias:'📰' };
-
-  const TL_POOL = [
-    { al:'info',    text:'Publicación detectada — #Internas2026' },
-    { al:'info',    text:'TSJE emite comunicado oficial de normalidad' },
-    { al:'info',    text:'Alta concurrencia confirmada en Alto Paraná' },
-    { al:'medio',   text:'Viralización — 45 compartidos en 10 min' },
-    { al:'medio',   text:'Tendencia en alza detectada — Canindeyú' },
-    { al:'medio',   text:'Incremento de menciones +34% — Central' },
-    { al:'alto',    text:'Denuncia ingresada — irregularidad electoral' },
-    { al:'alto',    text:'Compartido por cuenta verificada de alto alcance' },
-    { al:'alto',    text:'Múltiples reportes simultáneos — Amambay' },
-    { al:'critico', text:'Alerta máxima — posible irregularidad confirmada' },
-    { al:'critico', text:'Violencia verbal reportada — Caaguazú' },
-    { al:'critico', text:'Compra de votos denunciada — TSJE notificado' },
-  ];
-
-  const HASHTAGS = {
-    '#EleccionesPY':  234, '#Votacion2026': 187, '#TSJE':        143,
-    '#Internas2026':  121, '#VotoLibre':     98, '#Paraguay2026': 87,
-    '#CiberelectPY':   65, '#ResultadosPY':  54, '#DemocraciaPY': 42,
-  };
-
   let activeSources      = new Set(['all']);
   let scanKeywords       = ['elecciones','TSJE','votación'];
   let feedInterval       = null;
   let heatData           = {};
-  let scanMentions       = 0;
   let monitorInitialized = false;
-  let sentiment          = { pos:52, neu:31, neg:17 };
+  let sentiment          = { pos:0, neu:0, neg:0 };
+  let trendingWords      = {};
   let hasCritical        = false;
-  let geoFeatures        = null;  // referencia a los features para pulse rings
+  let geoFeatures        = null;
 
   function initMonitor() {
     if (monitorInitialized) return;
@@ -937,27 +883,22 @@
     renderKeywordTags();
     renderTrending();
     renderSentiment();
-    for (let i = 0; i < 7; i++) addFeedItem(false);
-    for (let i = 0; i < 5; i++) addTimelineEvent(false);
+    showFeedLoading();
 
+    // Decaimiento suave del mapa de calor cada 5 s
     feedInterval = setInterval(() => {
-      addFeedItem(true);
-      addTimelineEvent(true);
       DEPTS.forEach(d => {
-        const delta = (Math.random() - 0.38) * 0.6;
+        const delta = (Math.random() - 0.6) * 0.15;
         heatData[d.id] = Math.max(d.base, Math.min(8, (heatData[d.id] || d.base) + delta));
       });
       renderHeatMap();
       renderDeptStats();
-      updateSentiment();
-      updateTrending();
       checkCritical();
-      document.getElementById('scan-count').textContent = `${++scanMentions} menciones`;
-    }, 2600);
+    }, 5000);
 
     initD3Map();
 
-    // Arrancar polling de Facebook scraping y RSS portales PY
+    // Polling de datos reales
     fetchFacebookPosts();
     fbPollInterval = setInterval(fetchFacebookPosts, 60000);
 
@@ -980,26 +921,36 @@
   }
 
   // ── Timeline ─────────────────────────────────────────────────────────────
-  function addTimelineEvent(animate) {
-    const ev   = TL_POOL[Math.floor(Math.random() * TL_POOL.length)];
-    const al   = ALERT_LEVELS.find(a => a.key === ev.al) || ALERT_LEVELS[0];
-    const time = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+  function addRSSToTimeline(item) {
     const list = document.getElementById('tl-list');
     if (!list) return;
-    const el = document.createElement('div');
+    const al   = ALERT_LEVELS.find(a => a.key === item.alertLevel) || ALERT_LEVELS[0];
+    const time = item.pubDate
+      ? new Date(item.pubDate).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
+      : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+    const el   = document.createElement('div');
     el.className = 'tl-item';
-    if (animate) el.style.animation = 'slideIn .25s ease';
-    el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">${al.icon}</span><span class="tl-text">${escHtml(ev.text)}</span>`;
+    el.style.animation = 'slideIn .25s ease';
+    const short = (item.title || '').length > 60 ? item.title.slice(0, 60) + '…' : (item.title || '');
+    el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">${al.icon}</span><span class="tl-text">${escHtml(short)}</span>`;
     list.insertBefore(el, list.firstChild);
     while (list.children.length > 20) list.removeChild(list.lastChild);
   }
 
   // ── Sentimiento ───────────────────────────────────────────────────────────
-  function updateSentiment() {
-    const shift = (Math.random() - 0.48) * 5;
-    sentiment.neg = Math.max(5,  Math.min(45, sentiment.neg + shift));
-    sentiment.pos = Math.max(20, Math.min(65, sentiment.pos - shift * 0.6));
-    sentiment.neu = Math.max(5,  100 - sentiment.pos - sentiment.neg);
+  function updateSentimentFromRSS(items) {
+    if (!items || !items.length) return;
+    let pos = 0, neu = 0, neg = 0;
+    items.forEach(i => {
+      if (i.alertLevel === 'info')       pos++;
+      else if (i.alertLevel === 'medio') neu++;
+      else                               neg++;
+    });
+    const total = pos + neu + neg;
+    if (!total) return;
+    sentiment.pos = Math.round(pos / total * 100);
+    sentiment.neu = Math.round(neu / total * 100);
+    sentiment.neg = Math.round(100 - sentiment.pos - sentiment.neu);
     renderSentiment();
   }
 
@@ -1017,16 +968,32 @@
   }
 
   // ── Tendencias ────────────────────────────────────────────────────────────
-  function updateTrending() {
-    const keys = Object.keys(HASHTAGS);
-    HASHTAGS[keys[Math.floor(Math.random() * keys.length)]] += Math.floor(Math.random() * 8) + 1;
+  const TREND_STOP_WORDS = new Set([
+    'de','la','el','en','y','a','los','las','del','un','una','que','con','por',
+    'para','se','al','no','es','su','sus','más','como','pero','sobre','ha','sido',
+    'este','esta','son','fue','entre','sin','desde','hasta','ante','tras',
+  ]);
+
+  function updateTrendingFromRSS(items) {
+    items.forEach(item => {
+      (item.title || '').split(/\s+/).forEach(word => {
+        const w = word.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+        if (w.length < 4 || TREND_STOP_WORDS.has(w)) return;
+        trendingWords[w] = (trendingWords[w] || 0) + 1;
+      });
+    });
     renderTrending();
   }
 
   function renderTrending() {
-    const sorted = Object.entries(HASHTAGS).sort((a,b) => b[1]-a[1]).slice(0,6);
     const el = document.getElementById('trending-list');
     if (!el) return;
+    const entries = Object.entries(trendingWords);
+    if (!entries.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div>';
+      return;
+    }
+    const sorted = entries.sort((a,b) => b[1]-a[1]).slice(0,6);
     el.innerHTML = sorted.map(([kw, n]) =>
       `<div class="trend-item" onclick="addKeywordFromTrend('${escHtml(kw)}')">
          <span class="trend-kw">${escHtml(kw)}</span>
@@ -1236,33 +1203,40 @@
       });
   }
 
-  // ── Feed ──────────────────────────────────────────────────────────────────
-  function addFeedItem(animate) {
-    const srcKeys = [...activeSources].filter(s => s !== 'all');
-    const pool    = srcKeys.length ? srcKeys : ['x','facebook','tiktok','noticias'];
-    const src     = pool[Math.floor(Math.random() * pool.length)];
-    const post    = FEED_POSTS[Math.floor(Math.random() * FEED_POSTS.length)];
-    const user    = FEED_USERS[src][Math.floor(Math.random() * FEED_USERS[src].length)];
-    const dept    = DEPTS[Math.floor(Math.random() * 11)];
-    const al      = ALERT_LEVELS.find(a => a.key === post.al) || ALERT_LEVELS[0];
-    const time    = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    const list    = document.getElementById('feed-list');
-    const el      = document.createElement('div');
-    el.className  = `feed-item feed-source-${src}`;
-    el.style.borderLeftColor = al.color;
-    if (!animate) el.style.animation = 'none';
-    el.innerHTML  = `
-      <span class="feed-icon">${SRC_ICON[src]}</span>
-      <div class="feed-content">
-        <div class="feed-user">${escHtml(user)} <span style="font-size:.64rem;color:${al.color};font-weight:600;margin-left:.3rem">${al.icon} ${al.label}</span></div>
-        <div class="feed-text">${escHtml(post.text)}</div>
-        <div class="feed-meta"><span>${time}</span><span class="feed-dept">📍 ${dept.name}</span><span style="text-transform:uppercase">${src}</span></div>
-      </div>`;
-    list.insertBefore(el, list.firstChild);
-    while (list.children.length > 60) list.removeChild(list.lastChild);
-    const boost = post.al === 'critico' ? 1.2 : post.al === 'alto' ? 0.8 : post.al === 'medio' ? 0.5 : 0.25;
-    heatData[dept.id] = Math.min(8, (heatData[dept.id] || dept.base) + boost);
+  // ── Feed loading state ────────────────────────────────────────────────────
+  function showFeedLoading() {
+    const list = document.getElementById('feed-list');
+    if (!list || list.querySelector('#feed-loading-msg')) return;
+    const el = document.createElement('div');
+    el.id = 'feed-loading-msg';
+    el.style.cssText = 'text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.85rem;';
+    el.textContent = '⏳ Cargando noticias reales de Paraguay…';
+    list.appendChild(el);
+  }
+
+  function removeFeedLoading() {
+    const el = document.getElementById('feed-loading-msg');
+    if (el) el.remove();
+  }
+
+  // ── Calor desde noticias reales ───────────────────────────────────────────
+  function updateHeatFromRSS(items) {
+    if (!items || !items.length) return;
+    items.forEach(item => {
+      const text = ((item.title || '') + ' ' + (item.description || '')).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '');
+      DEPTS.forEach(d => {
+        if (text.includes(normName(d.name))) {
+          const boost = item.alertLevel === 'critico' ? 1.0 :
+                        item.alertLevel === 'alto'    ? 0.7 :
+                        item.alertLevel === 'medio'   ? 0.4 : 0.2;
+          heatData[d.id] = Math.min(8, (heatData[d.id] || d.base) + boost);
+        }
+      });
+    });
     renderHeatMap();
+    renderDeptStats();
+    checkCritical();
   }
 
   // ── Mapa de calor ─────────────────────────────────────────────────────────
@@ -1442,7 +1416,15 @@
 
       const list     = document.getElementById('feed-list');
       const newItems = (data.items || []).filter(i => i.title && !rssSeenTitles.has(i.title));
+
+      // Actualizar contador con total real
+      const countEl = document.getElementById('scan-count');
+      if (countEl) countEl.textContent = `${data.total || 0} noticias`;
+
       if (!newItems.length) return;
+
+      // Quitar el mensaje de carga cuando lleguen los primeros artículos
+      removeFeedLoading();
 
       const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
       const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
@@ -1457,6 +1439,12 @@
           ? new Date(item.pubDate).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
           : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
 
+        // Badge 🔍 BÚSQUEDA si el título coincide con alguna keyword activa
+        const titleLow = (item.title || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        const isMatch  = scanKeywords.some(kw =>
+          titleLow.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
+        );
+
         const el = document.createElement('div');
         el.className = 'feed-item feed-source-noticias feed-item-link';
         el.style.borderLeftColor = item.portalColor || '#f59e0b';
@@ -1468,6 +1456,7 @@
             <div class="feed-user" style="display:flex;align-items:center;gap:.32rem;flex-wrap:wrap;">
               <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
               <span class="rss-real">● REAL</span>
+              ${isMatch ? '<span style="font-size:.63rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍 BÚSQUEDA</span>' : ''}
               <span style="font-size:.63rem;color:${alColor};font-weight:600;">${alIcon} ${alLabel}</span>
             </div>
             <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.18rem;">${escHtml(item.title)}</div>
@@ -1482,6 +1471,12 @@
         else list.appendChild(el);
       });
       while (list.children.length > 90) list.removeChild(list.lastChild);
+
+      // Actualizar mapa de calor, timeline, sentimiento y tendencias con datos reales
+      updateHeatFromRSS(newItems);
+      newItems.slice(0, 5).forEach(item => addRSSToTimeline(item));
+      updateSentimentFromRSS(data.items || []);
+      updateTrendingFromRSS(newItems);
 
     } catch {
       if (statusEl) { statusEl.className = 'rss-status-badge rss-error'; }
