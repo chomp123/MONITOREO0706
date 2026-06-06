@@ -1086,6 +1086,60 @@
       .trim();
   }
 
+  // ── Radar: requestAnimationFrame ─────────────────────────────────────────
+  function startRadar(svg, rcx, rcy, W, H) {
+    svg.select('#radar-group').remove();
+    svg.select('defs').remove();
+
+    const rMax = Math.min(W, H) * 0.45;
+
+    const defs = svg.append('defs');
+    defs.append('clipPath').attr('id', 'radar-clip')
+      .append('rect').attr('width', W).attr('height', H);
+
+    const radarBase = svg.append('g').attr('id', 'radar-group')
+      .style('pointer-events', 'none');
+
+    [0.25, 0.5, 0.75, 1.0].forEach(r => {
+      radarBase.append('circle')
+        .attr('cx', rcx).attr('cy', rcy)
+        .attr('r', rMax * r)
+        .attr('fill', 'none')
+        .attr('stroke', 'rgba(226,75,74,0.15)')
+        .attr('stroke-width', 0.8)
+        .attr('clip-path', 'url(#radar-clip)');
+    });
+
+    const sweep = radarBase.append('line')
+      .attr('id', 'radar-sweep-line')
+      .attr('x1', rcx).attr('y1', rcy)
+      .attr('x2', rcx).attr('y2', rcy - rMax)
+      .attr('stroke', '#e24b4a')
+      .attr('stroke-width', 2)
+      .attr('opacity', 0.85)
+      .attr('clip-path', 'url(#radar-clip)');
+
+    let angle   = 0;
+    let active  = true;
+    let paused  = false;
+
+    function rotate() {
+      if (!active) return;
+      if (!paused) {
+        angle = (angle + 0.8) % 360;
+        const rad = (angle - 90) * Math.PI / 180;
+        sweep.attr('x2', rcx + Math.cos(rad) * rMax)
+             .attr('y2', rcy + Math.sin(rad) * rMax);
+      }
+      requestAnimationFrame(rotate);
+    }
+    requestAnimationFrame(rotate);
+
+    window._radarStop   = () => { active = false; };
+    window._radarPause  = () => { paused = true; };
+    window._radarResume = () => { paused = false; };
+  }
+
   // ── Mapa D3 + zoom + radar ────────────────────────────────────────────────
   function initD3Map() {
     const wrap = document.getElementById('map-wrap');
@@ -1095,7 +1149,7 @@
     const cy   = H * 0.44;
 
     d3.select('#map-wrap svg').remove();
-    if (window._radarTimer) { window._radarTimer.stop(); window._radarTimer = null; }
+    if (window._radarStop) { window._radarStop(); window._radarStop = null; }
 
     const svg = d3.select('#map-wrap')
       .insert('svg', ':first-child')
@@ -1175,76 +1229,47 @@
           });
 
         // Municipios estratégicos — puntos actualizables por renderStrategicCityDots()
+        const CITY_LBL_CFG = {
+          'Asunción':        { dx: -6,  dy: -6,  anchor: 'end'   },
+          'Ciudad del Este': { dx:  10, dy:  3,  anchor: 'start' },
+          'Encarnación':     { dx:   5, dy:  14, anchor: 'start' },
+          'Pedro Juan Cab.': { dx:   5, dy: -12, anchor: 'start' },
+          'Luque':           { dx: -6,  dy:  10, anchor: 'end'   },
+          'San Lorenzo':     { dx: -6,  dy: -4,  anchor: 'end'   },
+        };
         STRATEGIC_CITIES.forEach(city => {
-          const [cx_, cy_] = projection([city.lon, city.lat]);
+          const [px, py] = projection([city.lon, city.lat]);
           const slug = city.name.replace(/[\s.]/g,'');
+          const cfg = CITY_LBL_CFG[city.name] || { dx: 5, dy: 3, anchor: 'start' };
+          const txtX = px + cfg.dx;
+          const txtY = py + cfg.dy;
+          const labelW = city.name.length * 5.4 + 8;
+          const bgX = cfg.anchor === 'end' ? txtX - labelW : txtX - 2;
           mapG.append('circle')
             .attr('id', `city-dot-${slug}`)
-            .attr('cx', cx_).attr('cy', cy_).attr('r', 3.5)
+            .attr('cx', px).attr('cy', py).attr('r', 3.5)
             .attr('fill', '#4b5563').attr('stroke', '#fff').attr('stroke-width', .9)
+            .style('pointer-events', 'none');
+          mapG.append('rect')
+            .attr('id', `city-bg-${slug}`)
+            .attr('x', bgX).attr('y', txtY - 9)
+            .attr('width', labelW).attr('height', 11)
+            .attr('fill', 'rgba(7,9,15,0.7)')
+            .attr('rx', 2).attr('ry', 2)
             .style('pointer-events', 'none');
           mapG.append('text')
             .attr('id', `city-lbl-${slug}`)
-            .attr('x', cx_ + 5).attr('y', cy_ + 3)
-            .attr('font-size', 5.8).attr('fill', '#6b7280')
+            .attr('x', txtX).attr('y', txtY)
+            .attr('font-size', 9).attr('fill', '#d1d5db')
             .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
+            .attr('text-anchor', cfg.anchor)
             .style('pointer-events', 'none')
             .text(city.name);
         });
 
         // ── Radar overlay ──────────────────────────────────────────────────
-        // Centro geográfico de Paraguay en coordenadas SVG
         const [rcx, rcy] = projection([-58.2, -23.5]);
-        const radioMaximo = Math.min(W, H) * 0.45;
-
-        // ClipPath para que el radar no salga del mapa
-        svg.append('defs').append('clipPath')
-          .attr('id', 'map-clip')
-          .append('rect')
-          .attr('width', W).attr('height', H);
-
-        // Anillos concéntricos
-        [0.25, 0.5, 0.75, 1.0].forEach(r => {
-          svg.append('circle')
-            .attr('cx', rcx).attr('cy', rcy)
-            .attr('r', radioMaximo * r)
-            .attr('fill', 'none')
-            .attr('stroke', '#e24b4a')
-            .attr('stroke-width', 0.3)
-            .attr('opacity', 0.2)
-            .attr('clip-path', 'url(#map-clip)')
-            .style('pointer-events', 'none');
-        });
-
-        // Grupo radar con D3 timer
-        const radarGroup = svg.append('g')
-          .attr('id', 'radar-sweep-g')
-          .attr('clip-path', 'url(#map-clip)')
-          .style('pointer-events', 'none');
-
-        radarGroup.append('line')
-          .attr('id', 'radar-sweep-line')
-          .attr('x1', rcx).attr('y1', rcy)
-          .attr('x2', rcx).attr('y2', rcy - radioMaximo)
-          .attr('stroke', '#e24b4a')
-          .attr('stroke-width', 1.5)
-          .attr('opacity', 0.8);
-
-        // Estela semitransparente
-        radarGroup.append('path')
-          .attr('id', 'radar-trail')
-          .attr('d', `M ${rcx},${rcy} L ${rcx-12},${rcy-radioMaximo} L ${rcx+4},${rcy-radioMaximo} Z`)
-          .attr('fill', 'rgba(226,75,74,0.10)');
-
-        let radarAngulo = 0;
-        let radarPaused = false;
-        window._radarTimer = d3.timer(() => {
-          if (radarPaused) return;
-          radarAngulo = (radarAngulo + 1) % 360;
-          radarGroup.attr('transform', `rotate(${radarAngulo}, ${rcx}, ${rcy})`);
-        });
-        window._radarPause  = () => { radarPaused = true; };
-        window._radarResume = () => { radarPaused = false; };
+        startRadar(svg, rcx, rcy, W, H);
 
         renderHeatMap();
         checkCritical();
