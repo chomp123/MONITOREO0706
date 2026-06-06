@@ -396,6 +396,21 @@
     .fb-badge-ok   { background:#1e3a5a; border-color:#1877f2; color:#60a5fa; }
     .fb-badge-blocked { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
     .fb-badge-error   { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
+
+    /* RSS portal badges */
+    .rss-badge  { display:inline-flex; align-items:center; padding:.1rem .38rem; border-radius:4px;
+                  font-size:.59rem; font-weight:700; letter-spacing:.05em; flex-shrink:0; white-space:nowrap; }
+    .rss-real   { background:#16a34a22; border:1px solid #16a34a; color:#4ade80;
+                  font-size:.58rem; font-weight:700; padding:.1rem .32rem; border-radius:4px; flex-shrink:0; }
+    .feed-item-link { cursor:pointer; }
+    .feed-item-link:hover .feed-text { text-decoration:underline; text-decoration-color:#a78bfa44; }
+
+    /* RSS status badge (toolbar) */
+    .rss-status-badge { display:flex; align-items:center; gap:.3rem; padding:.22rem .55rem;
+                        border-radius:999px; font-size:.66rem; font-weight:600; white-space:nowrap; flex-shrink:0;
+                        background:#1a200a; border:1px solid #22c55e44; color:#4ade80; }
+    .rss-status-badge.rss-init   { background:#1a1a2e; border-color:#2a2a3d; color:var(--muted); }
+    .rss-status-badge.rss-error  { background:#1a1a1a; border-color:#4b5563; color:#6b7280; }
   </style>
 </head>
 <body>
@@ -508,6 +523,10 @@
           <div id="fb-status-badge" class="fb-badge fb-badge-init" title="Estado scraping Facebook">
             <span class="fb-badge-icon">f</span>
             <span id="fb-badge-text">FB…</span>
+          </div>
+          <div id="rss-status-badge" class="rss-status-badge rss-init" title="Noticias RSS portales PY">
+            <span>📰</span>
+            <span id="rss-badge-text">RSS…</span>
           </div>
         </div>
 
@@ -667,6 +686,7 @@
     history.length = 0;
     if (feedInterval)   { clearInterval(feedInterval);   feedInterval   = null; monitorInitialized = false; }
     if (fbPollInterval) { clearInterval(fbPollInterval); fbPollInterval = null; }
+    if (rssInterval)    { clearInterval(rssInterval);    rssInterval    = null; }
     document.getElementById('chat-messages').innerHTML = '<div class="system-msg">Sesión iniciada — ARGOS activo</div>';
     document.getElementById('screen-app').style.display  = 'none';
     document.getElementById('screen-login').style.display = 'flex';
@@ -937,9 +957,12 @@
 
     initD3Map();
 
-    // Arrancar polling de Facebook scraping
+    // Arrancar polling de Facebook scraping y RSS portales PY
     fetchFacebookPosts();
     fbPollInterval = setInterval(fetchFacebookPosts, 60000);
+
+    fetchRSSNews();
+    rssInterval = setInterval(fetchRSSNews, 60000);
   }
 
   // ── Alerta crítica → pausa radar ──────────────────────────────────────────
@@ -1382,7 +1405,89 @@
     }
   }
 
-  // El polling de FB se arranca desde initMonitor() — ver llamada allí abajo.
+  // El polling de FB y RSS se arrancan desde initMonitor() — ver llamada allí abajo.
+
+  // ── RSS noticias reales (portales PY via Google News) ────────────────────
+  //
+  // Consulta /api/rss cada 60 s. Inyecta noticias nuevas en el feed con:
+  //  - Badge del portal (color según fuente: ABC #rojo, Ultima Hora #azul, etc.)
+  //  - Badge "● REAL" verde para distinguir de noticias simuladas
+  //  - Click abre el artículo en nueva pestaña
+
+  const rssSeenTitles = new Set();
+  let rssInterval     = null;
+
+  // Mapa portal → clase CSS de badge (basado en portalColor del backend)
+  function rssBadgeStyle(color) {
+    return `background:${color}22;border:1px solid ${color}66;color:${color}`;
+  }
+
+  async function fetchRSSNews() {
+    if (!token) return;
+    const statusEl = document.getElementById('rss-status-badge');
+    const textEl   = document.getElementById('rss-badge-text');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/rss`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Actualizar badge de estado
+      if (statusEl && textEl) {
+        statusEl.className = 'rss-status-badge';
+        textEl.textContent = `RSS ${data.total || 0} noticias`;
+        statusEl.title = `Última actualización: ${data.lastFetch ? new Date(data.lastFetch).toLocaleTimeString('es') : '—'}`;
+      }
+
+      const list     = document.getElementById('feed-list');
+      const newItems = (data.items || []).filter(i => i.title && !rssSeenTitles.has(i.title));
+      if (!newItems.length) return;
+
+      const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
+      const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
+      const ALERT_LABELS = { critico:'Crítico', alto:'Alto', medio:'Medio', info:'Informativo' };
+
+      newItems.slice(0, 10).forEach(item => {
+        rssSeenTitles.add(item.title);
+        const alIcon  = ALERT_ICONS[item.alertLevel]  || '🔵';
+        const alColor = ALERT_COLORS[item.alertLevel] || '#378ADD';
+        const alLabel = ALERT_LABELS[item.alertLevel] || 'Informativo';
+        const time    = item.pubDate
+          ? new Date(item.pubDate).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
+          : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+
+        const el = document.createElement('div');
+        el.className = 'feed-item feed-source-noticias feed-item-link';
+        el.style.borderLeftColor = item.portalColor || '#f59e0b';
+        if (item.url) el.addEventListener('click', () => window.open(item.url, '_blank', 'noopener,noreferrer'));
+
+        el.innerHTML = `
+          <span class="feed-icon">📰</span>
+          <div class="feed-content">
+            <div class="feed-user" style="display:flex;align-items:center;gap:.32rem;flex-wrap:wrap;">
+              <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
+              <span class="rss-real">● REAL</span>
+              <span style="font-size:.63rem;color:${alColor};font-weight:600;">${alIcon} ${alLabel}</span>
+            </div>
+            <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.18rem;">${escHtml(item.title)}</div>
+            ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.72rem;margin-top:.1rem;">${escHtml(item.description)}</div>` : ''}
+            <div class="feed-meta" style="margin-top:.2rem;">
+              <span>${time}</span>
+              ${item.url ? '<span style="color:#4ade80;font-size:.63rem;">↗ Ver artículo</span>' : ''}
+            </div>
+          </div>`;
+
+        if (list.firstChild) list.insertBefore(el, list.firstChild);
+        else list.appendChild(el);
+      });
+      while (list.children.length > 90) list.removeChild(list.lastChild);
+
+    } catch {
+      if (statusEl) { statusEl.className = 'rss-status-badge rss-error'; }
+      if (textEl)   { textEl.textContent = 'RSS error'; }
+    }
+  }
 </script>
 </body>
 </html>
