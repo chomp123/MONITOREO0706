@@ -3720,6 +3720,7 @@ ${SEP}`;
           <button class="inc-btn inc-btn-detail" onclick="openDetalleIncidente('${escHtml(inc.codigo)}')">Ver detalle</button>
           ${next ? `<button class="inc-btn inc-btn-avanzar" onclick="cambiarEstadoIncidente('${escHtml(inc.codigo)}','${next}')">→ ${next.charAt(0).toUpperCase()+next.slice(1)}</button>` : ''}
           ${inc.estado !== 'cerrado' ? `<button class="inc-btn inc-btn-cerrar" onclick="cambiarEstadoIncidente('${escHtml(inc.codigo)}','cerrado')">✓ Cerrar</button>` : ''}
+          <button class="inc-btn" style="color:#60a5fa;border-color:#378ADD44" onclick="exportarDocx('${escHtml(inc.codigo)}')">📄 DOCX</button>
         </div>
       </div>`;
     }).join('');
@@ -3997,10 +3998,37 @@ ${SEP}`;
           </div>`).join('') : '<div style="color:var(--muted);font-size:.75rem">Sin historial registrado</div>'}
       </div>
       <!-- Footer -->
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:.5rem;padding-top:.3rem;border-top:1px solid var(--border);">
-        ${userRole==='admin' ? `<button class="inc-btn" style="background:#3f0f0f44;border-color:#7f1d1d;color:#f87171;padding:.2rem .55rem" onclick="eliminarIncidente('${inc.codigo}')">🗑️ Eliminar</button>` : ''}
-        <button class="inc-btn" style="background:none;border-color:var(--border);color:var(--muted)" onclick="closeDetalleIncidente()">✕ Cerrar</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.3rem;border-top:1px solid var(--border);flex-wrap:wrap;">
+        <button class="inc-btn" style="background:#1e3a5f33;border-color:#378ADD55;color:#60a5fa;padding:.2rem .6rem;font-size:.7rem;" onclick="exportarDocx('${inc.codigo}')">📄 Exportar DOCX</button>
+        <div style="display:flex;gap:.4rem;">
+          ${userRole==='admin' ? `<button class="inc-btn" style="background:#3f0f0f44;border-color:#7f1d1d;color:#f87171;padding:.2rem .55rem" onclick="eliminarIncidente('${inc.codigo}')">🗑️ Eliminar</button>` : ''}
+          <button class="inc-btn" style="background:none;border-color:var(--border);color:var(--muted)" onclick="closeDetalleIncidente()">✕ Cerrar</button>
+        </div>
       </div>`;
+  }
+
+  async function exportarDocx(codigo) {
+    showToast('Generando documento…', 'info');
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/exportar-docx`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast('Error al generar DOCX: ' + (err.error || res.status), 'error');
+        return;
+      }
+      const blob = await res.blob();
+      const fecha = new Date().toISOString().slice(0, 10);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ARGOS_${codigo}_${fecha}.docx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('DOCX descargado', 'success');
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    }
   }
 
   async function cambiarEstadoIncidente(codigo, estado) {
