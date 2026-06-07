@@ -2060,8 +2060,8 @@
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function escJs(s) {
-    return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ').slice(0, 200);
+  function escJs(s, max = 300) {
+    return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ').slice(0, max);
   }
 
   // ── Event listeners ──────────────────────────────────────────────────────
@@ -3768,7 +3768,7 @@ ${SEP}`;
             <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
             <div style="display:flex;align-items:center;gap:.35rem;flex-shrink:0;">
               ${item.url ? '<span style="color:#4ade80;font-size:.62rem;">↗ Ver artículo</span>' : ''}
-              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;">🚨 Reportar</button>
+              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}','${escJs(item.description||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;">🚨 Reportar</button>
             </div>
           </div>
         </div>`;
@@ -3944,9 +3944,9 @@ ${SEP}`;
     return 'Otro';
   }
 
-  function reportarDesdeNoticia(title, url, lugar) {
-    const tipo = detectarTipoIncidente(title);
-    openCrearIncidente({ tipo, descripcion: title, lugar: lugar || '', evidencia: url || '' });
+  function reportarDesdeNoticia(title, url, lugar, desc) {
+    const tipo = detectarTipoIncidente((title || '') + ' ' + (desc || ''));
+    openCrearIncidente({ tipo, descripcion: title || desc || '', lugar: lugar || '', evidencia: url || '' });
   }
 
   // ── Modal crear incidente ─────────────────────────────────────────────────
