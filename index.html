@@ -2302,7 +2302,33 @@
   }
 
   // ── Feed tabs & incident classification ───────────────────────────────────
+  const _PAISES_FE = [
+    'trump','california','primarias',
+    'eeuu','estados unidos','argentina','brasil','brazil',
+    'colombia','venezuela','peru','chile','bolivia',
+    'uruguay','ecuador','mexico','israel','ucrania',
+    'rusia','china','espana','kosovo','armenia',
+    'haiti','cuba','nicaragua','panama','costa rica',
+    'honduras','guatemala','el salvador',
+  ];
+  const _LUGARES_PY_FE = [
+    'paraguay','asuncion','tsje','anr','plra',
+    'luque','san lorenzo','cde','encarnacion',
+    'pedro juan','caaguazu','concepcion','villarrica',
+    'itapua','central','amambay','paraguari',
+    'misiones','cordillera','hagamos','anetete','cruzada',
+  ];
+
+  function isItemFromParaguay(item) {
+    const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const title = norm(item.title || '');
+    const full  = title + ' ' + norm(item.description || '');
+    if (_PAISES_FE.some(p => title.includes(p))) return false;
+    return _LUGARES_PY_FE.some(l => full.includes(l));
+  }
+
   function isIncidentItem(item) {
+    if (!isItemFromParaguay(item)) return false;
     const text = ((item.title || '') + ' ' + (item.description || ''))
       .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
     const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
