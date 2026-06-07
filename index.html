@@ -1061,7 +1061,7 @@
           <button class="source-btn"            id="src-facebook" onclick="toggleSource('facebook')">f Facebook</button>
           <button class="source-btn"            id="src-tiktok"   onclick="toggleSource('tiktok')">♪ TikTok</button>
           <button class="source-btn"            id="src-noticias" onclick="toggleSource('noticias')">📰 Noticias</button>
-          <div class="scan-group">
+          <div class="scan-group" id="scan-group">
             <input class="scan-input" id="scan-keyword" placeholder="Agregar palabra clave…" />
             <button class="btn-scan" onclick="addKeyword()">+ Agregar</button>
           </div>
@@ -1523,6 +1523,10 @@
     // Ocultar Usuarios para roles no-admin
     const navAdmin = document.getElementById('nav-admin');
     if (userRole !== 'admin') navAdmin.style.display = 'none';
+
+    // Ocultar add-keyword para visualizadores
+    const scanGroup = document.getElementById('scan-group');
+    if (scanGroup) scanGroup.style.display = ['admin','operador'].includes(userRole) ? '' : 'none';
 
     loadKeywords();
     loadSources();
@@ -2220,22 +2224,29 @@
   // ── Distribución de alertas ───────────────────────────────────────────────
   function updateSentimentFromRSS(items) { updateAlertDistribution(items); } // alias legacy
 
-  function updateAlertDistribution(items) {
+  function updateAlertDistribution() {
     const block = document.querySelector('#adist-info')?.closest('.widget-block');
-    if (!items || !items.length) { if (block) block.style.display = 'none'; return; }
+    const items = rssAllItems;
+    if (!items.length) { if (block) block.style.display = 'none'; return; }
     const counts = { info:0, medio:0, alto:0, critico:0 };
-    items.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
+    items.forEach(i => {
+      const lvl = (i.alertLevel || i.nivel || '').toLowerCase();
+      if      (lvl === 'info' || lvl === 'informativo' || lvl === '') counts.info++;
+      else if (lvl === 'medio')   counts.medio++;
+      else if (lvl === 'alto')    counts.alto++;
+      else if (lvl === 'critico') counts.critico++;
+      else counts.info++;
+    });
     const total = Object.values(counts).reduce((s,n) => s+n, 0);
     if (!total) { if (block) block.style.display = 'none'; return; }
     if (block) block.style.display = '';
-    const set = (key) => {
+    ['info','medio','alto','critico'].forEach(key => {
       const pct = Math.round(counts[key] / total * 100);
       const bar = document.getElementById(`adist-${key}`);
       const lbl = document.getElementById(`adist-${key}-pct`);
       if (bar) bar.style.width = pct + '%';
-      if (lbl) lbl.textContent = pct + '%';
-    };
-    ['info','medio','alto','critico'].forEach(set);
+      if (lbl) lbl.textContent = `${counts[key]} (${pct}%)`;
+    });
   }
 
   // ── Hot Keywords ──────────────────────────────────────────────────────────
@@ -2294,9 +2305,9 @@
   function isIncidentItem(item) {
     const text = ((item.title || '') + ' ' + (item.description || ''))
       .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    return INCIDENT_KEYWORDS.some(kw =>
-      text.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
-    );
+    const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return INCIDENT_KEYWORDS.some(kw => text.includes(norm(kw))) ||
+           scanKeywords.some(kw => text.includes(norm(kw)));
   }
 
   function switchFeedTab(tab) {
@@ -2546,9 +2557,18 @@
     }).join('');
   }
 
-  function addKeywordFromTrend(kw) {
+  async function addKeywordFromTrend(kw) {
+    if (!['admin','operador'].includes(userRole)) return;
     const clean = kw.replace(/^#/, '');
-    if (!scanKeywords.includes(clean)) { scanKeywords.push(clean); renderKeywordTags(); saveKeywords(); }
+    if (scanKeywords.includes(clean)) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/keywords/agregar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ keyword: clean }),
+      });
+      if (res.ok) await loadKeywords();
+    } catch (e) { /* silencioso */ }
   }
 
   // ── Mapeo nombre TopoJSON → ID interno ──────────────────────────────────
@@ -2939,21 +2959,25 @@
     saveSources();
   }
 
-  // ── Scanner keywords ──────────────────────────────────────────────────────
-  function loadKeywords() {
-    const saved = localStorage.getItem('argos_keywords');
-    if (saved) {
-      try { scanKeywords = JSON.parse(saved); }
-      catch(e) { scanKeywords = [...DEFAULT_KEYWORDS]; }
-    } else {
+  // ── Scanner keywords (globales, persistidas en DB) ───────────────────────
+  async function loadKeywords() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/keywords`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        scanKeywords = Array.isArray(data) ? data : [...DEFAULT_KEYWORDS];
+      } else {
+        scanKeywords = [...DEFAULT_KEYWORDS];
+      }
+    } catch (e) {
       scanKeywords = [...DEFAULT_KEYWORDS];
     }
     renderKeywordTags();
   }
 
-  function saveKeywords() {
-    localStorage.setItem('argos_keywords', JSON.stringify(scanKeywords));
-  }
+  function saveKeywords() { /* no-op: keywords se persisten en DB */ }
 
   function saveSources() {
     localStorage.setItem('argos_sources', JSON.stringify([...activeSources]));
@@ -2978,25 +3002,36 @@
     } catch(e) { /* usar defaults */ }
   }
 
-  function addKeyword() {
+  async function addKeyword() {
+    if (!['admin','operador'].includes(userRole)) return;
     const input = document.getElementById('scan-keyword');
     const kw = input.value.trim();
-    if (!kw || scanKeywords.includes(kw)) { input.value=''; return; }
-    scanKeywords.push(kw);
-    input.value = '';
-    renderKeywordTags();
-    saveKeywords();
+    if (!kw || scanKeywords.includes(kw)) { input.value = ''; return; }
+    try {
+      const res = await fetch(`${BACKEND_URL}/keywords/agregar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ keyword: kw }),
+      });
+      if (res.ok) { input.value = ''; await loadKeywords(); }
+    } catch (e) { showToast('Error al agregar keyword', 'error'); }
   }
 
-  function removeKeyword(kw) {
-    scanKeywords = scanKeywords.filter(k => k !== kw);
-    renderKeywordTags();
-    saveKeywords();
+  async function removeKeyword(kw) {
+    if (!['admin','operador'].includes(userRole)) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/keywords/${encodeURIComponent(kw)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) await loadKeywords();
+    } catch (e) { showToast('Error al eliminar keyword', 'error'); }
   }
 
   function renderKeywordTags() {
+    const canEdit = ['admin','operador'].includes(userRole);
     document.getElementById('keyword-tags').innerHTML = scanKeywords
-      .map(k => `<span class="keyword-tag">${escHtml(k)}<button onclick="removeKeyword('${escHtml(k)}')" title="Quitar">×</button></span>`)
+      .map(k => `<span class="keyword-tag">${escHtml(k)}${canEdit ? `<button onclick="removeKeyword('${escJs(k)}')" title="Quitar">×</button>` : ''}</span>`)
       .join('');
     updateSearchPanelDisplay();
   }
@@ -3240,7 +3275,7 @@
       // Actualizar mapa de calor, timeline, distribución alertas, tendencias, hot keywords, OSINT
       updateHeatFromRSS(newItems);
       newItems.slice(0, 5).forEach(item => addRSSToTimeline(item));
-      updateAlertDistribution(data.items || []);
+      updateAlertDistribution();
       updateTrendingFromRSS(newItems);
       updateHotKeywords();
       updateKPIBar();
@@ -3777,9 +3812,10 @@ ${SEP}`;
 
     if (!filtered.length) {
       const empty = document.createElement('div');
-      empty.className = 'system-msg';
-      empty.style.marginTop = '1rem';
-      empty.textContent = showIncidents ? 'Sin incidentes detectados aún' : 'Sin noticias aún';
+      empty.style.cssText = 'text-align:center;padding:1.5rem 1rem;color:var(--muted);font-size:.78rem;';
+      empty.textContent = showIncidents
+        ? '✅ Sin incidentes detectados en el feed'
+        : '📡 Sin noticias aún — esperando actualización';
       frag.appendChild(empty);
     }
 
