@@ -1108,44 +1108,6 @@
             </div>
             <div class="dept-stats" id="dept-stats"></div>
 
-            <!-- Panel transmisiones en vivo -->
-            <div id="lives-panel" style="
-              background: var(--bg2);
-              border: 0.5px solid var(--border);
-              border-top: 2px solid #e24b4a;
-              border-radius: var(--radius);
-              padding: 14px 16px;
-              margin-top: 14px;
-            ">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                <span style="width:8px;height:8px;border-radius:50%;background:#e24b4a;display:inline-block;
-                  animation:pulse-dot 1.2s infinite;"></span>
-                <span style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--text);">TRANSMISIONES EN VIVO</span>
-              </div>
-
-              <iframe
-                id="live-iframe-1"
-                width="100%"
-                style="aspect-ratio:16/9;border:none;border-radius:var(--radius-sm);margin-bottom:10px;display:block;"
-                src="https://www.youtube.com/embed/13Sx0IcR9Gc?autoplay=1&mute=1"
-                allowfullscreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-              </iframe>
-
-              <div id="live-slot-2" style="
-                width:100%;aspect-ratio:16/9;
-                background:var(--bg3);
-                border:0.5px dashed var(--border2);
-                border-radius:var(--radius-sm);
-                display:flex;align-items:center;
-                justify-content:center;
-                color:var(--text3);font-size:12px;
-              ">📡 Sin transmisión activa</div>
-
-              <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center;">
-                Los lives se activarán durante la jornada electoral
-              </div>
-            </div>
           </div>
 
           <!-- Panel derecho: feed + widgets + timeline -->
@@ -1245,6 +1207,22 @@
               <thead><tr><th>Hora</th><th>Evento</th><th>Lugar</th><th>Nivel</th><th>Tipo</th><th></th></tr></thead>
               <tbody id="crono-tbody"></tbody>
             </table>
+          </div>
+
+          <!-- Panel transmisiones en vivo -->
+          <div id="lives-panel" style="background:var(--bg2);border:0.5px solid var(--border);border-top:2px solid #e24b4a;border-radius:var(--radius);padding:14px 16px;margin-top:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#e24b4a;display:inline-block;animation:pulse-dot 1.2s infinite;"></span>
+              <span style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--text);">TRANSMISIONES EN VIVO</span>
+            </div>
+            <iframe id="live-iframe-1" width="100%"
+              style="aspect-ratio:16/9;border:none;border-radius:var(--radius-sm);margin-bottom:10px;display:block;max-height:220px;"
+              src="https://www.youtube.com/embed/13Sx0IcR9Gc?autoplay=1&mute=1"
+              allowfullscreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+            </iframe>
+            <div id="live-slot-2" style="width:100%;aspect-ratio:16/9;background:var(--bg3);border:0.5px dashed var(--border2);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;">📡 Sin transmisión activa</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center;">Los lives se activarán durante la jornada electoral</div>
           </div>
 
         </div><!-- monitor-body -->
