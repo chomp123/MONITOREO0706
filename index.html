@@ -301,6 +301,10 @@
     .crono-table thead tr th { color:var(--muted); font-size:.63rem; letter-spacing:.08em; text-transform:uppercase; padding:.2rem .4rem; text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); }
     .crono-table tbody tr td { padding:.25rem .4rem; border-bottom:1px solid #1a1a2a; vertical-align:top; }
     .crono-table tbody tr:hover td { background:#ffffff06; }
+    .crono-badge-manual { font-size:.56rem; padding:.1rem .35rem; border-radius:3px; background:#1e3a5f33; border:1px solid #378ADD44; color:#60a5fa; font-weight:700; vertical-align:middle; }
+    .crono-badge-auto   { font-size:.56rem; padding:.1rem .35rem; border-radius:3px; background:#33333333; border:1px solid #4b556344; color:#9ca3af; font-weight:700; vertical-align:middle; }
+    .crono-del-btn { background:none; border:none; color:#4b5563; font-size:.7rem; cursor:pointer; padding:.1rem .25rem; border-radius:3px; transition:color .15s; line-height:1; }
+    .crono-del-btn:hover { color:#f87171; }
     .crono-level-alto    { color:#f97316; }
     .crono-level-critico { color:#e24b4a; }
     .crono-level-medio   { color:#eab308; }
@@ -1158,7 +1162,7 @@
               <button class="crono-btn crono-exp" onclick="exportCronologia()">⬇ Exportar</button>
             </div>
             <table class="crono-table" id="crono-table">
-              <thead><tr><th>Hora</th><th>Evento</th><th>Lugar</th><th>Nivel</th></tr></thead>
+              <thead><tr><th>Hora</th><th>Evento</th><th>Lugar</th><th>Nivel</th><th>Tipo</th><th></th></tr></thead>
               <tbody id="crono-tbody"></tbody>
             </table>
           </div>
@@ -2149,7 +2153,7 @@
     loadIncidentes();
     setInterval(() => { loadIncidentes(); }, 60000);
 
-    renderCronologia();
+    loadCronologia();
   }
 
 
@@ -2251,7 +2255,7 @@
     return '<span class="rel-badge rel-single">🔴 Fuente única</span>';
   }
 
-  // ── Cronología operacional ────────────────────────────────────────────────
+  // ── Cronología operacional (persistente en PostgreSQL) ────────────────────
   function openCronoModal() {
     document.getElementById('crono-desc').value  = '';
     document.getElementById('crono-lugar').value = '';
@@ -2261,37 +2265,103 @@
   function closeCronoModal() {
     document.getElementById('modal-crono').classList.remove('open');
   }
-  function saveCronoEvent() {
+  async function saveCronoEvent() {
     const desc  = document.getElementById('crono-desc').value.trim();
     const lugar = document.getElementById('crono-lugar').value.trim();
     const nivel = document.getElementById('crono-nivel').value;
     if (!desc) return;
-    addCronoEvent(desc, lugar, nivel);
     closeCronoModal();
+    await addCronoEvent(desc, lugar, nivel);
   }
-  function addCronoEvent(desc, lugar, nivel, ts) {
-    const now  = ts || new Date();
-    const hora = now instanceof Date ? now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : ts;
-    cronologiaEvents.push({ hora, desc, lugar: lugar||'—', nivel, iso: (now instanceof Date ? now.toISOString() : '') });
+
+  // addCronoEvent: persiste en DB si hay token y rol, actualiza array local siempre
+  async function addCronoEvent(desc, lugar, nivel, ts, autoGenerado) {
+    lugar = lugar || '—';
+    const now = ts instanceof Date ? ts : new Date();
+    const hora = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    const iso  = now.toISOString();
+    const entry = { hora, desc, lugar, nivel, iso, auto_generado: !!autoGenerado };
+
+    // Intentar persistir en DB (solo si rol puede escribir)
+    if (token && ['admin','operador'].includes(userRole)) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/cronologia/agregar`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+          body: JSON.stringify({ evento: desc, lugar: lugar !== '—' ? lugar : '', nivel }),
+        });
+        if (res.ok) {
+          // Recargar desde DB para obtener el id real
+          await loadCronologia();
+          return;
+        }
+      } catch { /* fallback a memoria */ }
+    }
+
+    // Fallback: solo en memoria
+    cronologiaEvents.unshift(entry);
     renderCronologia();
   }
+
+  async function loadCronologia() {
+    if (!token) return;
+    try {
+      const res  = await fetch(`${BACKEND_URL}/cronologia`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      cronologiaEvents = rows.map(r => ({
+        id:            r.id,
+        hora:          new Date(r.hora).toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' }),
+        desc:          r.evento,
+        lugar:         r.lugar || '—',
+        nivel:         r.nivel || 'medio',
+        iso:           r.hora,
+        auto_generado: r.auto_generado,
+        responsable:   r.responsable,
+      }));
+      renderCronologia();
+    } catch (e) {
+      console.warn('[cronologia] load:', e.message);
+    }
+  }
+
   function renderCronologia() {
     const tbody = document.getElementById('crono-tbody');
     if (!tbody) return;
-    const NIVEL_ICONS = { info:'🔵', medio:'🟡', alto:'🟠', critico:'🔴' };
-    tbody.innerHTML = [...cronologiaEvents].reverse().map(e =>
+    const NIVEL_ICONS = { info:'🔵', medio:'🟡', alto:'🟠', critico:'🔴', informativo:'🔵' };
+    const canDel = ['admin','operador'].includes(userRole);
+    tbody.innerHTML = cronologiaEvents.map(e =>
       `<tr>
-        <td style="white-space:nowrap;color:var(--muted)">${escHtml(e.hora)}</td>
-        <td>${escHtml(e.desc)}</td>
-        <td style="color:var(--muted)">${escHtml(e.lugar)}</td>
-        <td class="crono-level-${e.nivel}">${NIVEL_ICONS[e.nivel]||''} ${e.nivel.toUpperCase()}</td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:.68rem">${escHtml(e.hora)}</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.desc)}">${escHtml(e.desc)}</td>
+        <td style="color:var(--muted);font-size:.68rem">${escHtml(e.lugar)}</td>
+        <td class="crono-level-${e.nivel}" style="white-space:nowrap">${NIVEL_ICONS[e.nivel]||'🔵'} ${(e.nivel||'medio').toUpperCase()}</td>
+        <td><span class="${e.auto_generado ? 'crono-badge-auto' : 'crono-badge-manual'}">${e.auto_generado ? 'Auto' : 'Manual'}</span></td>
+        <td>${canDel && e.id ? `<button class="crono-del-btn" onclick="deleteCronoEvent(${e.id})" title="Eliminar">✕</button>` : ''}</td>
       </tr>`
-    ).join('') || '<tr><td colspan="4" style="color:var(--muted);padding:.4rem">Sin eventos registrados</td></tr>';
+    ).join('') || '<tr><td colspan="6" style="color:var(--muted);padding:.4rem">Sin eventos registrados</td></tr>';
   }
+
+  async function deleteCronoEvent(id) {
+    if (!id) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/cronologia/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        cronologiaEvents = cronologiaEvents.filter(e => e.id !== id);
+        renderCronologia();
+      }
+    } catch (e) { console.warn('[cronologia] delete:', e.message); }
+  }
+
   function exportCronologia() {
     if (!cronologiaEvents.length) { alert('Sin eventos en la cronología.'); return; }
     const fecha = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
+    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO', informativo:'INFORMATIVO' };
     const lines = [
       `${fecha} - CRONOLOGÍA OPERACIONAL ARGOS`,
       '─'.repeat(50),
@@ -3081,7 +3151,7 @@
       newIncidents.forEach(item => {
         if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
           const loc = detectLocation((item.title||'')+' '+(item.description||''));
-          addCronoEvent(item.title.slice(0,80), loc||'—', item.alertLevel, new Date(item.fecha||item.pubDate||Date.now()));
+          addCronoEvent(item.title.slice(0,80), loc||'—', item.alertLevel, new Date(item.fecha||item.pubDate||Date.now()), true);
         }
       });
 
