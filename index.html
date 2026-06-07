@@ -1329,7 +1329,8 @@
           <div class="sitrep-toolbar">
             <span class="sitrep-title">📋 SITREP — ARGOS</span>
             <button class="btn-sitrep btn-sitrep-copy"   onclick="copySITREP()">📋 Copiar</button>
-            <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSITREP()">⬇ Descargar</button>
+            <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSITREP()">⬇ TXT</button>
+            <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSitrepDocx()" style="background:#1a2e1a33;border-color:#22c55e55;color:#4ade80;">📄 DOCX</button>
             <button class="btn-sitrep btn-sitrep-cerrar" onclick="document.getElementById('modal-sitrep').classList.remove('open')">✕ Cerrar</button>
           </div>
           <div class="sitrep-body">
@@ -3519,6 +3520,100 @@ ${SEP}`;
     const blob = new Blob([txt], { type:'text/plain;charset=utf-8' });
     const a    = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  }
+
+  async function downloadSitrepDocx() {
+    showToast('Generando SITREP DOCX…', 'info');
+    try {
+      const now  = new Date();
+      const hora = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+      const fecha = now.toLocaleDateString('es', { day:'2-digit', month:'2-digit', year:'numeric' });
+      const usr  = document.getElementById('user-info')?.textContent?.trim() || '—';
+      const nivelEl = document.getElementById('nivel-nacional');
+      const nivelNacional = nivelEl ? nivelEl.textContent.trim() : '—';
+
+      // Conteos RSS
+      const counts = { info:0, medio:0, alto:0, critico:0 };
+      rssAllItems.forEach(i => { const l=(i.alertLevel||'').toLowerCase(); if(counts[l]!==undefined) counts[l]++; });
+
+      // Incidentes
+      const incAbiertos    = incidentesData.filter(i => i.estado !== 'cerrado').length;
+      const incVerificados = incidentesData.filter(i => i.estado === 'verificado').length;
+      const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado').length;
+
+      // Top dept
+      const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0]?.name || '—';
+
+      // Tendencia principal
+      const catCounts = {};
+      rssAllItems.forEach(item => {
+        const t = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
+          for (const kw of kws) {
+            if (t.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) { catCounts[cat]=(catCounts[cat]||0)+1; break; }
+          }
+        }
+      });
+      const tendencia = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'Sin datos';
+      const keywords  = Object.entries(catCounts).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+
+      // Fuentes únicas
+      const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
+
+      // Incidentes destacados (alto+critico de incidentesData)
+      const destacados = incidentesData
+        .filter(i => i.prioridad === 'alta' || i.prioridad === 'critica' || i.prioridad === 'critico')
+        .slice(0, 10)
+        .map(i => ({
+          codigo:      i.codigo,
+          tipo:        i.tipo,
+          lugar:       [i.municipio||i.lugar, i.departamento].filter(Boolean).join(', ') || '—',
+          estado:      i.estado,
+          hora:        i.created_at ? new Date(i.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—',
+          descripcion: i.descripcion,
+        }));
+
+      const datos = {
+        nivelNacional, usuario: usr,
+        horaCorte: hora, fechaCorte: fecha,
+        incAbiertos, incVerificados, incCerrados,
+        topDept, tendencia, fuentes,
+        incTotales: incidentesData.length,
+        incCriticos: incidentesData.filter(i=>i.prioridad==='critica'||i.prioridad==='critico').length,
+        incAltos:    incidentesData.filter(i=>i.prioridad==='alta').length,
+        incMedios:   incidentesData.filter(i=>i.prioridad==='media').length,
+        incInfo:     incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length,
+        noticiasTotales: Object.values(counts).reduce((s,n)=>s+n,0),
+        noticiasCritico: counts.critico, noticiasAlto: counts.alto,
+        noticiasMedio: counts.medio,     noticiasInfo: counts.info,
+        fuentesActivas: fuentes.length,
+        destacados,
+        cronologia: cronologiaEvents.map(e => ({ hora: e.hora, desc: e.desc, lugar: e.lugar, nivel: e.nivel, auto_generado: e.auto_generado })),
+        keywords,
+        incidentesRegistrados: incidentesData.map(i => ({ codigo: i.codigo, tipo: i.tipo, estado: i.estado, lugar: [i.municipio||i.lugar,i.departamento].filter(Boolean).join('/') || '—', confianza: i.confianza })),
+      };
+
+      const res = await fetch(`${BACKEND_URL}/sitrep/exportar-docx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(datos),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast('Error: ' + (err.error || res.status), 'error');
+        return;
+      }
+      const blob = await res.blob();
+      const fechaFile = now.toISOString().slice(0, 10);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ARGOS_SITREP_${fechaFile}.docx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('SITREP DOCX descargado', 'success');
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    }
   }
 
   // ── Render feed filtrado por tab activo ──────────────────────────────────
