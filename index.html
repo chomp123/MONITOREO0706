@@ -953,6 +953,10 @@
           <button class="btn-new-inc" id="btn-new-inc" onclick="openCrearIncidente()">+ Nuevo Incidente</button>
           <div style="margin-left:auto;display:flex;align-items:center;gap:.5rem;">
             <span style="font-size:.7rem;color:var(--muted)" id="inc-total-label">0 incidentes</span>
+            <button class="inc-btn" onclick="downloadInformeEstadistico()" id="btn-informe-est"
+              style="padding:.25rem .7rem;background:#1a2e4433;border:1px solid #378ADD55;color:#60a5fa;font-size:.75rem;font-weight:600;border-radius:5px;cursor:pointer;">
+              📊 Informe del Día
+            </button>
             <button class="inc-btn inc-btn-detail" onclick="loadIncidentes()" style="padding:.25rem .6rem">↺</button>
           </div>
         </div>
@@ -1028,6 +1032,7 @@
               <option value="CERRAR_SESION_REMOTA">Cerrar Sesión</option>
             </select>
             <button class="btn-export" onclick="exportActivityCSV()">⬇ Exportar CSV</button>
+            <button class="btn-export" onclick="downloadInformeEstadistico()" style="background:#1a2e4433;border-color:#378ADD55;color:#60a5fa;">📊 Informe Estadístico Hoy</button>
             <button class="aact-btn" onclick="loadActivity()" style="margin-left:auto;">↺ Actualizar</button>
           </div>
           <div style="overflow-x:auto;" id="activity-wrap">
@@ -4006,6 +4011,40 @@ ${SEP}`;
     }
   }
 
+  async function downloadInformeEstadistico() {
+    const btns = document.querySelectorAll('[onclick="downloadInformeEstadistico()"]');
+    btns.forEach(b => { b.disabled = true; b.textContent = 'Generando…'; });
+    showToast('Generando informe estadístico…', 'info');
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/informe-estadistico/docx`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Error ${res.status}`);
+      }
+      const blob = await res.blob();
+      const now  = new Date();
+      const dd   = String(now.getDate()).padStart(2, '0');
+      const mm   = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const hh   = String(now.getHours()).padStart(2, '0');
+      const mi   = String(now.getMinutes()).padStart(2, '0');
+      const a    = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ARGOS_EST_${dd}${mm}${yyyy}_${hh}${mi}.docx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('Informe estadístico descargado', 'success');
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btns.forEach(b => {
+        b.disabled = false;
+        b.textContent = b.id === 'btn-informe-est' ? '📊 Informe del Día' : '📊 Informe Estadístico Hoy';
+      });
+    }
+  }
 
   // ── Render feed filtrado por tab activo ──────────────────────────────────
   const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
