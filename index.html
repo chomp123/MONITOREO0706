@@ -1334,6 +1334,7 @@
             <button class="btn-sitrep btn-sitrep-cerrar" onclick="document.getElementById('modal-sitrep').classList.remove('open')">✕ Cerrar</button>
           </div>
           <div class="sitrep-body">
+            <div id="sitrep-resumen-ej" style="display:none;background:rgba(96,165,250,0.07);border-left:3px solid #60a5fa;padding:10px 14px;margin-bottom:12px;font-size:.82rem;line-height:1.65;border-radius:0 4px 4px 0;color:#cbd5e1;white-space:pre-wrap;"></div>
             <pre class="sitrep-pre" id="sitrep-content"></pre>
           </div>
         </div>
@@ -3359,62 +3360,111 @@
   }
 
   // ── SITREP ────────────────────────────────────────────────────────────────
+  function generarNarrativaFrontend() {
+    const nivelEl  = document.getElementById('nivel-nacional');
+    const nivelTxt = nivelEl ? nivelEl.textContent.trim() : '—';
+    const nivelNorm = nivelTxt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const incCriticos = incidentesData.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico').length;
+    const incAbiertos = incidentesData.filter(i => i.estado !== 'cerrado').length;
+    const incCerrados = incidentesData.filter(i => i.estado === 'cerrado').length;
+    const totalRSS = rssAllItems.length;
+    const numFuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].length;
+    const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0];
+    const catCounts = {};
+    rssAllItems.forEach(item => {
+      const t = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
+        for (const kw of kws) {
+          if (t.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) {
+            catCounts[cat] = (catCounts[cat]||0) + 1; break;
+          }
+        }
+      }
+    });
+    const tendencia = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+    let apertura;
+    if (nivelNorm.includes('crisis')) {
+      apertura = `🔴 CRISIS: ${incCriticos} incidente(s) crítico(s) activo(s). Atención inmediata requerida.`;
+    } else if (nivelNorm.includes('tension')) {
+      apertura = `🟠 TENSIÓN: ${incCriticos} incidente(s) crítico(s), actividad inusual en múltiples jurisdicciones.`;
+    } else if (nivelNorm.includes('atencion')) {
+      apertura = `🟡 ATENCIÓN: Eventos de nivel alto bajo monitoreo continuo.`;
+    } else {
+      apertura = `🟢 NORMAL: Jornada electoral dentro de parámetros normales. Sin incidentes críticos activos.`;
+    }
+    const cuerpo = `Procesadas: ${totalRSS} noticias de ${numFuentes} fuentes — ${incAbiertos} incidentes abiertos, ${incCerrados} cerrados.` +
+      (topDept ? ` Mayor actividad: ${topDept.name}.` : '') +
+      (tendencia ? `  Tendencia: "${tendencia}".` : '');
+    return apertura + '\n' + cuerpo;
+  }
+
   function generateSITREPText() {
     const now   = new Date();
     const fecha = now.toLocaleDateString('es', { day:'2-digit', month:'2-digit', year:'numeric' });
     const hora  = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
     const usr   = document.getElementById('user-info')?.textContent?.trim() || '—';
 
-    const SEP  = '═'.repeat(45);
-    const sep2 = '─'.repeat(45);
+    const SEP  = '═'.repeat(50);
+    const sep2 = '─'.repeat(50);
 
-    // ── Nivel nacional ──
-    const nivelEl = document.getElementById('nivel-nacional');
+    const nivelEl  = document.getElementById('nivel-nacional');
     const nivelTxt = nivelEl ? nivelEl.textContent.trim() : '—';
 
-    // ── Conteos RSS ──
     const counts = { info:0, medio:0, alto:0, critico:0 };
-    rssAllItems.forEach(i => {
-      const lvl = (i.alertLevel || '').toLowerCase();
-      if (counts[lvl] !== undefined) counts[lvl]++;
-    });
-    const totalRSS = Object.values(counts).reduce((s,n) => s+n, 0);
+    rssAllItems.forEach(i => { const l=(i.alertLevel||'').toLowerCase(); if(counts[l]!==undefined) counts[l]++; });
+    const totalRSS = Object.values(counts).reduce((s,n)=>s+n,0);
 
-    // ── Incidentes ──
-    const incAbiertos   = incidentesData.filter(i => i.estado !== 'cerrado');
+    const incAbiertos    = incidentesData.filter(i => i.estado !== 'cerrado');
     const incVerificados = incidentesData.filter(i => i.estado === 'verificado');
-    const incCerrados   = incidentesData.filter(i => i.estado === 'cerrado');
+    const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado');
+    const incCriticosArr = incidentesData.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico');
 
-    // ── Departamento con mayor actividad ──
-    const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0];
+    const topDepts = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0));
+    const topDept  = topDepts[0];
 
-    // ── Tendencia principal (categoría con más hits) ──
     const catCounts = {};
     rssAllItems.forEach(item => {
-      const txt = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const t = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
       for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
         for (const kw of kws) {
-          if (txt.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) {
+          if (t.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) {
             catCounts[cat] = (catCounts[cat]||0) + 1; break;
           }
         }
       }
     });
-    const tendenciaPrincipal = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'Sin datos';
-
-    // ── Fuentes únicas ──
+    const tendenciasOrdenadas = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+    const tendenciaPrincipal  = tendenciasOrdenadas[0]?.[0] || 'Sin datos';
     const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
 
-    // ── Top 5 departamentos por heat ──
-    const topDepts = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0, 5);
+    // Ranking departamentos
+    const rankingDepts = topDepts
+      .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15+8) }))
+      .slice(0, 8);
 
-    // ── Incidentes destacados ──
-    const destacados = rssAllItems.filter(i => i.alertLevel === 'alto' || i.alertLevel === 'critico').slice(0, 10);
+    // Incidentes destacados consolidados (sin dup tipo+lugar)
+    const seenInc = new Set();
+    const destacados = incidentesData
+      .filter(i => i.prioridad === 'alta' || i.prioridad === 'critica' || i.prioridad === 'critico')
+      .filter(i => {
+        const key = `${(i.tipo||'').toLowerCase()}|${([i.municipio||i.lugar,i.departamento].filter(Boolean).join('/')).toLowerCase()}`;
+        if (seenInc.has(key)) return false;
+        seenInc.add(key); return true;
+      })
+      .slice(0, 10);
 
-    // ── Cronología ──
+    // Cronología consolidada (sin duplicados de texto)
+    const seenCrono = new Set();
+    const cronoUnica = cronologiaEvents.filter(e => {
+      const key = (e.desc||'').slice(0, 60).toLowerCase().trim();
+      if (seenCrono.has(key)) return false;
+      seenCrono.add(key); return true;
+    });
+
     const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
+    const narrativa = generarNarrativaFrontend();
 
-    let txt = `${SEP}
+    return `${SEP}
 SITUACIÓN ELECTORAL — ARGOS
 ${fecha}  ${hora}
 Generado por: ${usr}
@@ -3422,58 +3472,56 @@ ${SEP}
 
 RESUMEN EJECUTIVO
 ${sep2}
-ESTADO NACIONAL: ${nivelTxt}
-HORA DE CORTE: ${hora} — ${fecha}
+${narrativa}
 
-Incidentes abiertos:  ${incAbiertos.length}
-Verificados:          ${incVerificados.length}
-Cerrados:             ${incCerrados.length}
-
-Departamento con mayor actividad: ${topDept ? topDept.name : '—'}
-Tendencia principal: ${tendenciaPrincipal}
-
-FUENTES ANALIZADAS:
-${fuentes.length ? fuentes.join(' · ') : '—'}
 ${SEP}
 
-ESTADÍSTICAS
+1. ESTADO NACIONAL
+${sep2}
+Estado Nacional:           ${nivelTxt}
+Departamento más activo:   ${topDept ? topDept.name : '—'}
+Tendencia operacional:     ${tendenciaPrincipal}
+Período de análisis:       Últimas 48 horas
+Hora de corte:             ${hora} — ${fecha}
+
+2. ESTADÍSTICAS
 ${sep2}
 Incidentes totales:  ${incidentesData.length}
-🔴 Críticos:         ${incidentesData.filter(i=>i.prioridad==='critica'||i.prioridad==='critico').length}
-🟠 Altos:            ${incidentesData.filter(i=>i.prioridad==='alta').length}
-🟡 Medios:           ${incidentesData.filter(i=>i.prioridad==='media').length}
-🔵 Informativos:     ${incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length}
+  Críticos:          ${incCriticosArr.length}
+  Altos:             ${incidentesData.filter(i=>i.prioridad==='alta').length}
+  Medios:            ${incidentesData.filter(i=>i.prioridad==='media').length}
+  Informativos:      ${incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length}
+  Abiertos:          ${incAbiertos.length}
+  Verificados:       ${incVerificados.length}
+  Cerrados:          ${incCerrados.length}
 
 Noticias procesadas: ${totalRSS}
-  🔴 Críticas:       ${counts.critico}
-  🟠 Altas:          ${counts.alto}
-  🟡 Medias:         ${counts.medio}
-  🔵 Informativas:   ${counts.info}
+  Críticas:          ${counts.critico}
+  Altas:             ${counts.alto}
+  Medias:            ${counts.medio}
+  Informativas:      ${counts.info}
 Fuentes activas:     ${fuentes.length}
-Período: últimas 48 horas
-${SEP}
 
-DEPARTAMENTOS CON MAYOR ACTIVIDAD
+3. EVALUACIÓN OPERACIONAL
 ${sep2}
-${topDepts.map((d,i) => {
-  const cnt = Math.round((heatData[d.id]||0)*15+8);
-  const al  = alertLevel(heatData[d.id]||0);
-  return `${i+1}. ${d.name} — ${cnt} eventos ${al.icon}`;
+${rankingDepts.map((d,i) => {
+  const ev = d.count < 5 ? 'Baja' : d.count < 10 ? 'Moderada' : d.count < 20 ? 'Alta' : 'Muy alta';
+  return `${String(i+1).padStart(2)}. ${d.name.padEnd(22)} ${String(d.count).padStart(3)} eventos  [${ev}]`;
 }).join('\n')}
 
+4. INCIDENTES DESTACADOS
 ${sep2}
-INCIDENTES DESTACADOS
 ${destacados.length ? destacados.map(i => {
-  const ts  = i.fecha || i.pubDate || '';
-  const hr  = ts ? new Date(ts).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—';
-  const lvl = (i.alertLevel||'info').toUpperCase();
-  return `[${hr}] [${lvl}] ${i.title}\n         Fuente: ${i.portalName||'—'}`;
-}).join('\n') : 'Sin incidentes de nivel Alto o Crítico'}
+  const hr    = i.created_at ? new Date(i.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—';
+  const lvl   = (i.prioridad||'info').toUpperCase().replace('CRITICA','CRÍTICO');
+  const lugar = [i.municipio||i.lugar, i.departamento].filter(Boolean).join('/') || '—';
+  return `[${hr}] [${lvl}] ${i.codigo} — ${i.tipo}\n  Lugar: ${lugar}  Estado: ${(i.estado||'—').toUpperCase()}\n  ${i.descripcion||'—'}`;
+}).join('\n─\n') : 'Sin incidentes de nivel Alto o Crítico.'}
 
+5. INCIDENTES REGISTRADOS
 ${sep2}
-INCIDENTES REGISTRADOS
 ${(() => {
-  if (!incidentesData.length) return 'Sin incidentes registrados';
+  if (!incidentesData.length) return 'Sin incidentes registrados.';
   const byEstado = {};
   ESTADO_LIST.forEach(e => { byEstado[e] = incidentesData.filter(i => i.estado === e); });
   return ESTADO_LIST.map(e => {
@@ -3484,23 +3532,32 @@ ${(() => {
   }).filter(Boolean).join('\n');
 })()}
 
+6. CRONOLOGÍA CONSOLIDADA
 ${sep2}
-CRONOLOGÍA DE EVENTOS
-${cronologiaEvents.length ? cronologiaEvents.map(e =>
-  `${e.hora}  [${NIVEL_LABEL[e.nivel]||e.nivel}]  ${e.desc}  ${e.lugar && e.lugar!=='—' ? '· '+e.lugar : ''}`
-).join('\n') : 'Sin eventos registrados en la cronología'}
+${cronoUnica.length ? cronoUnica.map(e =>
+  `${e.hora}  [${NIVEL_LABEL[e.nivel]||e.nivel||'—'}]  ${e.desc}${e.lugar && e.lugar!=='—' ? '  · '+e.lugar : ''}`
+).join('\n') : 'Sin eventos en la cronología.'}
+
+7. TENDENCIAS DETECTADAS
+${sep2}
+${tendenciasOrdenadas.length ? tendenciasOrdenadas.map(([cat,n]) => `  ${cat}: ${n} ocurrencia(s)`).join('\n') : 'Sin datos de tendencias.'}
+Fuentes: ${fuentes.length ? fuentes.join(' · ') : '—'}
+
+8. CONCLUSIÓN Y OBSERVACIONES
+${sep2}
+
 
 ${SEP}
 Documento generado por ARGOS
-Departamento Especializado en Cibercrimen
-Policía Nacional del Paraguay
+Departamento Especializado en Cibercrimen — PNP
 ${SEP}`;
-
-    return txt;
   }
 
   function showSITREP() {
-    const txt = generateSITREPText();
+    const txt       = generateSITREPText();
+    const narrativa = generarNarrativaFrontend();
+    const resumenEl = document.getElementById('sitrep-resumen-ej');
+    if (resumenEl) { resumenEl.textContent = narrativa; resumenEl.style.display = ''; }
     document.getElementById('sitrep-content').textContent = txt;
     document.getElementById('modal-sitrep').classList.add('open');
   }
@@ -3560,18 +3617,32 @@ ${SEP}`;
       // Fuentes únicas
       const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
 
-      // Incidentes destacados (alto+critico de incidentesData)
+      // Incidentes destacados (alto+crítico, consolidados sin dup tipo+lugar)
+      const seenDocx = new Set();
       const destacados = incidentesData
         .filter(i => i.prioridad === 'alta' || i.prioridad === 'critica' || i.prioridad === 'critico')
+        .filter(i => {
+          const key = `${(i.tipo||'').toLowerCase()}|${([i.municipio||i.lugar,i.departamento].filter(Boolean).join('/')).toLowerCase()}`;
+          if (seenDocx.has(key)) return false;
+          seenDocx.add(key); return true;
+        })
         .slice(0, 10)
         .map(i => ({
-          codigo:      i.codigo,
-          tipo:        i.tipo,
-          lugar:       [i.municipio||i.lugar, i.departamento].filter(Boolean).join(', ') || '—',
-          estado:      i.estado,
-          hora:        i.created_at ? new Date(i.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—',
-          descripcion: i.descripcion,
+          codigo:           i.codigo,
+          tipo:             i.tipo,
+          nivel:            i.prioridad || '—',
+          lugar:            [i.municipio||i.lugar, i.departamento].filter(Boolean).join(', ') || '—',
+          estado:           i.estado,
+          primeraDeteccion: i.created_at ? new Date(i.created_at).toLocaleString('es',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—',
+          hora:             i.created_at ? new Date(i.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—',
+          descripcion:      i.descripcion,
         }));
+
+      // Ranking de departamentos por actividad
+      const ranking = [...DEPTS]
+        .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15+8) }))
+        .sort((a,b) => b.count - a.count)
+        .slice(0, 8);
 
       const datos = {
         nivelNacional, usuario: usr,
@@ -3590,7 +3661,7 @@ ${SEP}`;
         destacados,
         cronologia: cronologiaEvents.map(e => ({ hora: e.hora, desc: e.desc, lugar: e.lugar, nivel: e.nivel, auto_generado: e.auto_generado })),
         keywords,
-        incidentesRegistrados: incidentesData.map(i => ({ codigo: i.codigo, tipo: i.tipo, estado: i.estado, lugar: [i.municipio||i.lugar,i.departamento].filter(Boolean).join('/') || '—', confianza: i.confianza })),
+        ranking,
       };
 
       const res = await fetch(`${BACKEND_URL}/sitrep/exportar-docx`, {
