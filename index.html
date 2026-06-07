@@ -860,6 +860,7 @@
     <span id="user-info"></span>
     <span id="role-badge" class="badge"></span>
     <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
+    <span id="nivel-nacional" style="display:none;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:20px;border:1px solid;cursor:default;"></span>
     <button class="btn-sitrep-header" onclick="showSITREP()">📋 SITREP</button>
     <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
     <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
@@ -3213,9 +3214,10 @@
       // Auto-agregar incidentes de nivel alto/crítico a la cronología
       const newIncidents = newItems.filter(i => isIncidentItem(i));
       newIncidents.forEach(item => {
-        if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
+        // Solo críticos van a cronología automática
+        if (item.alertLevel === 'critico') {
           const loc = detectLocation((item.title||'')+' '+(item.description||''));
-          addCronoEvent(item.title.slice(0,80), loc||'—', item.alertLevel, new Date(item.fecha||item.pubDate||Date.now()), true);
+          addCronoEvent(item.title.slice(0,80), loc||'—', 'critico', new Date(item.fecha||item.pubDate||Date.now()), true);
         }
       });
 
@@ -3232,11 +3234,37 @@
       updateHotKeywords();
       updateKPIBar();
       updateActiveAlerts();
+      updateNivelNacional();
       trackOSINT(newItems);
 
     } catch {
       updateRSSSemaphore([], 0);
     }
+  }
+
+  // ── Nivel Nacional ────────────────────────────────────────────────────────
+  function updateNivelNacional() {
+    const criticos = incidentesData.filter(i => i.estado !== 'cerrado' && (i.prioridad === 'critica' || i.prioridad === 'critico')).length;
+    const altos    = incidentesData.filter(i => i.estado !== 'cerrado' && i.prioridad === 'alta').length;
+
+    let label, color, bg, border;
+    if (criticos >= 3) {
+      label = '🔴 CRISIS';     color = '#fca5a5'; bg = 'rgba(226,75,74,0.18)'; border = '#e24b4a88';
+    } else if (criticos >= 1 || altos >= 3) {
+      label = '🟠 TENSIÓN';    color = '#fdba74'; bg = 'rgba(249,115,22,0.18)'; border = '#f9731688';
+    } else if (altos >= 1) {
+      label = '🟡 ATENCIÓN';   color = '#fde68a'; bg = 'rgba(234,179,8,0.18)';  border = '#eab30888';
+    } else {
+      label = '🟢 NORMAL';     color = '#86efac'; bg = 'rgba(34,197,94,0.15)';  border = '#22c55e66';
+    }
+
+    const el = document.getElementById('nivel-nacional');
+    if (!el) return;
+    el.textContent = label;
+    el.style.color      = color;
+    el.style.background = bg;
+    el.style.borderColor = border;
+    el.style.display    = '';
   }
 
   // ── KPI Bar ───────────────────────────────────────────────────────────────
@@ -3336,28 +3364,54 @@
     const hora  = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
     const usr   = document.getElementById('user-info')?.textContent?.trim() || '—';
 
-    const counts = { info:0, medio:0, alto:0, critico:0 };
-    rssAllItems.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
-    const total = Object.values(counts).reduce((s,n) => s+n, 0);
-
-    // Top 5 departamentos por heat
-    const topDepts = [...DEPTS]
-      .sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))
-      .slice(0, 5);
-
-    // Incidentes destacados: alto + crítico
-    const destacados = rssAllItems
-      .filter(i => i.alertLevel === 'alto' || i.alertLevel === 'critico')
-      .slice(0, 10);
-
-    // Tendencias top 5
-    const trendTop = Object.entries(trendingWords).sort((a,b) => b[1]-a[1]).slice(0, 5);
-
-    // Cronología
-    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
-
     const SEP  = '═'.repeat(45);
     const sep2 = '─'.repeat(45);
+
+    // ── Nivel nacional ──
+    const nivelEl = document.getElementById('nivel-nacional');
+    const nivelTxt = nivelEl ? nivelEl.textContent.trim() : '—';
+
+    // ── Conteos RSS ──
+    const counts = { info:0, medio:0, alto:0, critico:0 };
+    rssAllItems.forEach(i => {
+      const lvl = (i.alertLevel || '').toLowerCase();
+      if (counts[lvl] !== undefined) counts[lvl]++;
+    });
+    const totalRSS = Object.values(counts).reduce((s,n) => s+n, 0);
+
+    // ── Incidentes ──
+    const incAbiertos   = incidentesData.filter(i => i.estado !== 'cerrado');
+    const incVerificados = incidentesData.filter(i => i.estado === 'verificado');
+    const incCerrados   = incidentesData.filter(i => i.estado === 'cerrado');
+
+    // ── Departamento con mayor actividad ──
+    const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0];
+
+    // ── Tendencia principal (categoría con más hits) ──
+    const catCounts = {};
+    rssAllItems.forEach(item => {
+      const txt = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
+        for (const kw of kws) {
+          if (txt.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) {
+            catCounts[cat] = (catCounts[cat]||0) + 1; break;
+          }
+        }
+      }
+    });
+    const tendenciaPrincipal = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'Sin datos';
+
+    // ── Fuentes únicas ──
+    const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
+
+    // ── Top 5 departamentos por heat ──
+    const topDepts = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0, 5);
+
+    // ── Incidentes destacados ──
+    const destacados = rssAllItems.filter(i => i.alertLevel === 'alto' || i.alertLevel === 'critico').slice(0, 10);
+
+    // ── Cronología ──
+    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
 
     let txt = `${SEP}
 SITUACIÓN ELECTORAL — ARGOS
@@ -3366,14 +3420,40 @@ Generado por: ${usr}
 ${SEP}
 
 RESUMEN EJECUTIVO
-Total eventos registrados: ${total}
-🟥 Críticos:     ${counts.critico}
-🟧 Altos:        ${counts.alto}
-🟨 Medios:       ${counts.medio}
-🔵 Informativos: ${counts.info}
-
 ${sep2}
+ESTADO NACIONAL: ${nivelTxt}
+HORA DE CORTE: ${hora} — ${fecha}
+
+Incidentes abiertos:  ${incAbiertos.length}
+Verificados:          ${incVerificados.length}
+Cerrados:             ${incCerrados.length}
+
+Departamento con mayor actividad: ${topDept ? topDept.name : '—'}
+Tendencia principal: ${tendenciaPrincipal}
+
+FUENTES ANALIZADAS:
+${fuentes.length ? fuentes.join(' · ') : '—'}
+${SEP}
+
+ESTADÍSTICAS
+${sep2}
+Incidentes totales:  ${incidentesData.length}
+🔴 Críticos:         ${incidentesData.filter(i=>i.prioridad==='critica'||i.prioridad==='critico').length}
+🟠 Altos:            ${incidentesData.filter(i=>i.prioridad==='alta').length}
+🟡 Medios:           ${incidentesData.filter(i=>i.prioridad==='media').length}
+🔵 Informativos:     ${incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length}
+
+Noticias procesadas: ${totalRSS}
+  🔴 Críticas:       ${counts.critico}
+  🟠 Altas:          ${counts.alto}
+  🟡 Medias:         ${counts.medio}
+  🔵 Informativas:   ${counts.info}
+Fuentes activas:     ${fuentes.length}
+Período: últimas 48 horas
+${SEP}
+
 DEPARTAMENTOS CON MAYOR ACTIVIDAD
+${sep2}
 ${topDepts.map((d,i) => {
   const cnt = Math.round((heatData[d.id]||0)*15+8);
   const al  = alertLevel(heatData[d.id]||0);
@@ -3388,10 +3468,6 @@ ${destacados.length ? destacados.map(i => {
   const lvl = (i.alertLevel||'info').toUpperCase();
   return `[${hr}] [${lvl}] ${i.title}\n         Fuente: ${i.portalName||'—'}`;
 }).join('\n') : 'Sin incidentes de nivel Alto o Crítico'}
-
-${sep2}
-TENDENCIAS DETECTADAS
-${trendTop.length ? trendTop.map(([kw,n]) => `• ${kw}: ${n} menciones`).join('\n') : 'Sin datos de tendencias'}
 
 ${sep2}
 INCIDENTES REGISTRADOS
@@ -3581,6 +3657,7 @@ ${SEP}`;
       incidentesData = await res.json();
       renderIncidentes();
       updateIncidenteBadge();
+      updateNivelNacional();
     } catch (e) {
       const el = document.getElementById('inc-list');
       if (el) el.innerHTML = `<div style="color:#f87171;text-align:center;padding:2rem">Error: ${escHtml(e.message)}</div>`;
