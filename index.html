@@ -496,6 +496,21 @@
     .btn-sitrep-dl:hover { background:#0e3d2066; }
     .btn-sitrep-cerrar   { background:none; border-color:var(--border); color:var(--muted); }
     .btn-sitrep-cerrar:hover { border-color:var(--danger); color:var(--danger); }
+    .btn-sitrep-dc       { background:#2e1a4433; border-color:#a855f755; color:#c084fc; }
+    .btn-sitrep-dc:hover { background:#2e1a4466; }
+
+    /* Modal doble corte */
+    #modal-doble-corte .modal-box { max-width: 420px; }
+    .dc-field { display:flex; flex-direction:column; gap:.35rem; margin-bottom:.75rem; }
+    .dc-field label { font-size:.72rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+    .dc-row { display:flex; gap:.75rem; align-items:center; }
+    .dc-row span { font-size:.75rem; color:var(--muted); }
+    .dc-input {
+      flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+      padding:.55rem .75rem; color:var(--text); font-size:.9rem; outline:none; transition:border .2s;
+    }
+    .dc-input:focus { border-color:var(--accent); }
+    .dc-sep { height:1px; background:var(--border); margin:.5rem 0; }
     .btn-sitrep-header {
       padding:.35rem .75rem; background:#7c3aed22; border:1px solid #7c3aed66;
       border-radius:6px; color:#a855f7; font-size:.75rem; font-weight:700;
@@ -1466,11 +1481,46 @@
             <button class="btn-sitrep btn-sitrep-copy"   onclick="copySITREP()">📋 Copiar</button>
             <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSITREP()">⬇ TXT</button>
             <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSitrepDocx()" style="background:#1a2e1a33;border-color:#22c55e55;color:#4ade80;">📄 DOCX</button>
+            <button class="btn-sitrep btn-sitrep-dc"     onclick="openDobleCorte()">📄 Doble Corte</button>
             <button class="btn-sitrep btn-sitrep-cerrar" onclick="document.getElementById('modal-sitrep').classList.remove('open')">✕ Cerrar</button>
           </div>
           <div class="sitrep-body">
             <div id="sitrep-resumen-ej" style="display:none;background:rgba(96,165,250,0.07);border-left:3px solid #60a5fa;padding:10px 14px;margin-bottom:12px;font-size:.82rem;line-height:1.65;border-radius:0 4px 4px 0;color:#cbd5e1;white-space:pre-wrap;"></div>
             <pre class="sitrep-pre" id="sitrep-content"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal doble corte -->
+      <div class="modal-overlay" id="modal-doble-corte">
+        <div class="modal-box" style="max-width:420px;">
+          <div class="modal-title">📄 SITREP DOBLE CORTE</div>
+
+          <div class="dc-field">
+            <label>Corte 1</label>
+            <div class="dc-row">
+              <input class="dc-input" id="dc-c1-desde" type="time" value="07:00"/>
+              <span>a</span>
+              <input class="dc-input" id="dc-c1-hasta" type="time" value="12:00"/>
+            </div>
+          </div>
+
+          <div class="dc-sep"></div>
+
+          <div class="dc-field">
+            <label>Corte 2</label>
+            <div class="dc-row">
+              <input class="dc-input" id="dc-c2-desde" type="time" value="12:00"/>
+              <span>a</span>
+              <input class="dc-input" id="dc-c2-hasta" type="time" value="16:00"/>
+            </div>
+          </div>
+
+          <div class="modal-msg" id="dc-msg"></div>
+
+          <div class="modal-actions" style="margin-top:.5rem;">
+            <button class="btn-cancel" onclick="document.getElementById('modal-doble-corte').classList.remove('open')">Cancelar</button>
+            <button class="btn-primary" id="btn-dc-generar" onclick="downloadDobleCorteDocx()">📄 Generar DOCX</button>
           </div>
         </div>
       </div>
@@ -3896,6 +3946,66 @@ ${SEP}`;
       showToast('Error: ' + e.message, 'error');
     }
   }
+
+  function openDobleCorte() {
+    document.getElementById('dc-msg').textContent = '';
+    document.getElementById('dc-msg').className = 'modal-msg';
+    document.getElementById('modal-doble-corte').classList.add('open');
+  }
+
+  async function downloadDobleCorteDocx() {
+    const btn  = document.getElementById('btn-dc-generar');
+    const msg  = document.getElementById('dc-msg');
+    const c1d  = document.getElementById('dc-c1-desde')?.value;
+    const c1h  = document.getElementById('dc-c1-hasta')?.value;
+    const c2d  = document.getElementById('dc-c2-desde')?.value;
+    const c2h  = document.getElementById('dc-c2-hasta')?.value;
+
+    if (!c1d || !c1h || !c2d || !c2h) {
+      msg.textContent = 'Completar todos los campos de hora.';
+      msg.className = 'modal-msg err';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Generando…';
+    msg.textContent = '';
+    msg.className = 'modal-msg';
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/sitrep/exportar-doble-corte`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          corte1: { desde: c1d, hasta: c1h },
+          corte2: { desde: c2d, hasta: c2h },
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Error ${res.status}`);
+      }
+      const blob  = await res.blob();
+      const today = new Date();
+      const dd    = String(today.getDate()).padStart(2,'0');
+      const mm    = String(today.getMonth()+1).padStart(2,'0');
+      const yyyy  = today.getFullYear();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ARGOS_SITREP_DOBLE_CORTE_${dd}${mm}${yyyy}.docx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      document.getElementById('modal-doble-corte').classList.remove('open');
+      showToast('SITREP Doble Corte descargado', 'success');
+    } catch (e) {
+      msg.textContent = e.message;
+      msg.className = 'modal-msg err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📄 Generar DOCX';
+    }
+  }
+
 
   // ── Render feed filtrado por tab activo ──────────────────────────────────
   const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
