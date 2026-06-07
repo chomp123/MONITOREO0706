@@ -1652,9 +1652,22 @@
 
   function fmtDate(iso) {
     if (!iso) return '<span style="color:var(--muted)">—</span>';
-    const d = new Date(iso);
-    return d.toLocaleDateString('es', { day:'2-digit', month:'2-digit' }) +
-           ' ' + d.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    const d    = new Date(iso);
+    const diff = Date.now() - d.getTime();
+    const min  = Math.floor(diff / 60000);
+    const hrs  = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    let rel;
+    if (min  <  1) rel = 'hace un momento';
+    else if (min < 60)  rel = `hace ${min} min`;
+    else if (hrs < 24)  rel = `hace ${hrs} h`;
+    else if (days < 7)  rel = `hace ${days} día${days>1?'s':''}`;
+    else rel = null;
+    const abs = d.toLocaleDateString('es', { day:'2-digit', month:'2-digit' }) +
+                ' ' + d.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    return rel
+      ? `<span title="${abs}" style="cursor:default">${rel}</span>`
+      : `<span>${abs}</span>`;
   }
 
   async function loadUsers() {
