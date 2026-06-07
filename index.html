@@ -1075,7 +1075,7 @@
             <input class="scan-input" id="scan-keyword" placeholder="Agregar palabra clave…" />
             <button class="btn-scan" onclick="addKeyword()">+ Agregar</button>
           </div>
-          <button class="btn-scan" onclick="openReporteSocial()" style="background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.45);color:#a78bfa;white-space:nowrap;">📱 Reportar Red Social</button>
+          <button id="btn-reportar-social" class="btn-scan" onclick="openReporteSocial()" style="background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.45);color:#a78bfa;white-space:nowrap;">📱 Reportar Red Social</button>
           <div id="fb-status-badge" class="fb-badge fb-badge-init" title="Estado scraping Facebook">
             <span class="fb-badge-icon">f</span>
             <span id="fb-badge-text">FB…</span>
@@ -4564,35 +4564,52 @@ ${SEP}`;
   let tourActive = false, tourStepIdx = 0, tourStepList = [];
 
   const TOUR_STEPS_BASE = [
+    // 1 — Bienvenida
     { sel:'header', title:'Bienvenido a ARGOS', panel:null,
-      text:'Sistema de Monitoreo Electoral del Departamento Especializado en Cibercrimen. Este tour te guiará por las funciones principales del sistema.' },
+      text:'Sistema de Monitoreo Electoral del Departamento Especializado en Cibercrimen. Este tour te guiará por las 15 funciones principales del sistema.' },
+    // 2 — Monitor
     { sel:'#nav-monitor', title:'Monitor Electoral', panel:null,
       text:'Panel principal de monitoreo. Aquí verás el mapa de actividad, noticias en tiempo real y alertas electorales.' },
+    // 3 — Mapa
     { sel:'#map-wrap', title:'Mapa de Actividad', panel:'monitor',
       text:'Paraguay dividido en 17 departamentos. Los colores indican nivel de actividad electoral. Rojo = alertas críticas. Los 6 municipios estratégicos están marcados.' },
+    // 4 — Feed
     { sel:'#feed-container', title:'Feed en Tiempo Real', panel:'monitor',
       text:'Noticias electorales de ABC Color, La Nación, Última Hora y otros medios. Se actualiza cada 30 segundos automáticamente. Las noticias críticas aparecen primero.' },
+    // 5 — Tabs
     { sel:'.feed-tabs', title:'Noticias vs Incidentes', panel:'monitor',
-      text:'Tab 📰 Noticias muestra cobertura periodística. Tab 🚨 Incidentes muestra eventos que requieren atención operativa.' },
+      text:'Tab 📰 Noticias muestra cobertura periodística. Tab 🚨 Incidentes filtra automáticamente eventos operativos detectados en los medios.' },
+    // 6 — Reportar desde noticia (NUEVO)
+    { sel:'#feed-container', title:'Reportar desde Noticia', panel:'monitor',
+      text:'Cada noticia tiene un botón 🚨 Reportar. Presionalo para abrir el formulario de incidentes pre-cargado con los datos de la noticia. El tipo de incidente se detecta automáticamente.' },
+    // 7 — Reportar desde Red Social (NUEVO)
+    { sel:'#btn-reportar-social', title:'Reportar desde Red Social', panel:'monitor',
+      text:'Botón 📱 para registrar incidentes detectados en redes sociales. Elegí la plataforma (Facebook, X, TikTok, Instagram, YouTube, WhatsApp), ingresá la URL y describí el evento.' },
+    // 8 — Indicadores OSINT
     { sel:'#osint-indicators', title:'Indicadores OSINT', panel:'monitor',
       text:'Conteo de keywords críticas en tiempo real. Si "fraude" supera 5 menciones en 10 minutos, el sistema dispara alerta automática.' },
+    // 9 — Keywords compartidas (NUEVO)
+    { sel:'#scan-group', title:'Keywords Compartidas', panel:'monitor',
+      text:'Las palabras clave de monitoreo son compartidas entre todos los usuarios. Los operadores pueden agregar o quitar keywords y los cambios se aplican a todos en tiempo real.' },
+    // 10 — Centro de Incidentes (NUEVO texto)
+    { sel:'#nav-incidentes', title:'Centro de Incidentes', panel:null,
+      text:'Gestión formal de incidentes. Creá uno nuevo con ➕ o reportá directamente desde una noticia o red social. Cada incidente tiene código único, nivel de confianza y trazabilidad completa.' },
+    // 11 — Cronología
     { sel:'.crono-panel', title:'Cronología Operacional', panel:'monitor',
       text:'Registro cronológico de eventos del día. Se llena automáticamente con alertas y permite agregar eventos manuales. Al final del día exportás el informe.' },
-    { sel:'#nav-incidentes', title:'Centro de Incidentes', panel:null,
-      text:'Gestión formal de incidentes electorales. Cada incidente tiene código único (INC-001), nivel de confianza, evidencias y trazabilidad completa de acciones.' },
+    // 12 — OSINT-PY
     { sel:'#nav-osint', title:'Repositorio OSINT-PY', panel:null,
       text:'Acceso directo a 25+ fuentes oficiales paraguayas e internacionales. Padrón electoral, registros, bases de datos públicas y herramientas de inteligencia.' },
+    // 13 — Búsqueda rápida redes
     { sel:'.search-panel', title:'Búsqueda en Redes Sociales', panel:'monitor',
       text:'Abrí búsquedas en Facebook, TikTok, YouTube y X con un clic usando las keywords activas. Los botones de emergencia buscan en las 4 redes simultáneamente.' },
-    { sel:'.btn-sitrep-header', title:'Generador de SITREP', panel:null,
-      text:'Genera automáticamente un informe situacional completo con todos los eventos, incidentes y tendencias del día. Listo para enviar al mando.' },
+    // 14 — SITREP (solo operadores)
+    { sel:'.btn-sitrep-header', title:'Generador de SITREP', panel:null, operadorOnly:true,
+      text:'Genera automáticamente un informe situacional en formato Word (.docx) con 8 secciones: resumen ejecutivo, evaluación de riesgo, incidentes consolidados, cronología y más. Listo para enviar al mando.' },
+    // 15 — Cuenta
     { sel:'#btn-account', title:'Tu cuenta', panel:null,
-      text:'Cambiá tu contraseña inicial PNP2026* por una personal. La sesión expira cada 8 horas por seguridad. Cualquier problema contactá a soporte.' },
+      text:'Cambiá tu contraseña inicial por una personal desde aquí. La sesión dura 8 horas por seguridad. Si es tu primer acceso, el administrador te habrá asignado la contraseña PNP2026*.' },
   ];
-  const TOUR_STEP_OPERADOR = {
-    sel:'.scanner-bar', title:'Escaneo Manual', panel:'monitor',
-    text:'Como operador podés iniciar búsquedas manuales en redes sociales. Seleccioná el tema, activá las fuentes y presioná ESCANEAR. Los resultados aparecen en el feed en segundos.',
-  };
 
   function initTour() {
     if (!userName || userRole === 'admin') return;
@@ -4601,8 +4618,10 @@ ${SEP}`;
   }
 
   function startTour() {
-    tourStepList = [...TOUR_STEPS_BASE];
-    if (userRole === 'operador') tourStepList.push(TOUR_STEP_OPERADOR);
+    tourStepList = TOUR_STEPS_BASE.filter(step => {
+      if (step.operadorOnly && userRole !== 'operador') return false;
+      return true;
+    });
     tourStepIdx = 0;
     tourActive  = true;
     // Crear DOM
