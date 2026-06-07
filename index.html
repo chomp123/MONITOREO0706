@@ -2246,6 +2246,14 @@
   // ── Hot Keywords ──────────────────────────────────────────────────────────
   const TWO_HOURS = 2 * 60 * 60 * 1000;
 
+  const CATEGORIAS_OSINT = {
+    'Fraude electoral': ['fraude','compra de votos','voto coaccionado','irregularidad'],
+    'Violencia':        ['pelea','agresión','tiros','batalla','herido','violencia'],
+    'Acarreo':          ['acarreo','transporte','colectivo'],
+    'Irregularidad':    ['irregularidad','denuncia','impugnación','reclamo'],
+    'Info institucional':['tsje','advierte','delito','maquina','padron','habilitado']
+  };
+
   function updateHotKeywords() {
     const now = Date.now();
     const recent = rssAllItems.filter(i => {
@@ -2254,25 +2262,27 @@
     });
     const counts = {};
     recent.forEach(item => {
-      (item.title + ' ' + (item.description || '')).toLowerCase()
-        .split(/\W+/)
-        .forEach(w => {
-          if (w.length < 4 || TREND_STOP_WORDS.has(w)) return;
-          counts[w] = (counts[w] || 0) + 1;
-        });
+      const txt = (item.title + ' ' + (item.description || '')).toLowerCase()
+                  .normalize('NFD').replace(/[̀-ͯ]/g, '');
+      for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
+        for (const kw of kws) {
+          const kwn = kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          if (txt.includes(kwn)) { counts[cat] = (counts[cat] || 0) + 1; break; }
+        }
+      }
     });
-    const top5 = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
     const el = document.getElementById('hotkeys-list');
     if (!el) return;
-    if (!top5.length) {
+    if (!sorted.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div>';
       return;
     }
-    const max = top5[0][1];
-    el.innerHTML = top5.map(([kw, n]) => {
+    const max = sorted[0][1];
+    el.innerHTML = sorted.map(([cat, n]) => {
       const pct = Math.round(n / max * 100);
       return `<div class="hotkey-item">
-        <div class="hotkey-top"><span class="hotkey-kw">${escHtml(kw)}</span><span class="hotkey-cnt">(${n})</span></div>
+        <div class="hotkey-top"><span class="hotkey-kw">${escHtml(cat)}</span><span class="hotkey-cnt">(${n})</span></div>
         <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%"></div></div>
       </div>`;
     }).join('');
@@ -3227,13 +3237,22 @@
   // ── KPI Bar ───────────────────────────────────────────────────────────────
   function updateKPIBar() {
     const counts = { info:0, medio:0, alto:0, critico:0 };
-    rssAllItems.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
+    rssAllItems.forEach(i => {
+      const lvl = (i.nivel || i.alertLevel || '').toLowerCase();
+      if      (lvl === 'informativo' || lvl === 'info') counts.info++;
+      else if (lvl === 'medio')   counts.medio++;
+      else if (lvl === 'alto')    counts.alto++;
+      else if (lvl === 'critico') counts.critico++;
+    });
     ['info','medio','alto','critico'].forEach(k => {
       const el = document.getElementById(`kpi-cnt-${k}`);
       if (el) el.textContent = counts[k];
       const item = document.getElementById(`kpi-${k}`);
       if (item) item.classList.toggle('kpi-active', activeLevelFilter === k);
     });
+    const total = counts.info + counts.medio + counts.alto + counts.critico;
+    const bar = document.getElementById('kpi-bar');
+    if (bar) bar.style.display = total === 0 ? 'none' : 'flex';
   }
 
   function filterFeedByLevel(level) {
@@ -3247,33 +3266,33 @@
   }
 
   // ── Alertas activas ───────────────────────────────────────────────────────
-  function updateActiveAlerts() {
+  async function updateActiveAlerts() {
     const el = document.getElementById('active-alerts-list');
     if (!el) return;
-
-    // Obtener departamentos con heat >= 5 (alto/crítico)
-    const alertDepts = DEPTS
-      .filter(d => (heatData[d.id] || 0) >= 5)
-      .sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))
-      .slice(0, 5);
-
-    if (!alertDepts.length) {
-      el.innerHTML = '<div style="color:#4ade80;font-size:.72rem;padding:.2rem 0;">✅ Sin alertas activas</div>';
-      return;
+    try {
+      const r = await apiFetch('/incidentes?estado=detectado,verificado,escalado');
+      const incidents = (r.incidentes || r || []).slice(0, 5);
+      if (!incidents.length) {
+        el.innerHTML = '<div style="color:#4ade80;font-size:.72rem;padding:.2rem 0;">✅ Sin incidentes activos</div>';
+        return;
+      }
+      const NIVEL_COLOR = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', informativo:'#378ADD' };
+      const NIVEL_ICON  = { critico:'🚨', alto:'🔴', medio:'🟡', informativo:'🔵' };
+      el.innerHTML = incidents.map(inc => {
+        const nivel = (inc.prioridad || inc.nivel || 'medio').toLowerCase();
+        const color = NIVEL_COLOR[nivel] || '#f97316';
+        const icon  = NIVEL_ICON[nivel]  || '🚨';
+        const lugar = inc.municipio || inc.lugar || inc.departamento || '—';
+        return `<div class="active-alert-row" style="cursor:pointer;" onclick="openIncidentModal('${escHtml(inc.codigo)}')">
+          <span style="font-size:.75rem;flex-shrink:0;">${icon}</span>
+          <span class="active-alert-dept">${escHtml(inc.codigo)}</span>
+          <span style="font-size:.65rem;color:var(--text2);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escHtml(lugar)}</span>
+          <span style="font-size:.62rem;color:${color};font-weight:700;flex-shrink:0;text-transform:capitalize;">${escHtml(nivel)}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      el.innerHTML = '<div style="color:var(--muted);font-size:.72rem;">—</div>';
     }
-
-    el.innerHTML = alertDepts.map(d => {
-      const heat = heatData[d.id] || 0;
-      const al   = alertLevel(heat);
-      const ts   = deptAlertTimes[d.id];
-      const ago  = ts ? formatTimeAgo(new Date(ts).toISOString()) : '';
-      return `<div class="active-alert-row">
-        <span style="font-size:.75rem;flex-shrink:0;">${al.icon}</span>
-        <span class="active-alert-dept">${d.name}</span>
-        <span style="font-size:.62rem;color:${al.color};font-weight:700;flex-shrink:0;">${al.label}</span>
-        ${ago ? `<span class="active-alert-time">${ago}</span>` : ''}
-      </div>`;
-    }).join('');
   }
 
   // ── Semáforo RSS ──────────────────────────────────────────────────────────
@@ -4228,6 +4247,16 @@ ${SEP}`;
 
   // ── Restaurar sesión al cargar la página (F5) ─────────────────────────────
   verifyToken();
+
+  function initLiveWidget() {
+    const iframe = document.getElementById('live-iframe-1');
+    const widget = document.getElementById('live-widget');
+    if (!widget) return;
+    const src = iframe ? (iframe.src || iframe.getAttribute('src') || '') : '';
+    const hasStream = src.includes('youtube.com') || src.includes('youtu.be');
+    widget.style.display = hasStream ? '' : 'none';
+  }
+  document.addEventListener('DOMContentLoaded', initLiveWidget);
 
   function toggleLive() {
     const body = document.getElementById('live-body');
