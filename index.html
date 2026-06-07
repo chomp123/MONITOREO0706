@@ -2060,6 +2060,9 @@
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+  function escJs(s) {
+    return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ').slice(0, 200);
+  }
 
   // ── Event listeners ──────────────────────────────────────────────────────
   document.getElementById('btn-login').addEventListener('click', doLogin);
@@ -2187,6 +2190,9 @@
     // Polling incidentes para badge (cada 60 s)
     loadIncidentes();
     setInterval(() => { loadIncidentes(); }, 60000);
+
+    // Polling incidentes abiertos (cada 30 s)
+    setInterval(updateActiveAlerts, 30000);
 
     loadCronologia();
     loadOperadores();
@@ -3303,13 +3309,18 @@
     renderFeedFromCache();
   }
 
-  // ── Alertas activas ───────────────────────────────────────────────────────
+  // ── Incidentes abiertos ───────────────────────────────────────────────────
   async function updateActiveAlerts() {
     const el = document.getElementById('active-alerts-list');
-    if (!el) return;
+    if (!el || !token) return;
     try {
-      const r = await apiFetch('/incidentes?estado=detectado,verificado,escalado');
-      const incidents = (r.incidentes || r || []).slice(0, 5);
+      const res = await fetch(`${BACKEND_URL}/incidentes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const incidents = (Array.isArray(data) ? data : (data.incidentes || []))
+        .filter(i => i.estado !== 'cerrado')
+        .slice(0, 5);
       if (!incidents.length) {
         el.innerHTML = '<div style="color:#4ade80;font-size:.72rem;padding:.2rem 0;">✅ Sin incidentes activos</div>';
         return;
@@ -3321,14 +3332,15 @@
         const color = NIVEL_COLOR[nivel] || '#f97316';
         const icon  = NIVEL_ICON[nivel]  || '🚨';
         const lugar = inc.municipio || inc.lugar || inc.departamento || '—';
-        return `<div class="active-alert-row" style="cursor:pointer;" onclick="openIncidentModal('${escHtml(inc.codigo)}')">
+        return `<div class="active-alert-row" style="cursor:pointer;" onclick="openDetalleIncidente('${escHtml(inc.codigo)}')">
           <span style="font-size:.75rem;flex-shrink:0;">${icon}</span>
           <span class="active-alert-dept">${escHtml(inc.codigo)}</span>
           <span style="font-size:.65rem;color:var(--text2);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escHtml(lugar)}</span>
           <span style="font-size:.62rem;color:${color};font-weight:700;flex-shrink:0;text-transform:capitalize;">${escHtml(nivel)}</span>
         </div>`;
       }).join('');
-    } catch {
+    } catch (e) {
+      console.warn('[alertas] updateActiveAlerts:', e.message);
       el.innerHTML = '<div style="color:var(--muted);font-size:.72rem;">—</div>';
     }
   }
@@ -3754,7 +3766,10 @@ ${SEP}`;
           ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;margin-top:.1rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
           <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
             <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
-            ${item.url ? '<span style="color:#4ade80;font-size:.62rem;flex-shrink:0;">↗ Ver artículo</span>' : ''}
+            <div style="display:flex;align-items:center;gap:.35rem;flex-shrink:0;">
+              ${item.url ? '<span style="color:#4ade80;font-size:.62rem;">↗ Ver artículo</span>' : ''}
+              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;">🚨 Reportar</button>
+            </div>
           </div>
         </div>`;
       frag.appendChild(el);
@@ -3917,6 +3932,21 @@ ${SEP}`;
     if (!badge) return;
     if (activos > 0) { badge.textContent = activos; badge.style.display = ''; }
     else badge.style.display = 'none';
+  }
+
+  // ── Reportar desde noticia ───────────────────────────────────────────────
+  function detectarTipoIncidente(text) {
+    const t = (text||'').toLowerCase();
+    if (['pelea','agresión','agresion','violencia','herido','tiros','disparos'].some(w=>t.includes(w))) return 'Violencia';
+    if (['fraude','compra de votos','coaccion','coacción'].some(w=>t.includes(w))) return 'Fraude';
+    if (['acarreo','transporte de votantes'].some(w=>t.includes(w))) return 'Acarreo';
+    if (['irregularidad','denuncia','reclamo','impugnacion','impugnación'].some(w=>t.includes(w))) return 'Irregularidad';
+    return 'Otro';
+  }
+
+  function reportarDesdeNoticia(title, url, lugar) {
+    const tipo = detectarTipoIncidente(title);
+    openCrearIncidente({ tipo, descripcion: title, lugar: lugar || '', evidencia: url || '' });
   }
 
   // ── Modal crear incidente ─────────────────────────────────────────────────
