@@ -321,6 +321,32 @@
     .fuente-item-hdr { display:flex;align-items:center;gap:.4rem; }
     .fuente-portal { font-weight:700;color:var(--text); }
     .fuente-meta { font-size:.63rem;color:var(--muted); }
+    /* Prioridad */
+    .prio-btn { padding:.18rem .55rem;font-size:.67rem;font-weight:700;border-radius:5px;cursor:pointer;border:1px solid;transition:all .15s; }
+    .prio-alta   { background:#3f0f0f44;border-color:#7f1d1d;color:#f87171; }
+    .prio-alta.active   { background:#7f1d1d;border-color:#ef4444;color:#fff; }
+    .prio-media  { background:#45300844;border-color:#92400e;color:#fbbf24; }
+    .prio-media.active  { background:#92400e;border-color:#f59e0b;color:#fff; }
+    .prio-baja   { background:#1e293b44;border-color:#374151;color:#9ca3af; }
+    .prio-baja.active   { background:#374151;border-color:#6b7280;color:#d1d5db; }
+    /* Historial */
+    .hist-entry { display:flex;gap:.5rem;align-items:flex-start;padding:.22rem 0;border-bottom:1px solid #ffffff05;font-size:.7rem; }
+    .hist-entry:last-child { border-bottom:none; }
+    .hist-time  { color:var(--muted);white-space:nowrap;flex-shrink:0;font-size:.62rem; }
+    .hist-user  { font-weight:700;flex-shrink:0;min-width:52px; }
+    .hist-accion { color:var(--text);flex:1; }
+    .hist-verde   .hist-user { color:#4ade80; }
+    .hist-azul    .hist-user { color:#60a5fa; }
+    .hist-amarillo .hist-user { color:#fbbf24; }
+    .hist-naranja  .hist-user { color:#fb923c; }
+    .hist-gris    .hist-user { color:#9ca3af; }
+    /* Relacionados */
+    .rel-item { display:flex;align-items:center;gap:.5rem;padding:.22rem 0;border-bottom:1px solid #ffffff06;font-size:.75rem; }
+    .rel-item:last-child { border-bottom:none; }
+    .rel-codigo { font-family:monospace;font-weight:700;color:var(--accent2);cursor:pointer; }
+    .rel-codigo:hover { text-decoration:underline; }
+    .rel-del { background:none;border:none;color:#4b5563;cursor:pointer;font-size:.65rem;padding:.1rem .25rem;border-radius:3px;transition:color .15s; }
+    .rel-del:hover { color:#f87171; }
     .crono-level-alto    { color:#f97316; }
     .crono-level-critico { color:#e24b4a; }
     .crono-level-medio   { color:#eab308; }
@@ -2170,6 +2196,7 @@
     setInterval(() => { loadIncidentes(); }, 60000);
 
     loadCronologia();
+    loadOperadores();
   }
 
 
@@ -3492,9 +3519,24 @@ ${SEP}`;
   let incidentesData       = [];
   let incFiltroEstado      = 'todos';
   let detalleIncidenteCodigo = null;
+  let operadoresList       = [];
 
   const CONF_LABELS = ['','Rumor','Fuente única','Dos fuentes','Medio reconocido','Confirmado oficial'];
   const ESTADO_NEXT = { detectado:'verificado', verificado:'escalado', escalado:'cerrado' };
+
+  const DEPARTAMENTOS_PY = [
+    'Alto Paraguay','Alto Paraná','Amambay','Asunción (Capital)',
+    'Boquerón','Caaguazú','Caazapá','Canindeyú','Central',
+    'Concepción','Cordillera','Guairá','Itapúa','Misiones',
+    'Ñeembucú','Paraguarí','Presidente Hayes','San Pedro',
+  ];
+
+  async function loadOperadores() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/operadores`, { headers:{ 'Authorization':`Bearer ${token}` } });
+      if (res.ok) operadoresList = await res.json();
+    } catch {}
+  }
   const ESTADO_IDX  = { detectado:0, verificado:1, escalado:2, cerrado:3 };
   const ESTADO_LIST = ['detectado','verificado','escalado','cerrado'];
 
@@ -3672,7 +3714,7 @@ ${SEP}`;
     estadoBadge.textContent = (inc.estado||'—').toUpperCase();
     estadoBadge.className = `inc-estado-badge inc-est-${inc.estado}`;
     document.getElementById('dm-tipo-lugar').textContent =
-      [inc.tipo, inc.lugar, inc.departamento].filter(Boolean).join(' · ');
+      [inc.tipo, inc.municipio||inc.lugar, inc.departamento].filter(Boolean).join(' · ');
 
     const curIdx = ESTADO_IDX[inc.estado] ?? 0;
     const stepperHtml = ESTADO_LIST.map((s, i) => {
@@ -3689,30 +3731,78 @@ ${SEP}`;
 
     const fuentes    = Array.isArray(inc.fuentes)    ? inc.fuentes    : [];
     const evidencias = Array.isArray(inc.evidencias) ? inc.evidencias : [];
+    const historial  = Array.isArray(inc.historial)  ? inc.historial  : [];
+    const relacionados = Array.isArray(inc.relacionados) ? inc.relacionados : [];
 
     const evIcon = { foto:'🖼', video:'▶️', link:'🔗', captura:'📸', nota:'📝', rss:'📰', web:'🌐', social:'💬', oficial:'🏛' };
+    const prioActual = inc.prioridad || 'media';
 
     const canEdit = ['admin','operador'].includes(userRole);
     const isNotClosed = inc.estado !== 'cerrado';
+    const IS = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.28rem .55rem;color:var(--text);font-size:.75rem;outline:none;';
 
-    const inputStyle = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.28rem .55rem;color:var(--text);font-size:.75rem;outline:none;';
+    // Historial: color por tipo de acción
+    function histClass(accion) {
+      const a = (accion||'').toLowerCase();
+      if (a.includes('cread'))   return 'hist-verde';
+      if (a.includes('estado') || a.includes('pasar')) return a.includes('escalad') ? 'hist-naranja' : 'hist-azul';
+      if (a.includes('evidencia') || a.includes('fuente')) return 'hist-amarillo';
+      if (a.includes('observ') || a.includes('ubicac') || a.includes('asign') || a.includes('prioridad') || a.includes('relacionad') || a.includes('confianza')) return 'hist-gris';
+      return 'hist-gris';
+    }
+
+    const dptosOptions = DEPARTAMENTOS_PY.map(d =>
+      `<option value="${escHtml(d)}"${inc.departamento===d?' selected':''}>${escHtml(d)}</option>`
+    ).join('');
+    const opOptions = operadoresList.map(o =>
+      `<option value="${escHtml(o.username)}"${inc.responsable===o.username?' selected':''}>${escHtml(o.name)}</option>`
+    ).join('');
 
     document.getElementById('dm-body').innerHTML = `
       <!-- Meta info -->
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-size:.72rem;color:var(--muted);padding:.2rem 0 .1rem;">
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;font-size:.71rem;color:var(--muted);">
         <span>🕐 ${fmtDate(inc.created_at)}</span>
-        ${inc.lugar || inc.departamento ? `<span>📍 ${escHtml([inc.lugar, inc.departamento].filter(Boolean).join(' · '))}</span>` : ''}
-        <span>👤 ${escHtml(inc.responsable||'sistema')}</span>
+        ${inc.departamento ? `<span>📍 ${escHtml([inc.municipio||inc.lugar, inc.departamento].filter(Boolean).join(' · '))}</span>` : ''}
+        ${inc.local_votacion ? `<span>🏛 ${escHtml(inc.local_votacion)}</span>` : ''}
       </div>
-      <!-- Descripción -->
+      <!-- Descripción + Prioridad + Asignación en fila -->
+      <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
+        <div style="flex:1;min-width:160px;">
+          <div class="inc-section-title">Descripción</div>
+          <div style="font-size:.81rem;line-height:1.5;color:var(--text)">${escHtml(inc.descripcion||'—')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.45rem;min-width:130px;">
+          <div>
+            <div class="inc-section-title">Prioridad</div>
+            <div style="display:flex;gap:.28rem;">
+              ${['alta','media','baja'].map(p => `<button class="prio-btn prio-${p}${prioActual===p?' active':''}" onclick="${canEdit?`setPrioridad('${inc.codigo}','${p}')`:''}"> ${p.charAt(0).toUpperCase()+p.slice(1)}</button>`).join('')}
+            </div>
+          </div>
+          ${canEdit ? `
+          <div>
+            <div class="inc-section-title">Asignar a</div>
+            <select style="${IS}width:100%" onchange="asignarIncidente('${inc.codigo}',this.value)">
+              <option value="">— sin asignar —</option>
+              ${opOptions}
+            </select>
+          </div>` : `<div style="font-size:.72rem;color:var(--muted)">👤 ${escHtml(inc.responsable||'sistema')}</div>`}
+        </div>
+      </div>
+      <!-- Ubicación -->
+      ${canEdit ? `
       <div>
-        <div class="inc-section-title">Descripción</div>
-        <div style="font-size:.82rem;line-height:1.5;color:var(--text)">${escHtml(inc.descripcion||'—')}</div>
-      </div>
+        <div class="inc-section-title">📍 Ubicación</div>
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;">
+          <select id="ub-dpto" style="${IS}flex:1;min-width:120px;"><option value="">— Departamento —</option>${dptosOptions}</select>
+          <input type="text" id="ub-municipio" value="${escHtml(inc.municipio||inc.lugar||'')}" placeholder="Municipio / Ciudad" style="${IS}flex:1;min-width:110px;">
+          <input type="text" id="ub-local" value="${escHtml(inc.local_votacion||'')}" placeholder="Local de votación" style="${IS}flex:1;min-width:110px;">
+          <button class="inc-btn inc-btn-avanzar" style="white-space:nowrap" onclick="guardarUbicacion('${inc.codigo}')">💾 Guardar</button>
+        </div>
+      </div>` : ''}
       <!-- Escalamiento -->
       <div>
         <div class="inc-section-title">Escalamiento</div>
-        <div class="inc-stepper" style="margin:.5rem 0 .6rem;">${stepperHtml}</div>
+        <div class="inc-stepper" style="margin:.5rem 0 .55rem;">${stepperHtml}</div>
         ${canEdit && isNotClosed ? `
           <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
             ${ESTADO_NEXT[inc.estado] ? `<button class="inc-btn inc-btn-avanzar" onclick="cambiarEstadoIncidente('${inc.codigo}','${ESTADO_NEXT[inc.estado]}')">→ Pasar a ${ESTADO_NEXT[inc.estado]}</button>` : ''}
@@ -3746,11 +3836,9 @@ ${SEP}`;
           </div>`).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin fuentes</div>'}
         ${canEdit ? `
           <div style="display:flex;gap:.35rem;align-items:center;margin-top:.4rem;flex-wrap:wrap">
-            <input type="text" id="fuente-url"    placeholder="URL" style="flex:2;min-width:130px;${inputStyle}">
-            <input type="text" id="fuente-titulo" placeholder="Título (opcional)" style="flex:3;min-width:110px;${inputStyle}">
-            <select id="fuente-tipo" style="${inputStyle}">
-              <option value="rss">RSS</option><option value="web">Web</option><option value="social">Social</option><option value="oficial">Oficial</option>
-            </select>
+            <input type="text" id="fuente-url"    placeholder="URL" style="flex:2;min-width:120px;${IS}">
+            <input type="text" id="fuente-titulo" placeholder="Título (opcional)" style="flex:3;min-width:100px;${IS}">
+            <select id="fuente-tipo" style="${IS}"><option value="rss">RSS</option><option value="web">Web</option><option value="social">Social</option><option value="oficial">Oficial</option></select>
             <button class="inc-btn inc-btn-detail" onclick="agregarFuente('${inc.codigo}')">+ Fuente</button>
           </div>` : ''}
       </div>
@@ -3760,11 +3848,9 @@ ${SEP}`;
         ${evidencias.map(e => `<div class="ev-item"><span class="ev-icon">${evIcon[e.tipo]||'🔗'}</span><a class="ev-link" href="${escHtml(e.url||'#')}" target="_blank" rel="noopener">${escHtml(e.descripcion||e.url||'Link')}</a></div>`).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin evidencias</div>'}
         ${canEdit ? `
           <div style="display:flex;gap:.35rem;align-items:center;margin-top:.4rem;flex-wrap:wrap">
-            <input type="text" id="ev-url" placeholder="URL de evidencia" style="flex:2;min-width:140px;${inputStyle}">
-            <input type="text" id="ev-desc" placeholder="Descripción" style="flex:3;min-width:110px;${inputStyle}">
-            <select id="ev-tipo" style="${inputStyle}">
-              <option value="foto">📷 Foto</option><option value="video">🎥 Video</option><option value="link">🔗 Link</option><option value="captura">📸 Captura</option>
-            </select>
+            <input type="text" id="ev-url"  placeholder="URL de evidencia" style="flex:2;min-width:130px;${IS}">
+            <input type="text" id="ev-desc" placeholder="Descripción" style="flex:3;min-width:100px;${IS}">
+            <select id="ev-tipo" style="${IS}"><option value="foto">📷 Foto</option><option value="video">🎥 Video</option><option value="link">🔗 Link</option><option value="captura">📸 Captura</option></select>
             <button class="inc-btn inc-btn-detail" onclick="agregarEvidencia('${inc.codigo}')">+ Agregar</button>
           </div>` : ''}
       </div>
@@ -3772,9 +3858,36 @@ ${SEP}`;
       <div>
         <div class="inc-section-title">Observaciones</div>
         ${canEdit ? `
-          <textarea id="obs-textarea" style="width:100%;box-sizing:border-box;${inputStyle}resize:vertical;min-height:56px;font-family:inherit;line-height:1.45;">${escHtml(inc.observaciones||'')}</textarea>
-          <button class="inc-btn inc-btn-avanzar" style="margin-top:.35rem" onclick="guardarObservacion('${inc.codigo}')">💾 Guardar observación</button>
+          <textarea id="obs-textarea" style="width:100%;box-sizing:border-box;${IS}resize:vertical;min-height:54px;font-family:inherit;line-height:1.45;">${escHtml(inc.observaciones||'')}</textarea>
+          <button class="inc-btn inc-btn-avanzar" style="margin-top:.32rem" onclick="guardarObservacion('${inc.codigo}')">💾 Guardar observación</button>
         ` : `<div style="font-size:.78rem;color:var(--text);white-space:pre-wrap">${escHtml(inc.observaciones||'—')}</div>`}
+      </div>
+      <!-- Relacionados -->
+      <div>
+        <div class="inc-section-title">🔗 Relacionados (${relacionados.length})</div>
+        ${relacionados.map(r => {
+          const rel = incidentesData.find(i => i.codigo === r);
+          return `<div class="rel-item">
+            <span class="rel-codigo" onclick="openDetalleIncidente('${escHtml(r)}')">${escHtml(r)}</span>
+            ${rel ? `<span style="font-size:.72rem;color:var(--muted)">${escHtml(rel.tipo||'')}${rel.lugar?' · '+rel.lugar:''}</span>` : ''}
+            ${canEdit ? `<button class="rel-del" onclick="desrelacionarIncidente('${inc.codigo}','${escHtml(r)}')" title="Quitar relación">✕</button>` : ''}
+          </div>`;
+        }).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin incidentes relacionados</div>'}
+        ${canEdit ? `
+          <div style="display:flex;gap:.35rem;margin-top:.4rem;align-items:center;">
+            <input type="text" id="rel-input" placeholder="INC-XXX" style="width:90px;${IS}">
+            <button class="inc-btn inc-btn-detail" onclick="relacionarIncidente('${inc.codigo}')">Relacionar</button>
+          </div>` : ''}
+      </div>
+      <!-- Historial -->
+      <div>
+        <div class="inc-section-title">📋 Historial (${historial.length})</div>
+        ${historial.length ? historial.map(h => `
+          <div class="hist-entry ${histClass(h.accion)}">
+            <span class="hist-time">${new Date(h.timestamp).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</span>
+            <span class="hist-user">${escHtml(h.usuario||'?')}</span>
+            <span class="hist-accion">${escHtml(h.accion||'')}</span>
+          </div>`).join('') : '<div style="color:var(--muted);font-size:.75rem">Sin historial registrado</div>'}
       </div>
       <!-- Footer -->
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:.5rem;padding-top:.3rem;border-top:1px solid var(--border);">
@@ -3859,6 +3972,66 @@ ${SEP}`;
       });
       if (res.ok) { showToast(`${codigo} eliminado`, 'info'); closeDetalleIncidente(); loadIncidentes(); }
       else { showToast('Error al eliminar', 'error'); }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function guardarUbicacion(codigo) {
+    const dpto  = document.getElementById('ub-dpto')?.value;
+    const muni  = document.getElementById('ub-municipio')?.value?.trim();
+    const local = document.getElementById('ub-local')?.value?.trim();
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/ubicacion`, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ departamento: dpto||null, municipio: muni||null, local_votacion: local||null }),
+      });
+      if (res.ok) { showToast('Ubicación guardada', 'success'); openDetalleIncidente(codigo); }
+      else showToast('Error al guardar ubicación', 'error');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function setPrioridad(codigo, prioridad) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/prioridad`, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ prioridad }),
+      });
+      if (res.ok) { showToast(`Prioridad → ${prioridad}`, 'success'); openDetalleIncidente(codigo); }
+      else showToast('Error al cambiar prioridad', 'error');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function asignarIncidente(codigo, username) {
+    if (!username) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/asignar`, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      if (res.ok) { showToast(`Asignado a ${username}`, 'success'); openDetalleIncidente(codigo); }
+      else showToast('Error al asignar', 'error');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function relacionarIncidente(codigo) {
+    const codigoRel = document.getElementById('rel-input')?.value?.trim().toUpperCase();
+    if (!codigoRel) { showToast('Ingrese un código INC-XXX', 'info'); return; }
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/relacionar`, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ codigoRelacionado: codigoRel }),
+      });
+      if (res.ok) { showToast(`Relacionado con ${codigoRel}`, 'success'); openDetalleIncidente(codigo); }
+      else { const d = await res.json(); showToast(d.error || 'Error', 'error'); }
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function desrelacionarIncidente(codigo, codigoRel) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}/relacionar/${encodeURIComponent(codigoRel)}`, {
+        method:'DELETE', headers:{'Authorization':`Bearer ${token}`},
+      });
+      if (res.ok) { showToast(`Relación con ${codigoRel} eliminada`, 'info'); openDetalleIncidente(codigo); }
+      else showToast('Error al quitar relación', 'error');
     } catch (e) { showToast('Error: ' + e.message, 'error'); }
   }
 
