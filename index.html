@@ -329,6 +329,56 @@
     body.ops-mode .feed-text          { font-size:.9rem !important; }
     .ops-countdown { font-size:.7rem; color:#a855f7; margin-left:.5rem; }
 
+    /* ── KPI Bar ─────────────────────────────────────────── */
+    .kpi-bar {
+      display:flex; align-items:stretch; background:var(--card);
+      border-bottom:1px solid var(--border); flex-shrink:0; overflow:hidden;
+    }
+    .kpi-item {
+      flex:1; display:flex; align-items:center; justify-content:center; gap:.45rem;
+      padding:.38rem .5rem; cursor:pointer; border-right:1px solid var(--border);
+      transition:background .15s; user-select:none;
+    }
+    .kpi-item:last-child { border-right:none; }
+    .kpi-item:hover { background:#ffffff08; }
+    .kpi-item.kpi-active { background:#ffffff12; }
+    .kpi-count { font-size:1.1rem; font-weight:800; line-height:1; }
+    .kpi-label { font-size:.6rem; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; line-height:1.2; }
+
+    /* ── Active alerts widget ─────────────────────────────── */
+    .active-alert-row { display:flex; align-items:center; gap:.5rem; padding:.25rem 0; border-bottom:1px solid #ffffff06; font-size:.72rem; }
+    .active-alert-row:last-child { border-bottom:none; }
+    .active-alert-dept { flex:1; color:var(--text); font-weight:600; }
+    .active-alert-time { color:var(--muted); font-size:.62rem; flex-shrink:0; }
+
+    /* ── SITREP modal ─────────────────────────────────────── */
+    .sitrep-box {
+      background:var(--card); border:1px solid var(--accent);
+      border-radius:14px; width:100%; max-width:680px; max-height:80vh;
+      display:flex; flex-direction:column; box-shadow:0 0 48px #7c3aed33;
+      overflow:hidden;
+    }
+    .sitrep-toolbar { display:flex; gap:.5rem; padding:.75rem 1.25rem; border-bottom:1px solid var(--border); flex-shrink:0; align-items:center; }
+    .sitrep-title   { font-size:.9rem; font-weight:700; color:var(--accent2); flex:1; letter-spacing:.08em; }
+    .sitrep-body    { flex:1; overflow-y:auto; padding:1rem 1.25rem; }
+    .sitrep-pre     { font-family:monospace; font-size:.77rem; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+    .btn-sitrep {
+      padding:.35rem .75rem; font-size:.75rem; font-weight:700; border-radius:6px;
+      cursor:pointer; border:1px solid; transition:all .15s;
+    }
+    .btn-sitrep-copy     { background:#1e3a5f33; border-color:#378ADD55; color:#60a5fa; }
+    .btn-sitrep-copy:hover { background:#1e3a5f66; }
+    .btn-sitrep-dl       { background:#0e3d2033; border-color:#22c55e55; color:#4ade80; }
+    .btn-sitrep-dl:hover { background:#0e3d2066; }
+    .btn-sitrep-cerrar   { background:none; border-color:var(--border); color:var(--muted); }
+    .btn-sitrep-cerrar:hover { border-color:var(--danger); color:var(--danger); }
+    .btn-sitrep-header {
+      padding:.35rem .75rem; background:#7c3aed22; border:1px solid #7c3aed66;
+      border-radius:6px; color:#a855f7; font-size:.75rem; font-weight:700;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-sitrep-header:hover { background:#7c3aed44; }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -657,6 +707,7 @@
     <span id="user-info"></span>
     <span id="role-badge" class="badge"></span>
     <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
+    <button class="btn-sitrep-header" onclick="showSITREP()">📋 SITREP</button>
     <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
     <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
     <button class="btn-logout" id="btn-logout">Salir</button>
@@ -830,6 +881,26 @@
           </div>
         </div>
 
+        <!-- KPI Bar -->
+        <div class="kpi-bar" id="kpi-bar">
+          <div class="kpi-item" id="kpi-info"    onclick="filterFeedByLevel('info')"    title="Ver solo informativos">
+            <span class="kpi-count" id="kpi-cnt-info"    style="color:#378ADD">0</span>
+            <div class="kpi-label">🔵<br>Informativos</div>
+          </div>
+          <div class="kpi-item" id="kpi-medio"   onclick="filterFeedByLevel('medio')"   title="Ver solo medios">
+            <span class="kpi-count" id="kpi-cnt-medio"   style="color:#eab308">0</span>
+            <div class="kpi-label">🟡<br>Medios</div>
+          </div>
+          <div class="kpi-item" id="kpi-alto"    onclick="filterFeedByLevel('alto')"    title="Ver solo altos">
+            <span class="kpi-count" id="kpi-cnt-alto"    style="color:#f97316">0</span>
+            <div class="kpi-label">🟠<br>Altos</div>
+          </div>
+          <div class="kpi-item" id="kpi-critico" onclick="filterFeedByLevel('critico')" title="Ver solo críticos">
+            <span class="kpi-count" id="kpi-cnt-critico" style="color:#e24b4a">0</span>
+            <div class="kpi-label">🔴<br>Críticos</div>
+          </div>
+        </div>
+
         <div class="monitor-body">
           <!-- Mapa con radar -->
           <div class="map-panel">
@@ -919,6 +990,10 @@
                     <span style="font-size:.58rem;color:var(--muted);">10 min</span>
                   </div>
                   <div id="osint-indicators"></div>
+                </div>
+                <div class="widget-block">
+                  <div class="widget-title">🚨 Alertas Activas</div>
+                  <div id="active-alerts-list"><div style="color:var(--muted);font-size:.72rem;">Cargando…</div></div>
                 </div>
                 <div class="widget-block">
                   <div class="widget-title">Distribución de Alertas</div>
@@ -1036,6 +1111,21 @@
           <button class="sp-emerg sp-alto"    onclick="searchEmergency('fraude electoral')" title="Abrir en las 4 redes">🟠 FRAUDE ELECTORAL</button>
           <button class="sp-emerg sp-alto"    onclick="searchEmergency('acarreo')"          title="Abrir en las 4 redes">🟠 ACARREO</button>
           <button class="sp-emerg sp-medio"   onclick="searchEmergency('irregularidad')"    title="Abrir en las 4 redes">🟡 IRREGULARIDAD</button>
+        </div>
+      </div>
+
+      <!-- Modal SITREP -->
+      <div class="modal-overlay" id="modal-sitrep">
+        <div class="sitrep-box">
+          <div class="sitrep-toolbar">
+            <span class="sitrep-title">📋 SITREP — ARGOS</span>
+            <button class="btn-sitrep btn-sitrep-copy"   onclick="copySITREP()">📋 Copiar</button>
+            <button class="btn-sitrep btn-sitrep-dl"     onclick="downloadSITREP()">⬇ Descargar</button>
+            <button class="btn-sitrep btn-sitrep-cerrar" onclick="document.getElementById('modal-sitrep').classList.remove('open')">✕ Cerrar</button>
+          </div>
+          <div class="sitrep-body">
+            <pre class="sitrep-pre" id="sitrep-content"></pre>
+          </div>
         </div>
       </div>
 
@@ -1801,6 +1891,8 @@
   let opsCountdownTimer  = null;
   let opsNextRefresh     = 0;
   let cronologiaEvents   = [];
+  let activeLevelFilter  = null;    // null = todos; 'info'|'medio'|'alto'|'critico'
+  let deptAlertTimes     = {};      // deptId → timestamp del último item alto/crítico
   const KNOWN_VERIFIED_PORTALS = ['abc','ultimahora','lanacion','nacion','c9n','adndigital','cronica','hoy','unicanal','a24'];
 
   const INCIDENT_KEYWORDS = [
@@ -1834,6 +1926,7 @@
     renderDeptStats();
     renderKeywordTags();
     renderTrending();
+    updateActiveAlerts();
     showFeedLoading();
 
     // Decaimiento suave del mapa de calor cada 5 s
@@ -2050,8 +2143,21 @@
     'este','esta','son','fue','entre','sin','desde','hasta','ante','tras',
   ]);
 
+  // Keywords a monitorear en Tendencias: OSINT fijas + scanner activas
+  function getTrendKeywords() {
+    return [...new Set([...OSINT_KWS, ...scanKeywords])];
+  }
+
   function updateTrendingFromRSS(items) {
+    // Contar en nuevos ítems (acumular en trendingWords)
     items.forEach(item => {
+      const text = ((item.title||'') + ' ' + (item.description||''))
+        .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      getTrendKeywords().forEach(kw => {
+        const k = kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        if (text.includes(k)) trendingWords[k] = (trendingWords[k] || 0) + 1;
+      });
+      // también palabras sueltas del título para relleno
       (item.title || '').split(/\s+/).forEach(word => {
         const w = word.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
         if (w.length < 4 || TREND_STOP_WORDS.has(w)) return;
@@ -2064,17 +2170,36 @@
   function renderTrending() {
     const el = document.getElementById('trending-list');
     if (!el) return;
-    const entries = Object.entries(trendingWords);
-    if (!entries.length) {
+
+    // Priorizar keywords definidas con conteo > 0, luego resto
+    const definedKws = getTrendKeywords();
+    const definedEntries = definedKws
+      .map(kw => [kw, trendingWords[kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')] || 0])
+      .filter(([,n]) => n > 0)
+      .sort((a,b) => b[1]-a[1]);
+
+    const otherEntries = Object.entries(trendingWords)
+      .filter(([kw]) => !definedKws.some(dk => dk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') === kw))
+      .sort((a,b) => b[1]-a[1]);
+
+    const combined = [...definedEntries, ...otherEntries].slice(0, 6);
+
+    if (!combined.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div>';
       return;
     }
-    const sorted = entries.sort((a,b) => b[1]-a[1]).slice(0,6);
-    el.innerHTML = sorted.map(([kw, n]) =>
-      `<div class="trend-item" onclick="addKeywordFromTrend('${escHtml(kw)}')">
-         <span class="trend-kw">${escHtml(kw)}</span>
-         <span class="trend-count">${n}</span>
-       </div>`).join('');
+    const max = combined[0][1];
+    el.innerHTML = combined.map(([kw, n]) => {
+      const pct = max > 0 ? Math.round(n / max * 100) : 0;
+      const isKnown = definedKws.some(dk => dk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') === kw);
+      return `<div class="hotkey-item" onclick="addKeywordFromTrend('${escHtml(kw)}')" style="cursor:pointer" title="Agregar al scanner">
+        <div class="hotkey-top">
+          <span class="hotkey-kw" style="${isKnown?'color:#a855f7':''}">${escHtml(kw)}</span>
+          <span class="hotkey-cnt">${n}</span>
+        </div>
+        <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%;background:${isKnown?'#a855f7':'#60a5fa'}"></div></div>
+      </div>`;
+    }).join('');
   }
 
   function addKeywordFromTrend(kw) {
@@ -2326,12 +2451,16 @@
                         item.alertLevel === 'alto'    ? 0.7 :
                         item.alertLevel === 'medio'   ? 0.4 : 0.2;
           heatData[d.id] = Math.min(8, (heatData[d.id] || d.base) + boost);
+          if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
+            deptAlertTimes[d.id] = Date.now();
+          }
         }
       });
     });
     renderHeatMap();
     renderDeptStats();
     checkCritical();
+    updateActiveAlerts();
   }
 
   // ── Mapa de calor ─────────────────────────────────────────────────────────
@@ -2721,12 +2850,7 @@
       if (!res.ok) return;
       const data = await res.json();
 
-      // Actualizar badge de estado
-      if (statusEl && textEl) {
-        statusEl.className = 'rss-status-badge';
-        textEl.textContent = `RSS ${data.total || 0} noticias`;
-        statusEl.title = `Última actualización: ${data.lastFetch ? new Date(data.lastFetch).toLocaleTimeString('es') : '—'}`;
-      }
+      updateRSSSemaphore(data.feeds || [], data.total || 0);
 
       const list     = document.getElementById('feed-list');
       const newItems = (data.items || []).filter(i => i.title && !rssSeenTitles.has(i.title));
@@ -2774,12 +2898,196 @@
       updateAlertDistribution(data.items || []);
       updateTrendingFromRSS(newItems);
       updateHotKeywords();
+      updateKPIBar();
+      updateActiveAlerts();
       trackOSINT(newItems);
 
     } catch {
-      if (statusEl) { statusEl.className = 'rss-status-badge rss-error'; }
-      if (textEl)   { textEl.textContent = 'RSS error'; }
+      updateRSSSemaphore([], 0);
     }
+  }
+
+  // ── KPI Bar ───────────────────────────────────────────────────────────────
+  function updateKPIBar() {
+    const counts = { info:0, medio:0, alto:0, critico:0 };
+    rssAllItems.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
+    ['info','medio','alto','critico'].forEach(k => {
+      const el = document.getElementById(`kpi-cnt-${k}`);
+      if (el) el.textContent = counts[k];
+      const item = document.getElementById(`kpi-${k}`);
+      if (item) item.classList.toggle('kpi-active', activeLevelFilter === k);
+    });
+  }
+
+  function filterFeedByLevel(level) {
+    if (activeLevelFilter === level) {
+      activeLevelFilter = null;
+    } else {
+      activeLevelFilter = level;
+    }
+    updateKPIBar();
+    renderFeedFromCache();
+  }
+
+  // ── Alertas activas ───────────────────────────────────────────────────────
+  function updateActiveAlerts() {
+    const el = document.getElementById('active-alerts-list');
+    if (!el) return;
+
+    // Obtener departamentos con heat >= 5 (alto/crítico)
+    const alertDepts = DEPTS
+      .filter(d => (heatData[d.id] || 0) >= 5)
+      .sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))
+      .slice(0, 5);
+
+    if (!alertDepts.length) {
+      el.innerHTML = '<div style="color:#4ade80;font-size:.72rem;padding:.2rem 0;">✅ Sin alertas activas</div>';
+      return;
+    }
+
+    el.innerHTML = alertDepts.map(d => {
+      const heat = heatData[d.id] || 0;
+      const al   = alertLevel(heat);
+      const ts   = deptAlertTimes[d.id];
+      const ago  = ts ? formatTimeAgo(new Date(ts).toISOString()) : '';
+      return `<div class="active-alert-row">
+        <span style="font-size:.75rem;flex-shrink:0;">${al.icon}</span>
+        <span class="active-alert-dept">${d.name}</span>
+        <span style="font-size:.62rem;color:${al.color};font-weight:700;flex-shrink:0;">${al.label}</span>
+        ${ago ? `<span class="active-alert-time">${ago}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Semáforo RSS ──────────────────────────────────────────────────────────
+  function updateRSSSemaphore(feeds, total) {
+    const statusEl = document.getElementById('rss-status-badge');
+    const textEl   = document.getElementById('rss-badge-text');
+    if (!statusEl || !textEl) return;
+
+    const allFeeds   = feeds || [];
+    const errored    = allFeeds.filter(f => f.error).length;
+    const ok         = allFeeds.length - errored;
+    const errList    = allFeeds.filter(f => f.error).map(f => `❌ ${f.name}: ${f.error}`).join('\n');
+    const okList     = allFeeds.filter(f => !f.error).map(f => `✅ ${f.name}`).join('\n');
+    const tooltip    = `${okList}\n${errList}`.trim();
+
+    if (errored === 0) {
+      statusEl.className = 'rss-status-badge';
+      statusEl.style.background = '#1a200a'; statusEl.style.borderColor = '#22c55e44'; statusEl.style.color = '#4ade80';
+      textEl.textContent = `🟢 RSS OK · ${total} noticias`;
+    } else if (errored < allFeeds.length) {
+      statusEl.className = 'rss-status-badge';
+      statusEl.style.background = '#2a1f05'; statusEl.style.borderColor = '#eab30844'; statusEl.style.color = '#fbbf24';
+      textEl.textContent = `🟡 RSS degradado · ${ok}/${allFeeds.length} feeds`;
+    } else {
+      statusEl.className = 'rss-status-badge rss-error';
+      statusEl.style.background = ''; statusEl.style.borderColor = ''; statusEl.style.color = '';
+      textEl.textContent = '🔴 RSS fuera de línea';
+    }
+    statusEl.title = tooltip || `Última actualización: ${new Date().toLocaleTimeString('es')}`;
+  }
+
+  // ── SITREP ────────────────────────────────────────────────────────────────
+  function generateSITREPText() {
+    const now   = new Date();
+    const fecha = now.toLocaleDateString('es', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const hora  = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    const usr   = document.getElementById('user-info')?.textContent?.trim() || '—';
+
+    const counts = { info:0, medio:0, alto:0, critico:0 };
+    rssAllItems.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
+    const total = Object.values(counts).reduce((s,n) => s+n, 0);
+
+    // Top 5 departamentos por heat
+    const topDepts = [...DEPTS]
+      .sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))
+      .slice(0, 5);
+
+    // Incidentes destacados: alto + crítico
+    const destacados = rssAllItems
+      .filter(i => i.alertLevel === 'alto' || i.alertLevel === 'critico')
+      .slice(0, 10);
+
+    // Tendencias top 5
+    const trendTop = Object.entries(trendingWords).sort((a,b) => b[1]-a[1]).slice(0, 5);
+
+    // Cronología
+    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
+
+    const SEP  = '═'.repeat(45);
+    const sep2 = '─'.repeat(45);
+
+    let txt = `${SEP}
+SITUACIÓN ELECTORAL — ARGOS
+${fecha}  ${hora}
+Generado por: ${usr}
+${SEP}
+
+RESUMEN EJECUTIVO
+Total eventos registrados: ${total}
+🟥 Críticos:     ${counts.critico}
+🟧 Altos:        ${counts.alto}
+🟨 Medios:       ${counts.medio}
+🔵 Informativos: ${counts.info}
+
+${sep2}
+DEPARTAMENTOS CON MAYOR ACTIVIDAD
+${topDepts.map((d,i) => {
+  const cnt = Math.round((heatData[d.id]||0)*15+8);
+  const al  = alertLevel(heatData[d.id]||0);
+  return `${i+1}. ${d.name} — ${cnt} eventos ${al.icon}`;
+}).join('\n')}
+
+${sep2}
+INCIDENTES DESTACADOS
+${destacados.length ? destacados.map(i => {
+  const ts  = i.fecha || i.pubDate || '';
+  const hr  = ts ? new Date(ts).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—';
+  const lvl = (i.alertLevel||'info').toUpperCase();
+  return `[${hr}] [${lvl}] ${i.title}\n         Fuente: ${i.portalName||'—'}`;
+}).join('\n') : 'Sin incidentes de nivel Alto o Crítico'}
+
+${sep2}
+TENDENCIAS DETECTADAS
+${trendTop.length ? trendTop.map(([kw,n]) => `• ${kw}: ${n} menciones`).join('\n') : 'Sin datos de tendencias'}
+
+${sep2}
+CRONOLOGÍA DE EVENTOS
+${cronologiaEvents.length ? cronologiaEvents.map(e =>
+  `${e.hora}  [${NIVEL_LABEL[e.nivel]||e.nivel}]  ${e.desc}  ${e.lugar && e.lugar!=='—' ? '· '+e.lugar : ''}`
+).join('\n') : 'Sin eventos registrados en la cronología'}
+
+${SEP}
+Documento generado por ARGOS
+Departamento Especializado en Cibercrimen
+Policía Nacional del Paraguay
+${SEP}`;
+
+    return txt;
+  }
+
+  function showSITREP() {
+    const txt = generateSITREPText();
+    document.getElementById('sitrep-content').textContent = txt;
+    document.getElementById('modal-sitrep').classList.add('open');
+  }
+
+  function copySITREP() {
+    const txt = document.getElementById('sitrep-content').textContent;
+    navigator.clipboard.writeText(txt).then(() => {
+      const btn = document.querySelector('.btn-sitrep-copy');
+      if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copiado'; setTimeout(() => { btn.textContent = orig; }, 2000); }
+    }).catch(() => { alert('No se pudo copiar al portapapeles.'); });
+  }
+
+  function downloadSITREP() {
+    const txt  = document.getElementById('sitrep-content').textContent;
+    const now  = new Date();
+    const name = `argos-sitrep-${now.toISOString().slice(0,16).replace('T','-').replace(':','')}.txt`;
+    const blob = new Blob([txt], { type:'text/plain;charset=utf-8' });
+    const a    = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
   }
 
   // ── Render feed filtrado por tab activo ──────────────────────────────────
@@ -2792,7 +3100,10 @@
     if (!list) return;
 
     const showIncidents = activeFeedTab === 'incidentes';
-    const filtered = rssAllItems.filter(i => isIncidentItem(i) === showIncidents);
+    const filtered = rssAllItems.filter(i =>
+      isIncidentItem(i) === showIncidents &&
+      (activeLevelFilter === null || i.alertLevel === activeLevelFilter)
+    );
 
     // Actualizar contadores en tabs
     const cntN = document.getElementById('feed-tab-cnt-noticias');
