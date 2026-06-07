@@ -2256,13 +2256,16 @@
 
   function updateHotKeywords() {
     const now = Date.now();
-    const recent = rssAllItems.filter(i => {
+    // Intentar con ventana de 2h; si no hay noticias recientes usar todas
+    let pool2h = rssAllItems.filter(i => {
       const ts = new Date(i.fecha || i.pubDate || 0).getTime();
-      return now - ts < TWO_HOURS;
+      return ts > 0 && now - ts < TWO_HOURS;
     });
+    const source = pool2h.length > 0 ? pool2h : rssAllItems;
+
     const counts = {};
-    recent.forEach(item => {
-      const txt = (item.title + ' ' + (item.description || '')).toLowerCase()
+    source.forEach(item => {
+      const txt = ((item.title || '') + ' ' + (item.description || '')).toLowerCase()
                   .normalize('NFD').replace(/[̀-ͯ]/g, '');
       for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
         for (const kw of kws) {
@@ -2271,9 +2274,9 @@
         }
       }
     });
-    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
     const el = document.getElementById('hotkeys-list');
     if (!el) return;
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
     if (!sorted.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div>';
       return;
@@ -3929,7 +3932,9 @@ ${SEP}`;
       });
       if (res.ok) {
         showToast(`Estado → ${estado.toUpperCase()}`, 'success');
-        addCronoEvent(`${codigo} → ${estado.toUpperCase()}`, '—', estado === 'escalado' ? 'alto' : estado === 'critico' ? 'critico' : 'info');
+        if (estado !== 'cerrado') {
+          addCronoEvent(`${codigo} → ${estado.toUpperCase()}`, '—', estado === 'escalado' ? 'alto' : 'info');
+        }
         loadIncidentes();
         openDetalleIncidente(codigo);
       } else { showToast('Error al cambiar estado', 'error'); }
