@@ -773,6 +773,46 @@
     .osint-card-ext  { font-size:.7rem; color:var(--muted); }
     .osint-badge { font-size:.58rem; font-weight:700; padding:.1rem .35rem; border-radius:4px;
                    background:#052e16; color:#4ade80; border:1px solid #166534; }
+
+    /* ── Tour guiado ─────────────────────────────────────── */
+    .tour-overlay  { position:fixed;inset:0;z-index:99990;pointer-events:all; }
+    .tour-spotlight {
+      position:fixed; border-radius:8px; pointer-events:none; z-index:99991;
+      box-shadow:0 0 0 9999px rgba(0,0,0,.76);
+      transition:left .28s cubic-bezier(.4,0,.2,1),top .28s cubic-bezier(.4,0,.2,1),
+                 width .28s cubic-bezier(.4,0,.2,1),height .28s cubic-bezier(.4,0,.2,1);
+    }
+    .tour-card {
+      position:fixed; width:296px; background:var(--card);
+      border:1.5px solid var(--accent); border-radius:12px;
+      padding:1.05rem 1.2rem .9rem; z-index:99992; pointer-events:all;
+      box-shadow:0 10px 40px #0009,0 0 0 1px #7c3aed18;
+      transition:left .28s cubic-bezier(.4,0,.2,1),top .28s cubic-bezier(.4,0,.2,1);
+    }
+    .tour-step-num { font-size:.58rem;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;font-weight:700;margin-bottom:.28rem; }
+    .tour-progress { height:3px;background:var(--border);border-radius:99px;margin-bottom:.7rem;overflow:hidden; }
+    .tour-progress-bar { height:100%;background:var(--accent);border-radius:99px;transition:width .28s ease; }
+    .tour-title { font-size:.88rem;font-weight:800;color:var(--text);margin-bottom:.38rem;line-height:1.25; }
+    .tour-text  { font-size:.74rem;color:var(--muted);line-height:1.58;margin-bottom:.75rem; }
+    .tour-actions { display:flex;align-items:center;gap:.38rem;flex-wrap:wrap; }
+    .tour-btn-next {
+      background:var(--accent);color:#fff;border:none;border-radius:6px;
+      padding:.3rem .8rem;font-size:.73rem;font-weight:700;cursor:pointer;
+      transition:background .15s;margin-left:auto;
+    }
+    .tour-btn-next:hover { background:#6d28d9; }
+    .tour-btn-prev {
+      background:transparent;color:var(--muted);border:1px solid var(--border);
+      border-radius:6px;padding:.28rem .65rem;font-size:.7rem;cursor:pointer;transition:all .15s;
+    }
+    .tour-btn-prev:hover { color:var(--text);border-color:var(--text); }
+    .tour-btn-skip { background:transparent;color:var(--muted);border:none;font-size:.66rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px; }
+    .tour-btn-skip:hover { color:var(--text); }
+    .tour-arrow { position:absolute;width:0;height:0;border:8px solid transparent; }
+    .tour-arrow.arr-top    { top:-16px;left:22px;border-bottom-color:var(--accent); }
+    .tour-arrow.arr-bottom { bottom:-16px;left:22px;border-top-color:var(--accent); }
+    .tour-arrow.arr-left   { left:-16px;top:22px;border-right-color:var(--accent); }
+    .tour-arrow.arr-right  { right:-16px;top:22px;border-left-color:var(--accent); }
   </style>
 </head>
 <body>
@@ -1539,6 +1579,7 @@
     loadKeywords();
     loadSources();
     showPanel('monitor');
+    initTour();
   }
 
   function doLogout() {
@@ -1606,6 +1647,9 @@
           const data = await res.json();
           userRole = data.role;
           userName = data.username || data.name;
+          if (data.resetTour && userName) {
+            localStorage.removeItem(`argos_tour_${userName}`);
+          }
           hideReconnecting();
           initApp();
           return;
@@ -1756,6 +1800,7 @@
               onclick="openUserModal('${escHtml(u.username)}','${escHtml(u.name||'')}','${escHtml(u.role)}')">✏️</button>
             <button class="aact-btn" title="Resetear contraseña"
               onclick="adminResetPassword('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🔑</button>
+            ${!prot ? `<button class="aact-btn" title="Resetear tour guiado" onclick="adminResetTour('${escHtml(u.username)}')">🎓</button>` : ''}
             ${sessBtn}${toggleBtn}${delBtn}
           </td></tr>`;
       }).join('');
@@ -3973,6 +4018,180 @@ ${SEP}`;
       if (res.ok) { showToast(`${codigo} eliminado`, 'info'); closeDetalleIncidente(); loadIncidentes(); }
       else { showToast('Error al eliminar', 'error'); }
     } catch (e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  // ── Tour guiado ───────────────────────────────────────────────────────────
+  let tourActive = false, tourStepIdx = 0, tourStepList = [];
+
+  const TOUR_STEPS_BASE = [
+    { sel:'header', title:'Bienvenido a ARGOS', panel:null,
+      text:'Sistema de Monitoreo Electoral del Departamento Especializado en Cibercrimen. Este tour te guiará por las funciones principales del sistema.' },
+    { sel:'#nav-monitor', title:'Monitor Electoral', panel:null,
+      text:'Panel principal de monitoreo. Aquí verás el mapa de actividad, noticias en tiempo real y alertas electorales.' },
+    { sel:'#map-wrap', title:'Mapa de Actividad', panel:'monitor',
+      text:'Paraguay dividido en 17 departamentos. Los colores indican nivel de actividad electoral. Rojo = alertas críticas. Los 6 municipios estratégicos están marcados.' },
+    { sel:'#feed-container', title:'Feed en Tiempo Real', panel:'monitor',
+      text:'Noticias electorales de ABC Color, La Nación, Última Hora y otros medios. Se actualiza cada 30 segundos automáticamente. Las noticias críticas aparecen primero.' },
+    { sel:'.feed-tabs', title:'Noticias vs Incidentes', panel:'monitor',
+      text:'Tab 📰 Noticias muestra cobertura periodística. Tab 🚨 Incidentes muestra eventos que requieren atención operativa.' },
+    { sel:'#osint-indicators', title:'Indicadores OSINT', panel:'monitor',
+      text:'Conteo de keywords críticas en tiempo real. Si "fraude" supera 5 menciones en 10 minutos, el sistema dispara alerta automática.' },
+    { sel:'.crono-panel', title:'Cronología Operacional', panel:'monitor',
+      text:'Registro cronológico de eventos del día. Se llena automáticamente con alertas y permite agregar eventos manuales. Al final del día exportás el informe.' },
+    { sel:'#nav-incidentes', title:'Centro de Incidentes', panel:null,
+      text:'Gestión formal de incidentes electorales. Cada incidente tiene código único (INC-001), nivel de confianza, evidencias y trazabilidad completa de acciones.' },
+    { sel:'#nav-osint', title:'Repositorio OSINT-PY', panel:null,
+      text:'Acceso directo a 25+ fuentes oficiales paraguayas e internacionales. Padrón electoral, registros, bases de datos públicas y herramientas de inteligencia.' },
+    { sel:'.search-panel', title:'Búsqueda en Redes Sociales', panel:'monitor',
+      text:'Abrí búsquedas en Facebook, TikTok, YouTube y X con un clic usando las keywords activas. Los botones de emergencia buscan en las 4 redes simultáneamente.' },
+    { sel:'.btn-sitrep-header', title:'Generador de SITREP', panel:null,
+      text:'Genera automáticamente un informe situacional completo con todos los eventos, incidentes y tendencias del día. Listo para enviar al mando.' },
+    { sel:'#btn-account', title:'Tu cuenta', panel:null,
+      text:'Cambiá tu contraseña inicial PNP2026* por una personal. La sesión expira cada 8 horas por seguridad. Cualquier problema contactá a soporte.' },
+  ];
+  const TOUR_STEP_OPERADOR = {
+    sel:'.scanner-bar', title:'Escaneo Manual', panel:'monitor',
+    text:'Como operador podés iniciar búsquedas manuales en redes sociales. Seleccioná el tema, activá las fuentes y presioná ESCANEAR. Los resultados aparecen en el feed en segundos.',
+  };
+
+  function initTour() {
+    if (!userName || userRole === 'admin') return;
+    if (localStorage.getItem(`argos_tour_${userName}`) === 'completado') return;
+    setTimeout(startTour, 900); // esperar render inicial
+  }
+
+  function startTour() {
+    tourStepList = [...TOUR_STEPS_BASE];
+    if (userRole === 'operador') tourStepList.push(TOUR_STEP_OPERADOR);
+    tourStepIdx = 0;
+    tourActive  = true;
+    // Crear DOM
+    if (!document.getElementById('tour-overlay')) {
+      const ov = document.createElement('div');
+      ov.id = 'tour-overlay'; ov.className = 'tour-overlay';
+      document.body.appendChild(ov);
+    }
+    if (!document.getElementById('tour-spotlight')) {
+      const sp = document.createElement('div');
+      sp.id = 'tour-spotlight'; sp.className = 'tour-spotlight';
+      document.body.appendChild(sp);
+    }
+    if (!document.getElementById('tour-card')) {
+      const cd = document.createElement('div');
+      cd.id = 'tour-card'; cd.className = 'tour-card';
+      document.body.appendChild(cd);
+    }
+    document.addEventListener('keydown', tourKeyDown);
+    showTourStep(0);
+  }
+
+  function tourKeyDown(e) { if (e.key === 'Escape') skipTour(); }
+
+  function showTourStep(idx) {
+    if (idx < 0 || idx >= tourStepList.length) { completeTour(); return; }
+    tourStepIdx = idx;
+    const step = tourStepList[idx];
+    // Cambiar panel si hace falta
+    if (step.panel) showPanel(step.panel);
+    // Renderizar contenido de la card primero (para medir altura)
+    renderTourCard(idx);
+    // Esperar render del panel antes de posicionar
+    setTimeout(() => {
+      const el = document.querySelector(step.sel);
+      if (!el) { showTourStep(idx + 1); return; }
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        positionSpotlight(el);
+        positionCard(el, idx);
+      }, 160);
+    }, step.panel ? 220 : 60);
+  }
+
+  function renderTourCard(idx) {
+    const card = document.getElementById('tour-card');
+    if (!card) return;
+    const step  = tourStepList[idx];
+    const total = tourStepList.length;
+    const pct   = Math.round(((idx + 1) / total) * 100);
+    card.innerHTML = `
+      <div class="tour-step-num">Paso ${idx + 1} de ${total}</div>
+      <div class="tour-progress"><div class="tour-progress-bar" style="width:${pct}%"></div></div>
+      <div class="tour-title">${step.title}</div>
+      <div class="tour-text">${step.text}</div>
+      <div class="tour-actions">
+        <button class="tour-btn-skip" onclick="skipTour()">Saltar tour</button>
+        ${idx > 0 ? '<button class="tour-btn-prev" onclick="prevTourStep()">← Anterior</button>' : ''}
+        <button class="tour-btn-next" onclick="nextTourStep()">${idx === total - 1 ? 'Finalizar ✓' : 'Siguiente →'}</button>
+      </div>`;
+  }
+
+  function positionSpotlight(el) {
+    const sp  = document.getElementById('tour-spotlight');
+    if (!sp) return;
+    const pad = 8;
+    const r   = el.getBoundingClientRect();
+    sp.style.left   = (r.left   - pad) + 'px';
+    sp.style.top    = (r.top    - pad) + 'px';
+    sp.style.width  = (r.width  + pad * 2) + 'px';
+    sp.style.height = (r.height + pad * 2) + 'px';
+  }
+
+  function positionCard(el, idx) {
+    const card = document.getElementById('tour-card');
+    if (!card) return;
+    const r     = el.getBoundingClientRect();
+    const pad   = 14;
+    const sp    = 12; // spotlight padding
+    const vw    = window.innerWidth;
+    const vh    = window.innerHeight;
+    const cw    = card.offsetWidth  || 300;
+    const ch    = card.offsetHeight || 200;
+
+    const belowRoom = vh - (r.bottom + sp);
+    const aboveRoom = r.top - sp;
+    const rightRoom = vw - (r.right  + sp);
+
+    let top, left, arrCls;
+    if (belowRoom >= ch + pad) {
+      top = r.bottom + sp + pad * .5; left = r.left; arrCls = 'arr-top';
+    } else if (aboveRoom >= ch + pad) {
+      top = r.top - sp - ch - pad * .5; left = r.left; arrCls = 'arr-bottom';
+    } else if (rightRoom >= cw + pad) {
+      top = r.top; left = r.right + sp + pad * .5; arrCls = 'arr-left';
+    } else {
+      top = r.top; left = r.left - sp - cw - pad * .5; arrCls = 'arr-right';
+    }
+    top  = Math.max(pad, Math.min(top,  vh - ch - pad));
+    left = Math.max(pad, Math.min(left, vw - cw - pad));
+    card.style.top  = top  + 'px';
+    card.style.left = left + 'px';
+    // Flecha
+    card.querySelectorAll('.tour-arrow').forEach(a => a.remove());
+    const arr = document.createElement('div');
+    arr.className = `tour-arrow ${arrCls}`;
+    card.appendChild(arr);
+  }
+
+  function nextTourStep() { showTourStep(tourStepIdx + 1); }
+  function prevTourStep() { showTourStep(tourStepIdx - 1); }
+  function skipTour()     { completeTour(); }
+
+  function completeTour() {
+    tourActive = false;
+    if (userName) localStorage.setItem(`argos_tour_${userName}`, 'completado');
+    ['tour-overlay','tour-spotlight','tour-card'].forEach(id => document.getElementById(id)?.remove());
+    document.removeEventListener('keydown', tourKeyDown);
+  }
+
+  async function adminResetTour(username) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/admin/reset-tour`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      if (res.ok) showAdminMsg(`✅ Tour de ${username} reseteado — verá el tour en su próximo login`, 'ok');
+      else showAdminMsg('Error al resetear tour', 'error');
+    } catch (e) { showAdminMsg('Error: ' + e.message, 'error'); }
   }
 
   async function guardarUbicacion(codigo) {
