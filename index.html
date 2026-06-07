@@ -190,12 +190,62 @@
     .history-empty { color: var(--muted); font-size: .9rem; }
 
     /* ── ADMIN PANEL ────────────────────────────────────── */
-    #panel-admin { flex: 1; overflow-y: auto; padding: 2rem; display: none; }
-    #panel-admin h2 { font-size: 1rem; color: var(--accent2); margin-bottom: 1.5rem; letter-spacing: .1em; }
-    .users-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    .users-table th { text-align: left; padding: .6rem 1rem; color: var(--muted); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-    .users-table td { padding: .7rem 1rem; border-bottom: 1px solid #1e1e2e; }
+    #panel-admin { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .admin-tabs-bar {
+      display: flex; gap: 0; flex-shrink: 0;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    .admin-tab {
+      padding: .65rem 1.1rem; font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+      border: none; background: none; color: var(--muted); cursor: pointer;
+      border-top: 2px solid transparent; margin-top: 2px; transition: color .15s;
+    }
+    .admin-tab:hover  { color: var(--text); }
+    .admin-tab.active { color: var(--text); }
+    .admin-tab[data-tab="usuarios"].active  { border-top-color: #378ADD; color: #60a5fa; }
+    .admin-tab[data-tab="actividad"].active { border-top-color: #22c55e; color: #4ade80; }
+    .admin-tab[data-tab="sesiones"].active  { border-top-color: #e24b4a; color: #f87171; }
+    .admin-tab-pane { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; display: none; flex-direction: column; gap: .75rem; }
+    .admin-tab-pane.active { display: flex; }
+    .admin-pane-hdr { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; flex-shrink: 0; }
+    .btn-new-user {
+      padding: .38rem .9rem; background: #378ADD22; border: 1px solid #378ADD66;
+      border-radius: 6px; color: #60a5fa; font-size: .78rem; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-new-user:hover { background: #378ADD33; }
+    .users-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .users-table th { text-align: left; padding: .5rem .75rem; color: var(--muted); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .users-table td { padding: .55rem .75rem; border-bottom: 1px solid #1e1e2e; vertical-align: middle; }
     .users-table tr:hover td { background: var(--card); }
+    .aact-btn {
+      background: none; border: 1px solid var(--border); border-radius: 5px;
+      padding: .2rem .42rem; font-size: .78rem; cursor: pointer; transition: all .15s;
+      color: var(--muted); line-height: 1;
+    }
+    .aact-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .aact-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .sd-on  { background: #22c55e; box-shadow: 0 0 4px #22c55e; }
+    .sd-off { background: #4b5563; }
+    .log-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+    .log-table th { text-align: left; padding: .4rem .6rem; color: var(--muted); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .log-table td { padding: .35rem .6rem; border-bottom: 1px solid #1a1a2a; font-family: monospace; }
+    .log-login  { color: #4ade80; }
+    .log-error  { color: #f87171; }
+    .log-change { color: #fbbf24; }
+    .log-scan   { color: #60a5fa; }
+    .log-block  { color: #f97316; }
+    .admin-filter { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: .3rem .6rem; color: var(--text); font-size: .78rem; outline: none; }
+    .btn-export { padding: .32rem .8rem; background: #22c55e18; border: 1px solid #22c55e44; border-radius: 6px; color: #4ade80; font-size: .75rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-export:hover { background: #22c55e28; }
+    .sess-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .7rem 1rem; display: flex; align-items: center; gap: .75rem; }
+    .sess-name { font-size: .85rem; font-weight: 600; flex: 1; }
+    .sess-meta { font-size: .68rem; color: var(--muted); }
+    .admin-msg { font-size:.78rem; margin-top:.2rem; padding:.4rem .7rem; border-radius:5px; display:none; }
+    .admin-msg.ok  { background:#052e1644; color:#4ade80; border:1px solid #166534; display:block; }
+    .admin-msg.err { background:#3f0f0f44; color:#f87171; border:1px solid #7f1d1d; display:block; }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
@@ -585,8 +635,93 @@
 
       <!-- Admin -->
       <div id="panel-admin">
-        <h2>GESTIÓN DE USUARIOS</h2>
-        <div id="admin-content"></div>
+        <div class="admin-tabs-bar">
+          <button class="admin-tab active" data-tab="usuarios"  onclick="switchAdminTab('usuarios')">👥 Usuarios</button>
+          <button class="admin-tab"        data-tab="actividad" onclick="switchAdminTab('actividad')">📋 Actividad</button>
+          <button class="admin-tab"        data-tab="sesiones"  onclick="switchAdminTab('sesiones')">🔌 Sesiones</button>
+        </div>
+
+        <!-- TAB 1: Usuarios -->
+        <div id="admin-tab-usuarios" class="admin-tab-pane active">
+          <div class="admin-pane-hdr">
+            <button class="btn-new-user" onclick="openUserModal()">+ Nuevo Usuario</button>
+            <div id="admin-msg" class="admin-msg"></div>
+          </div>
+          <div style="overflow-x:auto;"><table class="users-table" id="users-table">
+            <thead><tr>
+              <th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th>
+              <th>Última conexión</th><th>Escaneos</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="7" style="color:var(--muted);padding:1rem">Cargando…</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- TAB 2: Actividad -->
+        <div id="admin-tab-actividad" class="admin-tab-pane">
+          <div class="admin-pane-hdr">
+            <select class="admin-filter" id="act-filter-user"  onchange="renderActivityLog()"><option value="">Todos</option></select>
+            <select class="admin-filter" id="act-filter-tipo"  onchange="renderActivityLog()">
+              <option value="">Todas las acciones</option>
+              <option value="LOGIN_OK">Login OK</option>
+              <option value="LOGIN_FALLIDO">Login Fallido</option>
+              <option value="CUENTA_BLOQUEADA">Bloqueada</option>
+              <option value="CREAR_USUARIO">Crear</option>
+              <option value="EDITAR_USUARIO">Editar</option>
+              <option value="ELIMINAR_USUARIO">Eliminar</option>
+              <option value="RESET_PASSWORD">Reset PWD</option>
+              <option value="CERRAR_SESION_REMOTA">Cerrar Sesión</option>
+            </select>
+            <button class="btn-export" onclick="exportActivityCSV()">⬇ Exportar CSV</button>
+            <button class="aact-btn" onclick="loadActivity()" style="margin-left:auto;">↺ Actualizar</button>
+          </div>
+          <div style="overflow-x:auto;" id="activity-wrap">
+            <table class="log-table" id="activity-table">
+              <thead><tr><th>Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
+              <tbody id="activity-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: Sesiones -->
+        <div id="admin-tab-sesiones" class="admin-tab-pane">
+          <div class="admin-pane-hdr">
+            <span style="font-size:.72rem;color:var(--muted)">Actualización cada 30s</span>
+            <button class="aact-btn" onclick="loadSessions()" style="margin-left:auto;">↺ Actualizar</button>
+          </div>
+          <div id="sessions-wrap" style="display:flex;flex-direction:column;gap:.45rem;"></div>
+        </div>
+      </div>
+
+      <!-- Modal crear/editar usuario -->
+      <div class="modal-overlay" id="modal-user">
+        <div class="modal-box">
+          <div class="modal-title" id="modal-user-title">+ NUEVO USUARIO</div>
+          <div class="modal-field">
+            <label>Username (solo minúsculas/números/_)</label>
+            <input type="text" id="mu-username" placeholder="ej: jperez" autocomplete="off"/>
+          </div>
+          <div class="modal-field">
+            <label>Nombre completo</label>
+            <input type="text" id="mu-name" placeholder="Juan Pérez" autocomplete="off"/>
+          </div>
+          <div class="modal-field">
+            <label>Rol</label>
+            <select id="mu-role">
+              <option value="visualizador">Visualizador</option>
+              <option value="operador">Operador</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="modal-field" id="mu-pwd-field">
+            <label>Contraseña inicial (mín. 8 caracteres)</label>
+            <input type="password" id="mu-password" placeholder="••••••••" autocomplete="new-password"/>
+          </div>
+          <div class="modal-msg" id="modal-user-msg"></div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
+            <button class="btn-primary" id="btn-save-user" onclick="saveUser()">Guardar</button>
+          </div>
+        </div>
       </div>
 
       <!-- Monitor Electoral -->
@@ -1048,7 +1183,17 @@
     document.getElementById(`nav-${name}`).classList.add('active');
 
     if (name === 'history') loadHistory();
-    if (name === 'admin')   loadUsers();
+    if (name === 'admin') {
+      loadUsers();
+      if (adminSessionsInterval) clearInterval(adminSessionsInterval);
+      adminSessionsInterval = setInterval(() => {
+        const sesTab = document.getElementById('admin-tab-sesiones');
+        if (sesTab && sesTab.classList.contains('active')) loadSessions();
+      }, 30000);
+    } else if (adminSessionsInterval) {
+      clearInterval(adminSessionsInterval);
+      adminSessionsInterval = null;
+    }
     if (name === 'monitor') initMonitor();
   }
 
@@ -1071,57 +1216,297 @@
     } catch (e) { el.textContent = `Error: ${e.message}`; }
   }
 
-  // ── Usuarios (admin) ─────────────────────────────────────────────────────
-  async function loadUsers() {
-    const el = document.getElementById('admin-content');
-    el.textContent = 'Cargando…';
-    try {
-      const res   = await fetch(`${BACKEND_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-      const users = await res.json();
-      const roleColor = r => ({ admin: 'admin', operador: 'operador', visualizador: 'visualizador' }[r] || '');
-      el.innerHTML = `
-        <table class="users-table">
-          <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead>
-          <tbody>
-            ${users.map(u => `
-              <tr>
-                <td>${escHtml(u.username)}</td>
-                <td style="color:var(--muted);font-size:.82rem;">${escHtml(u.name||'')}</td>
-                <td><span class="badge badge-${roleColor(u.role)}">${escHtml(u.role)}</span></td>
-                <td>${u.username !== 'jblanco'
-                  ? `<button class="btn-reset-pwd" onclick="resetPassword('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🔑 Resetear</button>`
-                  : '<span style="color:var(--muted);font-size:.75rem;">—</span>'
-                }</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-        <div class="admin-msg" id="admin-msg"></div>`;
-    } catch (e) { el.textContent = `Error: ${e.message}`; }
+  // ── Admin panel ───────────────────────────────────────────────────────────
+
+  let adminActivityData = [];
+  let adminSessionsInterval = null;
+
+  function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.admin-tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.admin-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`admin-tab-${tab}`).classList.add('active');
+    if (tab === 'actividad') loadActivity();
+    if (tab === 'sesiones')  loadSessions();
   }
 
-  async function resetPassword(username, nombre) {
-    const msg = document.getElementById('admin-msg');
-    if (msg) { msg.className = 'admin-msg'; msg.textContent = ''; }
+  function showAdminMsg(text, type = 'ok') {
+    const el = document.getElementById('admin-msg');
+    if (!el) return;
+    el.textContent = text;
+    el.className = `admin-msg ${type}`;
+    setTimeout(() => { if (el) el.className = 'admin-msg'; }, 4000);
+  }
 
-    const ok = confirm(`¿Resetear contraseña de ${nombre} a PNP2026*?`);
-    if (!ok) return;
+  function roleColor(r) { return { admin:'admin', operador:'operador', visualizador:'visualizador' }[r] || ''; }
 
+  function fmtDate(iso) {
+    if (!iso) return '<span style="color:var(--muted)">—</span>';
+    const d = new Date(iso);
+    return d.toLocaleDateString('es', { day:'2-digit', month:'2-digit' }) +
+           ' ' + d.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  async function loadUsers() {
     try {
-      const res  = await fetch(`${BACKEND_URL}/api/reset-password`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body:    JSON.stringify({ username }),
+      const res  = await fetch(`${BACKEND_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const list = await res.json();
+      const tbody = document.getElementById('users-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = list.map(u => {
+        const prot = u.username === 'jblanco';
+        const statusDot = u.activo
+          ? `<span class="status-dot sd-on" title="Activo"></span>`
+          : `<span class="status-dot sd-off" title="Desactivado"></span>`;
+        const statusTxt = u.activo
+          ? '<span style="color:#4ade80;font-size:.72rem;">Activo</span>'
+          : '<span style="color:#f87171;font-size:.72rem;">Desactivado</span>';
+        const onlineDot = u.enLinea
+          ? ' <span style="font-size:.62rem;color:#4ade80;">● en línea</span>' : '';
+        const toggleBtn = !prot
+          ? `<button class="aact-btn" title="${u.activo?'Desactivar':'Activar'}"
+               onclick="adminToggleUser('${escHtml(u.username)}',${u.activo})">${u.activo?'🔴':'🟢'}</button>`
+          : '';
+        const delBtn = !prot
+          ? `<button class="aact-btn danger" title="Eliminar"
+               onclick="adminDeleteUser('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🗑️</button>`
+          : '';
+        const sessBtn = !prot
+          ? `<button class="aact-btn" title="Cerrar sesión remota"
+               onclick="adminCloseSession('${escHtml(u.username)}')">⏏️</button>`
+          : '';
+        return `<tr>
+          <td style="font-weight:600;font-family:monospace">${escHtml(u.username)}${onlineDot}</td>
+          <td style="color:var(--muted)">${escHtml(u.name||'')}</td>
+          <td><span class="badge badge-${roleColor(u.role)}">${escHtml(u.role)}</span></td>
+          <td style="display:flex;align-items:center;gap:.35rem">${statusDot}${statusTxt}</td>
+          <td style="font-size:.75rem">${fmtDate(u.lastLogin)}</td>
+          <td style="font-size:.75rem;color:var(--accent2)">${u.totalScans||0}</td>
+          <td style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <button class="aact-btn" title="Editar"
+              onclick="openUserModal('${escHtml(u.username)}','${escHtml(u.name||'')}','${escHtml(u.role)}')">✏️</button>
+            <button class="aact-btn" title="Resetear contraseña"
+              onclick="adminResetPassword('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🔑</button>
+            ${sessBtn}${toggleBtn}${delBtn}
+          </td></tr>`;
+      }).join('');
+    } catch (e) {
+      const tb = document.getElementById('users-tbody');
+      if (tb) tb.innerHTML = `<tr><td colspan="7" style="color:#f87171">Error: ${escHtml(e.message)}</td></tr>`;
+    }
+  }
+
+  // ── Modal crear/editar usuario ────────────────────────────────────────────
+  let editingUsername = null;
+
+  function openUserModal(username, name, role) {
+    editingUsername = username || null;
+    const isEdit = !!username;
+    document.getElementById('modal-user-title').textContent = isEdit ? '✏️ EDITAR USUARIO' : '+ NUEVO USUARIO';
+    document.getElementById('mu-username').value  = username || '';
+    document.getElementById('mu-username').disabled = isEdit;
+    document.getElementById('mu-name').value      = name    || '';
+    document.getElementById('mu-role').value      = role    || 'visualizador';
+    document.getElementById('mu-pwd-field').style.display = isEdit ? 'none' : '';
+    document.getElementById('mu-password').value  = '';
+    document.getElementById('modal-user-msg').textContent = '';
+    document.getElementById('modal-user-msg').className = 'modal-msg';
+    document.getElementById('btn-save-user').disabled = false;
+    document.getElementById('modal-user').classList.add('open');
+  }
+
+  function closeUserModal() {
+    document.getElementById('modal-user').classList.remove('open');
+    editingUsername = null;
+  }
+
+  async function saveUser() {
+    const username = document.getElementById('mu-username').value.trim().toLowerCase();
+    const nombre   = document.getElementById('mu-name').value.trim();
+    const rol      = document.getElementById('mu-role').value;
+    const password = document.getElementById('mu-password').value;
+    const msg      = document.getElementById('modal-user-msg');
+    const btn      = document.getElementById('btn-save-user');
+    msg.textContent = ''; msg.className = 'modal-msg';
+
+    if (!editingUsername && (!username || !nombre || !password))
+      return Object.assign(msg, { textContent:'❌ Todos los campos son requeridos', className:'modal-msg err' });
+    if (editingUsername && (!nombre))
+      return Object.assign(msg, { textContent:'❌ El nombre es requerido', className:'modal-msg err' });
+
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try {
+      let url = editingUsername ? `${BACKEND_URL}/admin/usuarios/editar` : `${BACKEND_URL}/admin/usuarios/crear`;
+      let method = editingUsername ? 'PUT' : 'POST';
+      let body = editingUsername
+        ? { username: editingUsername, nombre, rol }
+        : { username, nombre, rol, password };
+
+      const res  = await fetch(url, {
+        method, headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        if (msg) { msg.className = 'admin-msg ok'; msg.textContent = `✅ Contraseña de ${nombre} reseteada a PNP2026*`; }
+        closeUserModal();
+        showAdminMsg(editingUsername ? `✅ Usuario ${editingUsername} actualizado` : `✅ Usuario ${username} creado`, 'ok');
+        loadUsers();
       } else {
-        if (msg) { msg.className = 'admin-msg err'; msg.textContent = `❌ Error: ${data.error || 'Error al resetear contraseña'}`; }
+        msg.textContent = `❌ ${data.error || 'Error'}`;
+        msg.className = 'modal-msg err';
       }
     } catch (e) {
-      if (msg) { msg.className = 'admin-msg err'; msg.textContent = '❌ Error al resetear contraseña'; }
+      msg.textContent = `❌ ${e.message}`;
+      msg.className = 'modal-msg err';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Guardar';
     }
   }
+
+  async function adminResetPassword(username, nombre) {
+    if (!confirm(`¿Resetear contraseña de ${nombre} a PNP2026*?`)) return;
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/reset-password`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      showAdminMsg(res.ok && data.ok ? `✅ Contraseña de ${nombre} reseteada` : `❌ ${data.error||'Error'}`,
+                   res.ok && data.ok ? 'ok' : 'err');
+    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
+  }
+
+  async function adminToggleUser(username, activo) {
+    const accion = activo ? 'desactivar' : 'activar';
+    if (!confirm(`¿${accion.charAt(0).toUpperCase()+accion.slice(1)} usuario ${username}?`)) return;
+    try {
+      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/toggle`, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) { showAdminMsg(`✅ Usuario ${username} ${data.activo?'activado':'desactivado'}`, 'ok'); loadUsers(); }
+      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
+    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
+  }
+
+  async function adminDeleteUser(username, nombre) {
+    if (!confirm(`¿Eliminar usuario ${nombre} (${username})? Esta acción no se puede deshacer.`)) return;
+    try {
+      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/eliminar`, {
+        method:'DELETE', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) { showAdminMsg(`✅ Usuario ${username} eliminado`, 'ok'); loadUsers(); }
+      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
+    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
+  }
+
+  async function adminCloseSession(username) {
+    if (!confirm(`¿Cerrar sesión remota de ${username}?`)) return;
+    try {
+      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/cerrar-sesion`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) { showAdminMsg(`✅ Sesión de ${username} cerrada`, 'ok'); loadUsers(); }
+      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
+    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
+  }
+
+  // ── TAB 2: Actividad ──────────────────────────────────────────────────────
+  async function loadActivity() {
+    try {
+      const res  = await fetch(`${BACKEND_URL}/admin/logs`, { headers:{'Authorization':`Bearer ${token}`} });
+      adminActivityData = await res.json();
+      // Poblar filtro de usuarios
+      const users = [...new Set(adminActivityData.map(e => e.usuario))].sort();
+      const sel = document.getElementById('act-filter-user');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Todos</option>' +
+        users.map(u => `<option value="${escHtml(u)}"${u===cur?' selected':''}>${escHtml(u)}</option>`).join('');
+      renderActivityLog();
+    } catch (e) { console.warn('[admin]', e.message); }
+  }
+
+  function logTypeClass(accion) {
+    if (!accion) return '';
+    if (accion.includes('LOGIN_OK'))      return 'log-login';
+    if (accion.includes('FALLIDO') || accion.includes('ERROR') || accion.includes('BLOQUEADA')) return 'log-error';
+    if (accion.includes('CREAR') || accion.includes('EDITAR') || accion.includes('ELIMINAR') ||
+        accion.includes('RESET') || accion.includes('TOGGLE') || accion.includes('ACTIVAR') ||
+        accion.includes('DESACTIVAR') || accion.includes('CERRAR')) return 'log-change';
+    if (accion.includes('SCAN') || accion.includes('MONITOR')) return 'log-scan';
+    if (accion.includes('BLOQUEADO')) return 'log-block';
+    return '';
+  }
+
+  function renderActivityLog() {
+    const filterUser = document.getElementById('act-filter-user')?.value || '';
+    const filterTipo = document.getElementById('act-filter-tipo')?.value || '';
+    const data = adminActivityData.filter(e =>
+      (!filterUser || e.usuario === filterUser) &&
+      (!filterTipo || (e.accion||'').includes(filterTipo))
+    ).slice(0, 200);
+
+    const tbody = document.getElementById('activity-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = data.map(e => {
+      const cls = logTypeClass(e.accion);
+      const ts  = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+      const day = e.timestamp ? new Date(e.timestamp).toLocaleDateString('es',{day:'2-digit',month:'2-digit'}) : '';
+      return `<tr class="${cls}">
+        <td style="white-space:nowrap;color:var(--muted)">${day} ${ts}</td>
+        <td style="font-weight:600">${escHtml(e.usuario||'')}</td>
+        <td>${escHtml(e.accion||'')}</td>
+        <td style="color:var(--muted)">${escHtml(e.detalle||'')}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="4" style="color:var(--muted);padding:.8rem">Sin registros</td></tr>`;
+  }
+
+  async function exportActivityCSV() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/admin/logs/exportar`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `argos-log-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
+  }
+
+  // ── TAB 3: Sesiones activas ───────────────────────────────────────────────
+  async function loadSessions() {
+    try {
+      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/sesiones`, { headers:{'Authorization':`Bearer ${token}`} });
+      const data = await res.json();
+      const wrap = document.getElementById('sessions-wrap');
+      if (!wrap) return;
+      const online = data.filter(u => u.enLinea);
+      if (!online.length) {
+        wrap.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Sin sesiones activas ahora mismo</div>';
+        return;
+      }
+      wrap.innerHTML = online.map(u => `
+        <div class="sess-card">
+          <span class="status-dot sd-on"></span>
+          <div style="flex:1">
+            <div class="sess-name">${escHtml(u.username)} <span class="badge badge-${roleColor(u.role)}" style="font-size:.6rem">${escHtml(u.role)}</span></div>
+            <div class="sess-meta">${escHtml(u.name||'')} · Última actividad: ${fmtDate(u.lastActivity)} · IP: ${escHtml(u.ip||'—')}</div>
+          </div>
+          ${u.username !== 'jblanco'
+            ? `<button class="aact-btn" onclick="adminCloseSession('${escHtml(u.username)}');loadSessions()">⏏️ Cerrar</button>`
+            : ''}
+        </div>`).join('');
+    } catch (e) { console.warn('[sessions]', e.message); }
+  }
+
+  // ── Resetear contraseña (función legacy para compatibilidad) ─────────────
+  function resetPassword(username, nombre) { adminResetPassword(username, nombre); }
 
   // ── Cambio de contraseña ─────────────────────────────────────────────────
   function openPasswordModal() {
