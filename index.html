@@ -1252,7 +1252,7 @@
       <!-- Modal Crear Incidente -->
       <div class="modal-overlay" id="modal-crear-inc">
         <div class="modal-box" style="max-width:520px;gap:.75rem;">
-          <div class="modal-title">🚨 NUEVO INCIDENTE</div>
+          <div class="modal-title" id="cinc-modal-title">🚨 NUEVO INCIDENTE</div>
           <div class="modal-field">
             <label>Tipo</label>
             <select id="cinc-tipo" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.9rem;outline:none;">
@@ -1282,7 +1282,7 @@
               </select>
             </div>
           </div>
-          <div class="modal-field">
+          <div id="cinc-row-confianza" class="modal-field">
             <label>Nivel de confianza (1=Rumor · 3=Dos fuentes · 5=Confirmado)</label>
             <select id="cinc-confianza" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.88rem;outline:none;width:100%;">
               <option value="1">1 — Rumor / Sin verificar</option>
@@ -1292,13 +1292,16 @@
               <option value="5">5 — Confirmado oficialmente</option>
             </select>
           </div>
-          <div class="modal-field">
+          <div id="cinc-row-fuentes" class="modal-field">
             <label>Fuentes iniciales (URLs, una por línea)</label>
             <textarea id="cinc-fuentes" rows="2" placeholder="https://…" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.82rem;outline:none;resize:vertical;width:100%;box-sizing:border-box;font-family:monospace;"></textarea>
           </div>
           <div class="modal-field">
-            <label>Evidencias (URLs, una por línea)</label>
+            <label>URL de evidencia (opcional)</label>
             <textarea id="cinc-evidencias" rows="2" placeholder="https://…" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.82rem;outline:none;resize:vertical;width:100%;box-sizing:border-box;font-family:monospace;"></textarea>
+          </div>
+          <div id="cinc-viz-msg" style="display:none;background:rgba(245,158,11,0.08);border:1px solid #f59e0b44;border-radius:6px;padding:.6rem .9rem;font-size:.82rem;color:#fbbf24;">
+            ⚠️ Tu reporte será revisado por un operador antes de ser registrado oficialmente.
           </div>
           <div class="modal-msg" id="cinc-msg"></div>
           <div class="modal-actions">
@@ -3815,7 +3818,23 @@ ${SEP}`;
   async function loadIncidentes() {
     // Mostrar/ocultar botón según rol
     const btnNew = document.getElementById('btn-new-inc');
-    if (btnNew) btnNew.style.display = ['admin','operador'].includes(userRole) ? '' : 'none';
+    if (btnNew) {
+      if (userRole === 'visualizador') {
+        btnNew.style.display = '';
+        btnNew.textContent = '🚨 Reportar Incidente';
+        btnNew.style.background = 'rgba(226,75,74,0.12)';
+        btnNew.style.borderColor = 'rgba(226,75,74,0.5)';
+        btnNew.style.color = '#f87171';
+      } else if (['admin','operador'].includes(userRole)) {
+        btnNew.style.display = '';
+        btnNew.textContent = '+ Nuevo Incidente';
+        btnNew.style.background = '';
+        btnNew.style.borderColor = '';
+        btnNew.style.color = '';
+      } else {
+        btnNew.style.display = 'none';
+      }
+    }
     try {
       const q = [];
       if (incFiltroEstado && incFiltroEstado !== 'todos') q.push(`estado=${encodeURIComponent(incFiltroEstado)}`);
@@ -3901,7 +3920,7 @@ ${SEP}`;
   }
 
   // ── Modal crear incidente ─────────────────────────────────────────────────
-  function openCrearIncidente() {
+  function openCrearIncidente(prefill = {}) {
     ['cinc-tipo','cinc-desc','cinc-lugar','cinc-fuentes','cinc-evidencias'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = id === 'cinc-tipo' ? 'Violencia' : '';
@@ -3911,6 +3930,26 @@ ${SEP}`;
     document.getElementById('cinc-msg').textContent  = '';
     document.getElementById('cinc-msg').className    = 'modal-msg';
     document.getElementById('btn-save-inc').disabled = false;
+
+    // Pre-llenar si se pasan datos (desde "Reportar desde noticia")
+    if (prefill.tipo)        document.getElementById('cinc-tipo').value    = prefill.tipo;
+    if (prefill.descripcion) document.getElementById('cinc-desc').value    = prefill.descripcion;
+    if (prefill.lugar)       document.getElementById('cinc-lugar').value   = prefill.lugar;
+    if (prefill.evidencia)   document.getElementById('cinc-evidencias').value = prefill.evidencia;
+
+    // Adaptar modal para visualizadores
+    const isViz = userRole === 'visualizador';
+    const rowConf = document.getElementById('cinc-row-confianza');
+    const rowFuen = document.getElementById('cinc-row-fuentes');
+    if (rowConf) rowConf.style.display = isViz ? 'none' : '';
+    if (rowFuen) rowFuen.style.display = isViz ? 'none' : '';
+    const vizMsg = document.getElementById('cinc-viz-msg');
+    if (vizMsg) vizMsg.style.display = isViz ? '' : 'none';
+    const titleEl = document.getElementById('cinc-modal-title');
+    if (titleEl) titleEl.textContent = isViz ? '🚨 REPORTAR INCIDENTE' : '🚨 NUEVO INCIDENTE';
+    const btnSave = document.getElementById('btn-save-inc');
+    if (btnSave) btnSave.textContent = isViz ? 'Enviar Reporte' : 'Crear Incidente';
+
     document.getElementById('modal-crear-inc').classList.add('open');
   }
 
@@ -3919,27 +3958,28 @@ ${SEP}`;
   }
 
   async function saveIncidente() {
-    const tipo       = document.getElementById('cinc-tipo').value;
-    const descripcion= document.getElementById('cinc-desc').value.trim();
-    const lugar      = document.getElementById('cinc-lugar').value.trim();
+    const tipo         = document.getElementById('cinc-tipo').value;
+    const descripcion  = document.getElementById('cinc-desc').value.trim();
+    const lugar        = document.getElementById('cinc-lugar').value.trim();
     const departamento = document.getElementById('cinc-dept').value;
-    const confianza  = parseInt(document.getElementById('cinc-confianza').value, 10);
-    const fuentesRaw = document.getElementById('cinc-fuentes').value.trim();
-    const evidRaw    = document.getElementById('cinc-evidencias').value.trim();
-    const msg        = document.getElementById('cinc-msg');
-    const btn        = document.getElementById('btn-save-inc');
+    const msg = document.getElementById('cinc-msg');
+    const btn = document.getElementById('btn-save-inc');
 
     if (!descripcion) {
       msg.textContent = '❌ La descripción es requerida';
       msg.className = 'modal-msg err'; return;
     }
 
-    const fuentes   = fuentesRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), titulo:'' }));
-    const evidencias= evidRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), descripcion:'' }));
+    const isViz      = userRole === 'visualizador';
+    const confianza  = isViz ? 1 : parseInt(document.getElementById('cinc-confianza').value, 10);
+    const fuentesRaw = isViz ? '' : (document.getElementById('cinc-fuentes').value || '').trim();
+    const evidRaw    = (document.getElementById('cinc-evidencias').value || '').trim();
+    const fuentes    = fuentesRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), titulo:'' }));
+    const evidencias = evidRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), descripcion:'' }));
 
-    btn.disabled = true; btn.textContent = 'Creando…';
+    btn.disabled = true; btn.textContent = isViz ? 'Enviando…' : 'Creando…';
     try {
-      const res  = await fetch(`${BACKEND_URL}/incidentes/crear`, {
+      const res = await fetch(`${BACKEND_URL}/incidentes/crear`, {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
         body: JSON.stringify({ tipo, descripcion, lugar, departamento, confianza, fuentes, evidencias }),
@@ -3947,7 +3987,11 @@ ${SEP}`;
       const data = await res.json();
       if (res.ok && data.ok) {
         closeCrearIncidente();
-        addCronoEvent(`Nuevo incidente: ${tipo}`, lugar||departamento||'—', confianza>=4?'alto':'medio');
+        if (isViz) {
+          showToast(`Reporte ${data.codigo} enviado — pendiente de verificación`, 'success');
+        } else {
+          addCronoEvent(`Nuevo incidente: ${tipo}`, lugar||departamento||'—', confianza>=4?'alto':'medio');
+        }
         loadIncidentes();
       } else {
         msg.textContent = `❌ ${data.error||'Error'}`;
@@ -3957,7 +4001,8 @@ ${SEP}`;
       msg.textContent = `❌ ${e.message}`;
       msg.className = 'modal-msg err';
     } finally {
-      btn.disabled = false; btn.textContent = 'Crear Incidente';
+      const isStillViz = userRole === 'visualizador';
+      btn.disabled = false; btn.textContent = isStillViz ? 'Enviar Reporte' : 'Crear Incidente';
     }
   }
 
