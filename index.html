@@ -213,9 +213,10 @@
     }
     .admin-tab:hover  { color: var(--text); }
     .admin-tab.active { color: var(--text); }
-    .admin-tab[data-tab="usuarios"].active  { border-top-color: #378ADD; color: #60a5fa; }
-    .admin-tab[data-tab="actividad"].active { border-top-color: #22c55e; color: #4ade80; }
-    .admin-tab[data-tab="sesiones"].active  { border-top-color: #e24b4a; color: #f87171; }
+    .admin-tab[data-tab="usuarios"].active       { border-top-color: #378ADD; color: #60a5fa; }
+    .admin-tab[data-tab="actividad"].active      { border-top-color: #22c55e; color: #4ade80; }
+    .admin-tab[data-tab="sesiones"].active       { border-top-color: #e24b4a; color: #f87171; }
+    .admin-tab[data-tab="configuracion"].active  { border-top-color: #a855f7; color: #c084fc; }
     .admin-tab-pane { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; display: none; flex-direction: column; gap: .75rem; }
     .admin-tab-pane.active { display: flex; }
     .admin-pane-hdr { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; flex-shrink: 0; }
@@ -975,9 +976,10 @@
       <!-- Admin -->
       <div id="panel-admin">
         <div class="admin-tabs-bar">
-          <button class="admin-tab active" data-tab="usuarios"  onclick="switchAdminTab('usuarios')">👥 Usuarios</button>
-          <button class="admin-tab"        data-tab="actividad" onclick="switchAdminTab('actividad')">📋 Actividad</button>
-          <button class="admin-tab"        data-tab="sesiones"  onclick="switchAdminTab('sesiones')">🔌 Sesiones</button>
+          <button class="admin-tab active" data-tab="usuarios"       onclick="switchAdminTab('usuarios')">👥 Usuarios</button>
+          <button class="admin-tab"        data-tab="actividad"      onclick="switchAdminTab('actividad')">📋 Actividad</button>
+          <button class="admin-tab"        data-tab="sesiones"       onclick="switchAdminTab('sesiones')">🔌 Sesiones</button>
+          <button class="admin-tab"        data-tab="configuracion"  onclick="switchAdminTab('configuracion')">⚙️ Configuración</button>
         </div>
 
         <!-- TAB 1: Usuarios -->
@@ -1028,6 +1030,62 @@
             <button class="aact-btn" onclick="loadSessions()" style="margin-left:auto;">↺ Actualizar</button>
           </div>
           <div id="sessions-wrap" style="display:flex;flex-direction:column;gap:.45rem;"></div>
+        </div>
+
+        <!-- TAB 4: Configuración -->
+        <div id="admin-tab-configuracion" class="admin-tab-pane">
+          <div style="max-width:480px;display:flex;flex-direction:column;gap:1.25rem;">
+            <div style="font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding-bottom:.5rem;border-bottom:1px solid var(--border);">
+              Transmisión en Vivo
+            </div>
+
+            <!-- Estado activo/inactivo -->
+            <div style="display:flex;flex-direction:column;gap:.4rem;">
+              <label style="font-size:.72rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">Estado</label>
+              <div style="display:flex;gap:.6rem;">
+                <button id="live-cfg-on"  onclick="setLiveCfgEstado(true)"
+                  style="padding:.4rem 1rem;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;
+                         border:1px solid #22c55e;background:#22c55e22;color:#4ade80;transition:all .15s;">
+                  Activo
+                </button>
+                <button id="live-cfg-off" onclick="setLiveCfgEstado(false)"
+                  style="padding:.4rem 1rem;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;
+                         border:1px solid var(--border);background:none;color:var(--muted);transition:all .15s;">
+                  Inactivo
+                </button>
+              </div>
+            </div>
+
+            <!-- URL / ID de YouTube -->
+            <div style="display:flex;flex-direction:column;gap:.4rem;">
+              <label style="font-size:.72rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">
+                URL de YouTube o ID del video
+              </label>
+              <input id="live-cfg-url" type="text" placeholder="https://youtube.com/watch?v=XXXX  o  ID directo"
+                onpaste="parseLiveCfgUrl()" oninput="parseLiveCfgUrl()"
+                style="background:var(--surface);border:1px solid var(--border);border-radius:8px;
+                       padding:.6rem .9rem;color:var(--text);font-size:.88rem;outline:none;"/>
+              <div style="font-size:.72rem;color:var(--muted);">
+                ID detectado: <span id="live-cfg-id-preview" style="color:var(--accent2);font-weight:600;">—</span>
+              </div>
+            </div>
+
+            <!-- Vista previa thumbnail -->
+            <div id="live-cfg-thumb-wrap" style="display:none;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+              <img id="live-cfg-thumb" src="" alt="preview" style="width:100%;display:block;"/>
+            </div>
+
+            <!-- Mensaje de estado -->
+            <div id="live-cfg-msg" class="admin-msg"></div>
+
+            <!-- Botón guardar -->
+            <button onclick="saveLiveConfig()"
+              style="padding:.65rem 1.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));
+                     border:none;border-radius:8px;color:#fff;font-size:.92rem;font-weight:700;
+                     cursor:pointer;letter-spacing:.05em;width:fit-content;">
+              Guardar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1604,6 +1662,7 @@
 
     loadKeywords();
     loadSources();
+    loadLiveConfig();
     showPanel('monitor');
     initTour();
   }
@@ -1752,8 +1811,9 @@
     document.querySelectorAll('.admin-tab-pane').forEach(p => p.classList.remove('active'));
     document.querySelector(`.admin-tab[data-tab="${tab}"]`).classList.add('active');
     document.getElementById(`admin-tab-${tab}`).classList.add('active');
-    if (tab === 'actividad') loadActivity();
-    if (tab === 'sesiones')  loadSessions();
+    if (tab === 'actividad')     loadActivity();
+    if (tab === 'sesiones')      loadSessions();
+    if (tab === 'configuracion') loadAdminLiveConfig();
   }
 
   function showAdminMsg(text, type = 'ok') {
@@ -4827,6 +4887,117 @@ ${SEP}`;
   // ── Restaurar sesión al cargar la página (F5) ─────────────────────────────
   verifyToken();
 
+  // ── Configuración Live (polling + admin form) ─────────────────────────────
+  let _liveCfgActivo = false;
+  let _liveCfgVideoId = '';
+
+  async function loadLiveConfig() {
+    if (!token) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/config/live`, {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const iframe = document.getElementById('live-iframe-1');
+      const widget = document.getElementById('live-widget');
+      if (!iframe || !widget) return;
+      if (data.activo && data.videoId) {
+        const newSrc = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1`;
+        if (iframe.src !== newSrc) iframe.src = newSrc;
+        widget.style.display = '';
+      } else {
+        widget.style.display = 'none';
+        iframe.src = '';
+      }
+    } catch (_) {}
+  }
+
+  // Polling cada 30 s para que todos los usuarios vean el cambio
+  setInterval(loadLiveConfig, 30000);
+
+  // Carga el estado actual en el formulario del panel admin
+  async function loadAdminLiveConfig() {
+    if (!token) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/config/live`, {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      _liveCfgActivo  = data.activo;
+      _liveCfgVideoId = data.videoId || '';
+      const input = document.getElementById('live-cfg-url');
+      if (input) input.value = _liveCfgVideoId;
+      updateLiveCfgEstadoUI(_liveCfgActivo);
+      updateLiveCfgPreview(_liveCfgVideoId);
+    } catch (_) {}
+  }
+
+  function setLiveCfgEstado(activo) {
+    _liveCfgActivo = activo;
+    updateLiveCfgEstadoUI(activo);
+  }
+
+  function updateLiveCfgEstadoUI(activo) {
+    const on  = document.getElementById('live-cfg-on');
+    const off = document.getElementById('live-cfg-off');
+    if (!on || !off) return;
+    if (activo) {
+      on.style.borderColor  = '#22c55e'; on.style.background  = '#22c55e22'; on.style.color  = '#4ade80';
+      off.style.borderColor = 'var(--border)'; off.style.background = 'none'; off.style.color = 'var(--muted)';
+    } else {
+      off.style.borderColor = '#e24b4a'; off.style.background  = '#e24b4a22'; off.style.color  = '#f87171';
+      on.style.borderColor  = 'var(--border)'; on.style.background  = 'none'; on.style.color  = 'var(--muted)';
+    }
+  }
+
+  function parseLiveCfgUrl() {
+    const raw = (document.getElementById('live-cfg-url')?.value || '').trim();
+    let id = raw;
+    // Extraer ID de URLs de YouTube
+    const m = raw.match(/(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (m) id = m[1];
+    _liveCfgVideoId = id.slice(0, 20);
+    document.getElementById('live-cfg-id-preview').textContent = _liveCfgVideoId || '—';
+    updateLiveCfgPreview(_liveCfgVideoId);
+  }
+
+  function updateLiveCfgPreview(videoId) {
+    const wrap  = document.getElementById('live-cfg-thumb-wrap');
+    const thumb = document.getElementById('live-cfg-thumb');
+    if (!wrap || !thumb) return;
+    if (videoId && videoId.length >= 6) {
+      thumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+      wrap.style.display = '';
+      document.getElementById('live-cfg-id-preview').textContent = videoId;
+    } else {
+      wrap.style.display = 'none';
+      document.getElementById('live-cfg-id-preview').textContent = '—';
+    }
+  }
+
+  async function saveLiveConfig() {
+    const msg = document.getElementById('live-cfg-msg');
+    if (!msg) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/config/live`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: _liveCfgVideoId, activo: _liveCfgActivo }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al guardar');
+      msg.textContent = 'Configuración guardada. Los cambios se aplican en hasta 30 segundos.';
+      msg.className = 'admin-msg ok';
+      loadLiveConfig();
+    } catch (e) {
+      msg.textContent = e.message;
+      msg.className = 'admin-msg err';
+    }
+    setTimeout(() => { if (msg) msg.className = 'admin-msg'; }, 5000);
+  }
+
   function initLiveWidget() {
     const widget       = document.getElementById('live-widget');
     const header       = document.getElementById('live-header');
@@ -4837,10 +5008,6 @@ ${SEP}`;
       setTimeout(initLiveWidget, 500);
       return;
     }
-
-    // Visibilidad: solo mostrar cuando hay stream real
-    const src = iframe ? (iframe.src || iframe.getAttribute('src') || '') : '';
-    widget.style.display = (src.includes('youtube.com') || src.includes('youtu.be')) ? '' : 'none';
 
     // user-select: none para evitar selección al arrastrar
     widget.style.userSelect = 'none';
@@ -4946,7 +5113,7 @@ ${SEP}`;
 <div id="live-overlay" onclick="expandLive()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;"></div>
 
 <!-- Widget flotante de transmisión en vivo -->
-<div id="live-widget" style="position:fixed;bottom:20px;right:20px;width:320px;z-index:1000;background:var(--bg2);border:0.5px solid var(--border2);border-top:2px solid #e24b4a;border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,0.5);overflow:hidden;">
+<div id="live-widget" style="display:none;position:fixed;bottom:20px;right:20px;width:320px;z-index:1000;background:var(--bg2);border:0.5px solid var(--border2);border-top:2px solid #e24b4a;border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,0.5);overflow:hidden;">
   <div id="live-resize-handle" style="position:absolute;top:0;left:0;width:20px;height:20px;cursor:nw-resize;z-index:10;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:10px;background:rgba(255,255,255,0.05);">⤡</div>
   <div id="live-header" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(226,75,74,0.1);cursor:grab;">
     <div style="display:flex;align-items:center;gap:6px;">
@@ -4962,7 +5129,7 @@ ${SEP}`;
   <div id="live-body" style="display:block;line-height:0;">
     <iframe id="live-iframe-1" width="100%" height="100%"
       style="aspect-ratio:16/9;border:none;display:block;"
-      src="https://www.youtube.com/embed/13Sx0IcR9Gc?autoplay=1&mute=1"
+      src=""
       allowfullscreen
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
     </iframe>
