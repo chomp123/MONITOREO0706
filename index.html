@@ -247,6 +247,88 @@
     .admin-msg.ok  { background:#052e1644; color:#4ade80; border:1px solid #166534; display:block; }
     .admin-msg.err { background:#3f0f0f44; color:#f87171; border:1px solid #7f1d1d; display:block; }
 
+    /* ── Feed tabs ───────────────────────────────────────── */
+    .feed-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .feed-tab {
+      flex:1; padding:.32rem 0; font-size:.72rem; font-weight:700; letter-spacing:.06em;
+      background:none; border:none; border-bottom:2px solid transparent;
+      color:var(--muted); cursor:pointer; transition:all .15s;
+    }
+    .feed-tab.active { color:var(--text); border-bottom-color:var(--accent); }
+    .feed-tab-incidents.active { border-bottom-color:#e24b4a; color:#f87171; }
+
+    /* ── Incident feed items ──────────────────────────────── */
+    .feed-item-incident {
+      border-left-width:3px !important;
+      border-left-color:#e24b4a !important;
+      background:rgba(226,75,74,.06) !important;
+    }
+
+    /* ── Reliability badges ──────────────────────────────── */
+    .rel-badge { font-size:.6rem; border-radius:3px; padding:1px 5px; font-weight:700; border:1px solid; }
+    .rel-confirmed  { background:#05803222; color:#4ade80; border-color:#4ade8055; }
+    .rel-unconfirmed{ background:#ca8a0422; color:#fbbf24; border-color:#fbbf2455; }
+    .rel-single     { background:#9f121222; color:#f87171; border-color:#f8717155; }
+
+    /* ── Alert distribution ──────────────────────────────── */
+    .adist-row { display:flex; align-items:center; gap:.45rem; margin-bottom:.3rem; }
+    .adist-label { font-size:.7rem; color:var(--muted); width:80px; white-space:nowrap; }
+    .adist-wrap { flex:1; background:var(--surface); border-radius:4px; height:7px; overflow:hidden; }
+    .adist-bar { height:7px; border-radius:4px; transition:width .4s ease; }
+    .adist-pct { font-size:.7rem; color:var(--muted); width:32px; text-align:right; }
+
+    /* ── Hot keywords ────────────────────────────────────── */
+    .hotkey-item { margin-bottom:.35rem; }
+    .hotkey-top  { display:flex; justify-content:space-between; font-size:.72rem; margin-bottom:.18rem; }
+    .hotkey-kw   { color:var(--text); font-weight:600; }
+    .hotkey-cnt  { color:var(--muted); }
+    .hotkey-bar-wrap { background:var(--surface); border-radius:3px; height:5px; }
+    .hotkey-bar  { height:5px; border-radius:3px; background:#f97316; transition:width .4s ease; }
+
+    /* ── Cronología ──────────────────────────────────────── */
+    .crono-panel {
+      background:var(--surface); border-top:1px solid var(--border);
+      flex-shrink:0; padding:.5rem .8rem .6rem;
+    }
+    .crono-hdr  { display:flex; align-items:center; gap:.5rem; margin-bottom:.4rem; }
+    .crono-title{ font-size:.72rem; font-weight:700; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; flex:1; }
+    .crono-btn  { padding:.25rem .6rem; font-size:.68rem; font-weight:700; border-radius:5px; cursor:pointer; border:1px solid; transition:all .15s; }
+    .crono-add  { background:#1e3a5f33; border-color:#378ADD55; color:#60a5fa; }
+    .crono-add:hover { background:#1e3a5f66; }
+    .crono-exp  { background:#0e3d2033; border-color:#22c55e55; color:#4ade80; }
+    .crono-exp:hover { background:#0e3d2066; }
+    .crono-table { width:100%; border-collapse:collapse; font-size:.72rem; max-height:130px; overflow-y:auto; display:block; }
+    .crono-table thead tr th { color:var(--muted); font-size:.63rem; letter-spacing:.08em; text-transform:uppercase; padding:.2rem .4rem; text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); }
+    .crono-table tbody tr td { padding:.25rem .4rem; border-bottom:1px solid #1a1a2a; vertical-align:top; }
+    .crono-table tbody tr:hover td { background:#ffffff06; }
+    .crono-level-alto    { color:#f97316; }
+    .crono-level-critico { color:#e24b4a; }
+    .crono-level-medio   { color:#eab308; }
+    .crono-level-info    { color:#378ADD; }
+
+    /* ── Modo operaciones ─────────────────────────────────── */
+    .btn-ops-mode {
+      padding:.35rem .75rem; background:#7c3aed22; border:1px solid #7c3aed66;
+      border-radius:6px; color:#a855f7; font-size:.75rem; font-weight:700;
+      cursor:pointer; transition:all .2s; letter-spacing:.05em;
+    }
+    .btn-ops-mode:hover { background:#7c3aed44; }
+    .btn-ops-mode.active { background:#7c3aed; color:#fff; border-color:#7c3aed; }
+    body.ops-mode aside               { display:none !important; }
+    body.ops-mode header h1           { font-size:1.3rem; }
+    body.ops-mode .monitor-toolbar    { display:none; }
+    body.ops-mode .scanner-bar        { display:none; }
+    body.ops-mode .search-panel       { display:none; }
+    body.ops-mode .monitor-body       { font-size:1.05em; }
+    body.ops-mode .map-panel          { flex:1.5 !important; }
+    body.ops-mode .right-panel        { flex:1 !important; }
+    body.ops-mode .widgets-col        { display:none; }
+    body.ops-mode .timeline-panel     { display:none; }
+    body.ops-mode .feed-panel         { flex:1 !important; }
+    body.ops-mode #feed-container     { max-height:none !important; flex:1; }
+    body.ops-mode .feed-text          { font-size:.9rem !important; }
+    .ops-countdown { font-size:.7rem; color:#a855f7; margin-left:.5rem; }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -574,6 +656,8 @@
     <h1>ARGOS</h1>
     <span id="user-info"></span>
     <span id="role-badge" class="badge"></span>
+    <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
+    <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
     <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
     <button class="btn-logout" id="btn-logout">Salir</button>
   </header>
@@ -817,6 +901,10 @@
                     <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
                   </div>
                 </div>
+                <div class="feed-tabs">
+                  <button class="feed-tab active" id="feed-tab-noticias"   onclick="switchFeedTab('noticias')">📰 Noticias <span id="feed-tab-cnt-noticias" style="font-size:.6rem;color:var(--muted)"></span></button>
+                  <button class="feed-tab feed-tab-incidents" id="feed-tab-incidentes" onclick="switchFeedTab('incidentes')">🚨 Incidentes <span id="feed-tab-cnt-incidentes" style="font-size:.6rem;color:var(--muted)"></span></button>
+                </div>
                 <div id="feed-container">
                   <div class="feed-list" id="feed-list"></div>
                 </div>
@@ -833,26 +921,35 @@
                   <div id="osint-indicators"></div>
                 </div>
                 <div class="widget-block">
-                  <div class="widget-title">Sentimiento</div>
-                  <div class="s-row">
-                    <span class="s-label">🟢</span>
-                    <div class="s-bar-wrap"><div class="s-bar s-pos" id="s-pos" style="width:52%"></div></div>
-                    <span class="s-pct" id="s-pos-pct">52%</span>
+                  <div class="widget-title">Distribución de Alertas</div>
+                  <div class="adist-row">
+                    <span class="adist-label">🔵 Informativo</span>
+                    <div class="adist-wrap"><div class="adist-bar" id="adist-info" style="width:100%;background:#378ADD"></div></div>
+                    <span class="adist-pct" id="adist-info-pct">—</span>
                   </div>
-                  <div class="s-row">
-                    <span class="s-label">⚪</span>
-                    <div class="s-bar-wrap"><div class="s-bar s-neu" id="s-neu" style="width:31%"></div></div>
-                    <span class="s-pct" id="s-neu-pct">31%</span>
+                  <div class="adist-row">
+                    <span class="adist-label">🟡 Medio</span>
+                    <div class="adist-wrap"><div class="adist-bar" id="adist-medio" style="width:0;background:#eab308"></div></div>
+                    <span class="adist-pct" id="adist-medio-pct">—</span>
                   </div>
-                  <div class="s-row">
-                    <span class="s-label">🔴</span>
-                    <div class="s-bar-wrap"><div class="s-bar s-neg" id="s-neg" style="width:17%"></div></div>
-                    <span class="s-pct" id="s-neg-pct">17%</span>
+                  <div class="adist-row">
+                    <span class="adist-label">🟠 Alto</span>
+                    <div class="adist-wrap"><div class="adist-bar" id="adist-alto" style="width:0;background:#f97316"></div></div>
+                    <span class="adist-pct" id="adist-alto-pct">—</span>
+                  </div>
+                  <div class="adist-row">
+                    <span class="adist-label">🔴 Crítico</span>
+                    <div class="adist-wrap"><div class="adist-bar" id="adist-critico" style="width:0;background:#e24b4a"></div></div>
+                    <span class="adist-pct" id="adist-critico-pct">—</span>
                   </div>
                 </div>
                 <div class="widget-block" style="flex:1;">
                   <div class="widget-title">Tendencias</div>
                   <div id="trending-list"></div>
+                </div>
+                <div class="widget-block">
+                  <div class="widget-title">🔥 Keywords Calientes</div>
+                  <div id="hotkeys-list"><div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div></div>
                 </div>
               </div>
 
@@ -871,7 +968,49 @@
             </div>
 
           </div><!-- right-panel -->
+
+          <!-- Cronología operacional -->
+          <div class="crono-panel">
+            <div class="crono-hdr">
+              <span class="crono-title">📋 Cronología Operacional</span>
+              <button class="crono-btn crono-add" onclick="openCronoModal()">+ Agregar evento</button>
+              <button class="crono-btn crono-exp" onclick="exportCronologia()">⬇ Exportar</button>
+            </div>
+            <table class="crono-table" id="crono-table">
+              <thead><tr><th>Hora</th><th>Evento</th><th>Lugar</th><th>Nivel</th></tr></thead>
+              <tbody id="crono-tbody"></tbody>
+            </table>
+          </div>
+
         </div><!-- monitor-body -->
+
+        <!-- Modal cronología -->
+        <div class="modal-overlay" id="modal-crono">
+          <div class="modal-box" style="max-width:400px">
+            <div class="modal-title">📋 AGREGAR EVENTO</div>
+            <div class="modal-field">
+              <label>Descripción del evento</label>
+              <input type="text" id="crono-desc" placeholder="Ej: Primer incidente detectado en CDE" autocomplete="off"/>
+            </div>
+            <div class="modal-field">
+              <label>Lugar</label>
+              <input type="text" id="crono-lugar" placeholder="Ej: Ciudad del Este, Alto Paraná" autocomplete="off"/>
+            </div>
+            <div class="modal-field">
+              <label>Nivel</label>
+              <select id="crono-nivel" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.92rem;outline:none;">
+                <option value="info">🔵 Informativo</option>
+                <option value="medio">🟡 Medio</option>
+                <option value="alto">🟠 Alto</option>
+                <option value="critico">🔴 Crítico</option>
+              </select>
+            </div>
+            <div class="modal-actions">
+              <button class="btn-cancel" onclick="closeCronoModal()">Cancelar</button>
+              <button class="btn-primary" onclick="saveCronoEvent()">Agregar</button>
+            </div>
+          </div>
+        </div>
 
         <!-- Scanner bar -->
         <div class="scanner-bar">
@@ -1656,6 +1795,18 @@
   let sentiment          = { pos:0, neu:0, neg:0 };
   let trendingWords      = {};
   let geoFeatures        = null;
+  let activeFeedTab      = 'noticias';
+  let hotKeywordsInterval = null;
+  let opsMode            = false;
+  let opsCountdownTimer  = null;
+  let opsNextRefresh     = 0;
+  let cronologiaEvents   = [];
+  const KNOWN_VERIFIED_PORTALS = ['abc','ultimahora','lanacion','nacion','c9n','adndigital','cronica','hoy','unicanal','a24'];
+
+  const INCIDENT_KEYWORDS = [
+    'pelea','agresion','agresión','fraude','acarreo','compra de votos',
+    'denuncia','irregularidad','violencia','tiros','amenaza','conflicto',
+  ];
 
   // ── Municipios estratégicos ────────────────────────────────────────────────
   const STRATEGIC_CITIES = [
@@ -1683,7 +1834,6 @@
     renderDeptStats();
     renderKeywordTags();
     renderTrending();
-    renderSentiment();
     showFeedLoading();
 
     // Decaimiento suave del mapa de calor cada 5 s
@@ -1704,6 +1854,11 @@
 
     fetchRSSNews();
     rssInterval = setInterval(fetchRSSNews, 30000);
+
+    // Hot keywords cada 30 s
+    hotKeywordsInterval = setInterval(updateHotKeywords, 30000);
+
+    renderCronologia();
   }
 
 
@@ -1725,34 +1880,167 @@
     while (list.children.length > 20) list.removeChild(list.lastChild);
   }
 
-  // ── Sentimiento ───────────────────────────────────────────────────────────
-  function updateSentimentFromRSS(items) {
+  // ── Distribución de alertas ───────────────────────────────────────────────
+  function updateSentimentFromRSS(items) { updateAlertDistribution(items); } // alias legacy
+
+  function updateAlertDistribution(items) {
     if (!items || !items.length) return;
-    let pos = 0, neu = 0, neg = 0;
-    items.forEach(i => {
-      if (i.alertLevel === 'info')       pos++;
-      else if (i.alertLevel === 'medio') neu++;
-      else                               neg++;
-    });
-    const total = pos + neu + neg;
+    const counts = { info:0, medio:0, alto:0, critico:0 };
+    items.forEach(i => { if (counts[i.alertLevel] !== undefined) counts[i.alertLevel]++; });
+    const total = Object.values(counts).reduce((s,n) => s+n, 0);
     if (!total) return;
-    sentiment.pos = Math.round(pos / total * 100);
-    sentiment.neu = Math.round(neu / total * 100);
-    sentiment.neg = Math.round(100 - sentiment.pos - sentiment.neu);
-    renderSentiment();
+    const set = (key) => {
+      const pct = Math.round(counts[key] / total * 100);
+      const bar = document.getElementById(`adist-${key}`);
+      const lbl = document.getElementById(`adist-${key}-pct`);
+      if (bar) bar.style.width = pct + '%';
+      if (lbl) lbl.textContent = pct + '%';
+    };
+    ['info','medio','alto','critico'].forEach(set);
   }
 
-  function renderSentiment() {
-    const pos = Math.round(sentiment.pos);
-    const neu = Math.round(sentiment.neu);
-    const neg = Math.round(100 - pos - neu);
-    const set = (barId, pctId, v) => {
-      const b = document.getElementById(barId); if (b) b.style.width = v + '%';
-      const p = document.getElementById(pctId); if (p) p.textContent  = v + '%';
-    };
-    set('s-pos','s-pos-pct', pos);
-    set('s-neu','s-neu-pct', neu);
-    set('s-neg','s-neg-pct', neg);
+  // ── Hot Keywords ──────────────────────────────────────────────────────────
+  const TWO_HOURS = 2 * 60 * 60 * 1000;
+
+  function updateHotKeywords() {
+    const now = Date.now();
+    const recent = rssAllItems.filter(i => {
+      const ts = new Date(i.fecha || i.pubDate || 0).getTime();
+      return now - ts < TWO_HOURS;
+    });
+    const counts = {};
+    recent.forEach(item => {
+      (item.title + ' ' + (item.description || '')).toLowerCase()
+        .split(/\W+/)
+        .forEach(w => {
+          if (w.length < 4 || TREND_STOP_WORDS.has(w)) return;
+          counts[w] = (counts[w] || 0) + 1;
+        });
+    });
+    const top5 = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    const el = document.getElementById('hotkeys-list');
+    if (!el) return;
+    if (!top5.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div>';
+      return;
+    }
+    const max = top5[0][1];
+    el.innerHTML = top5.map(([kw, n]) => {
+      const pct = Math.round(n / max * 100);
+      return `<div class="hotkey-item">
+        <div class="hotkey-top"><span class="hotkey-kw">${escHtml(kw)}</span><span class="hotkey-cnt">(${n})</span></div>
+        <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Feed tabs & incident classification ───────────────────────────────────
+  function isIncidentItem(item) {
+    const text = ((item.title || '') + ' ' + (item.description || ''))
+      .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return INCIDENT_KEYWORDS.some(kw =>
+      text.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
+    );
+  }
+
+  function switchFeedTab(tab) {
+    activeFeedTab = tab;
+    document.getElementById('feed-tab-noticias').classList.toggle('active',   tab === 'noticias');
+    document.getElementById('feed-tab-incidentes').classList.toggle('active', tab === 'incidentes');
+    renderFeedFromCache();
+  }
+
+  // ── Reliability badge ─────────────────────────────────────────────────────
+  function getReliabilityBadge(item) {
+    const portal = (item.portalName || item.portal || '').toLowerCase();
+    const isVerified = KNOWN_VERIFIED_PORTALS.some(p => portal.includes(p));
+    if (isVerified) return '<span class="rel-badge rel-confirmed">🟢 Confirmado</span>';
+    if (portal.includes('google') || !item.portalName)
+      return '<span class="rel-badge rel-unconfirmed">🟡 No confirmado</span>';
+    return '<span class="rel-badge rel-single">🔴 Fuente única</span>';
+  }
+
+  // ── Cronología operacional ────────────────────────────────────────────────
+  function openCronoModal() {
+    document.getElementById('crono-desc').value  = '';
+    document.getElementById('crono-lugar').value = '';
+    document.getElementById('crono-nivel').value = 'medio';
+    document.getElementById('modal-crono').classList.add('open');
+  }
+  function closeCronoModal() {
+    document.getElementById('modal-crono').classList.remove('open');
+  }
+  function saveCronoEvent() {
+    const desc  = document.getElementById('crono-desc').value.trim();
+    const lugar = document.getElementById('crono-lugar').value.trim();
+    const nivel = document.getElementById('crono-nivel').value;
+    if (!desc) return;
+    addCronoEvent(desc, lugar, nivel);
+    closeCronoModal();
+  }
+  function addCronoEvent(desc, lugar, nivel, ts) {
+    const now  = ts || new Date();
+    const hora = now instanceof Date ? now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : ts;
+    cronologiaEvents.push({ hora, desc, lugar: lugar||'—', nivel, iso: (now instanceof Date ? now.toISOString() : '') });
+    renderCronologia();
+  }
+  function renderCronologia() {
+    const tbody = document.getElementById('crono-tbody');
+    if (!tbody) return;
+    const NIVEL_ICONS = { info:'🔵', medio:'🟡', alto:'🟠', critico:'🔴' };
+    tbody.innerHTML = [...cronologiaEvents].reverse().map(e =>
+      `<tr>
+        <td style="white-space:nowrap;color:var(--muted)">${escHtml(e.hora)}</td>
+        <td>${escHtml(e.desc)}</td>
+        <td style="color:var(--muted)">${escHtml(e.lugar)}</td>
+        <td class="crono-level-${e.nivel}">${NIVEL_ICONS[e.nivel]||''} ${e.nivel.toUpperCase()}</td>
+      </tr>`
+    ).join('') || '<tr><td colspan="4" style="color:var(--muted);padding:.4rem">Sin eventos registrados</td></tr>';
+  }
+  function exportCronologia() {
+    if (!cronologiaEvents.length) { alert('Sin eventos en la cronología.'); return; }
+    const fecha = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const NIVEL_LABEL = { info:'INFORMATIVO', medio:'MEDIO', alto:'ALTO', critico:'CRÍTICO' };
+    const lines = [
+      `${fecha} - CRONOLOGÍA OPERACIONAL ARGOS`,
+      '─'.repeat(50),
+      ...cronologiaEvents.map(e =>
+        `${e.hora} - [${NIVEL_LABEL[e.nivel]||e.nivel}] ${e.desc}${e.lugar && e.lugar!=='—' ? ' · ' + e.lugar : ''}`
+      ),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `argos-cronologia-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+  }
+
+  // ── Modo Operaciones ──────────────────────────────────────────────────────
+  function toggleOpsMode() {
+    opsMode = !opsMode;
+    document.body.classList.toggle('ops-mode', opsMode);
+    document.getElementById('btn-ops-mode').classList.toggle('active', opsMode);
+    const countdown = document.getElementById('ops-countdown');
+    if (opsMode) {
+      countdown.style.display = '';
+      startOpsCountdown();
+    } else {
+      countdown.style.display = 'none';
+      if (opsCountdownTimer) { clearInterval(opsCountdownTimer); opsCountdownTimer = null; }
+    }
+  }
+  function startOpsCountdown() {
+    opsNextRefresh = 30;
+    const countdown = document.getElementById('ops-countdown');
+    if (opsCountdownTimer) clearInterval(opsCountdownTimer);
+    opsCountdownTimer = setInterval(() => {
+      opsNextRefresh--;
+      if (countdown) countdown.textContent = `↺ ${opsNextRefresh}s`;
+      if (opsNextRefresh <= 0) {
+        opsNextRefresh = 30;
+        fetchRSSNow();
+      }
+    }, 1000);
   }
 
   // ── Tendencias ────────────────────────────────────────────────────────────
@@ -2466,62 +2754,26 @@
       );
       if (rssAllItems.length > 90) rssAllItems = rssAllItems.slice(0, 90);
 
-      // Re-renderizar todo el feed desde el master array ordenado
-      const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
-      const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
-      const ALERT_LABELS = { critico:'Crítico', alto:'Alto', medio:'Medio', info:'Informativo' };
-
-      const frag = document.createDocumentFragment();
-      rssAllItems.forEach(item => {
-        const alIcon  = ALERT_ICONS[item.alertLevel]  || '🔵';
-        const alColor = ALERT_COLORS[item.alertLevel] || '#378ADD';
-        const alLabel = ALERT_LABELS[item.alertLevel] || 'Informativo';
-        const iso     = item.fecha || item.pubDate || null;
-        const timeAgo = formatTimeAgo(iso);
-        const fullDt  = formatFullDate(iso);
-        const location = detectLocation((item.title||'')+' '+(item.description||''));
-
-        const titleLow = (item.title || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-        const isMatch  = scanKeywords.some(kw =>
-          titleLow.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
-        );
-
-        const el = document.createElement('div');
-        el.className = 'feed-item feed-source-noticias feed-item-link';
-        el.style.borderLeftColor = item.portalColor || '#f59e0b';
-        if (item.url) el.addEventListener('click', () => window.open(item.url, '_blank', 'noopener,noreferrer'));
-
-        el.innerHTML = `
-          <span class="feed-icon">📰</span>
-          <div class="feed-content">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.3rem;flex-wrap:wrap;">
-              <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;">
-                <span style="font-size:.68rem;color:${alColor};font-weight:700;">${alIcon}</span>
-                <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
-                <span class="rss-real">● REAL</span>
-                ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
-                <span style="font-size:.62rem;color:${alColor};font-weight:600;">${alLabel}</span>
-              </div>
-              <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;flex-shrink:0;">${timeAgo}</span>
-            </div>
-            <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
-            ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;margin-top:.1rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
-            <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
-              <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
-              ${item.url ? '<span style="color:#4ade80;font-size:.62rem;flex-shrink:0;">↗ Ver artículo</span>' : ''}
-            </div>
-          </div>`;
-        frag.appendChild(el);
+      // Auto-agregar incidentes de nivel alto/crítico a la cronología
+      const newIncidents = newItems.filter(i => isIncidentItem(i));
+      newIncidents.forEach(item => {
+        if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
+          const loc = detectLocation((item.title||'')+' '+(item.description||''));
+          addCronoEvent(item.title.slice(0,80), loc||'—', item.alertLevel, new Date(item.fecha||item.pubDate||Date.now()));
+        }
       });
-      list.innerHTML = '';
-      list.appendChild(frag);
-      updateFeedMoreIndicator();
 
-      // Actualizar mapa de calor, timeline, sentimiento, tendencias e indicadores OSINT
+      // Beep suave si hay incidentes nuevos
+      if (newIncidents.length) playIncidentBeep();
+
+      renderFeedFromCache();
+
+      // Actualizar mapa de calor, timeline, distribución alertas, tendencias, hot keywords, OSINT
       updateHeatFromRSS(newItems);
       newItems.slice(0, 5).forEach(item => addRSSToTimeline(item));
-      updateSentimentFromRSS(data.items || []);
+      updateAlertDistribution(data.items || []);
       updateTrendingFromRSS(newItems);
+      updateHotKeywords();
       trackOSINT(newItems);
 
     } catch {
@@ -2529,6 +2781,102 @@
       if (textEl)   { textEl.textContent = 'RSS error'; }
     }
   }
+
+  // ── Render feed filtrado por tab activo ──────────────────────────────────
+  const ALERT_ICONS  = { critico:'🔴', alto:'🟠', medio:'🟡', info:'🔵' };
+  const ALERT_COLORS = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', info:'#378ADD' };
+  const ALERT_LABELS = { critico:'Crítico', alto:'Alto', medio:'Medio', info:'Informativo' };
+
+  function renderFeedFromCache() {
+    const list = document.getElementById('feed-list');
+    if (!list) return;
+
+    const showIncidents = activeFeedTab === 'incidentes';
+    const filtered = rssAllItems.filter(i => isIncidentItem(i) === showIncidents);
+
+    // Actualizar contadores en tabs
+    const cntN = document.getElementById('feed-tab-cnt-noticias');
+    const cntI = document.getElementById('feed-tab-cnt-incidentes');
+    const totalNot = rssAllItems.filter(i => !isIncidentItem(i)).length;
+    const totalInc = rssAllItems.filter(i => isIncidentItem(i)).length;
+    if (cntN) cntN.textContent = totalNot ? `(${totalNot})` : '';
+    if (cntI) cntI.textContent = totalInc ? `(${totalInc})` : '';
+
+    const frag = document.createDocumentFragment();
+    filtered.forEach(item => {
+      const isIncident = isIncidentItem(item);
+      const alIcon  = ALERT_ICONS[item.alertLevel]  || '🔵';
+      const alColor = ALERT_COLORS[item.alertLevel] || '#378ADD';
+      const alLabel = ALERT_LABELS[item.alertLevel] || 'Informativo';
+      const iso     = item.fecha || item.pubDate || null;
+      const timeAgo = formatTimeAgo(iso);
+      const fullDt  = formatFullDate(iso);
+      const location = detectLocation((item.title||'')+' '+(item.description||''));
+      const relBadge = getReliabilityBadge(item);
+
+      const titleLow = (item.title || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const isMatch  = scanKeywords.some(kw =>
+        titleLow.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))
+      );
+
+      const el = document.createElement('div');
+      el.className = `feed-item feed-source-noticias feed-item-link${isIncident ? ' feed-item-incident' : ''}`;
+      el.style.borderLeftColor = isIncident ? '#e24b4a' : (item.portalColor || '#f59e0b');
+      if (item.url) el.addEventListener('click', () => window.open(item.url, '_blank', 'noopener,noreferrer'));
+
+      el.innerHTML = `
+        <span class="feed-icon">${isIncident ? '🚨' : '📰'}</span>
+        <div class="feed-content">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.3rem;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;">
+              <span style="font-size:.68rem;color:${alColor};font-weight:700;">${alIcon}</span>
+              <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
+              <span class="rss-real">● REAL</span>
+              ${relBadge}
+              ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
+              <span style="font-size:.62rem;color:${alColor};font-weight:600;">${alLabel}</span>
+            </div>
+            <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;flex-shrink:0;">${timeAgo}</span>
+          </div>
+          <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
+          ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;margin-top:.1rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
+          <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
+            ${item.url ? '<span style="color:#4ade80;font-size:.62rem;flex-shrink:0;">↗ Ver artículo</span>' : ''}
+          </div>
+        </div>`;
+      frag.appendChild(el);
+    });
+
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.className = 'system-msg';
+      empty.style.marginTop = '1rem';
+      empty.textContent = showIncidents ? 'Sin incidentes detectados aún' : 'Sin noticias aún';
+      frag.appendChild(empty);
+    }
+
+    list.innerHTML = '';
+    list.appendChild(frag);
+    updateFeedMoreIndicator();
+  }
+
+  // ── Beep suave de incidente ──────────────────────────────────────────────
+  function playIncidentBeep() {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+    } catch { /* sin audio → silencio */ }
+  }
+
+  // ── Fetch RSS manual (modo operaciones) ───────────────────────────────────
+  async function fetchRSSNow() { await fetchRSSNews(); }
 
   // ── Restaurar sesión al cargar la página (F5) ─────────────────────────────
   verifyToken();
