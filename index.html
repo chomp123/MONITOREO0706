@@ -1767,6 +1767,7 @@
   }
 
   function initApp() {
+    resetMonitorState();
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('screen-app').style.display  = 'flex';
     document.getElementById('user-info').textContent = userName;
@@ -2474,10 +2475,27 @@
   const osintAlertSent  = {};   // keyword → bool (anti-duplicado por ventana)
   OSINT_KWS.forEach(k => { osintLog[k] = []; osintAlertSent[k] = false; });
 
+  // ── Reset de contadores de sesión (se llama al iniciar sesión) ────────────
+  // Todo lo que alimenta el ranking "Actividad por Departamento" y el mapa de
+  // calor debe arrancar en 0 y crecer solo con noticias/incidentes de esta
+  // sesión — nunca con datos de una sesión anterior.
+  function resetMonitorState() {
+    DEPTS.forEach(d => { heatData[d.id] = 0; });
+    rssAllItems    = [];
+    incidentesData = [];
+    rssSeenTitles.clear();
+    deptAlertTimes = {};
+    trendingWords  = {};
+    sentiment      = { pos: 0, neu: 0, neg: 0 };
+    OSINT_KWS.forEach(k => { osintLog[k] = []; osintAlertSent[k] = false; });
+    renderHeatMap();
+    renderDeptStats();
+  }
+
   function initMonitor() {
     if (monitorInitialized) return;
     monitorInitialized = true;
-    DEPTS.forEach(d => { heatData[d.id] = d.base; });
+    DEPTS.forEach(d => { heatData[d.id] = 0; });
     renderHeatMap();
     renderDeptStats();
     renderKeywordTags();
@@ -2485,11 +2503,11 @@
     updateActiveAlerts();
     showFeedLoading();
 
-    // Decaimiento suave del mapa de calor cada 5 s
+    // Decaimiento suave del mapa de calor cada 5 s (nunca por debajo de 0)
     feedInterval = setInterval(() => {
       DEPTS.forEach(d => {
         const delta = (Math.random() - 0.6) * 0.15;
-        heatData[d.id] = Math.max(d.base, Math.min(8, (heatData[d.id] || d.base) + delta));
+        heatData[d.id] = Math.max(0, Math.min(8, (heatData[d.id] || 0) + delta));
       });
       renderHeatMap();
       renderDeptStats();
@@ -3209,7 +3227,7 @@
           const boost = item.alertLevel === 'critico' ? 1.0 :
                         item.alertLevel === 'alto'    ? 0.7 :
                         item.alertLevel === 'medio'   ? 0.4 : 0.2;
-          heatData[d.id] = Math.min(8, (heatData[d.id] || d.base) + boost);
+          heatData[d.id] = Math.min(8, (heatData[d.id] || 0) + boost);
           if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
             deptAlertTimes[d.id] = Date.now();
           }
@@ -3368,7 +3386,7 @@
       '<div class="map-title" style="margin-bottom:.4rem;">Actividad por Departamento</div>' +
       top.map((d,i) => {
         const al  = alertLevel(heatData[d.id]);
-        const cnt = Math.round((heatData[d.id]||0)*15+8);
+        const cnt = Math.round((heatData[d.id]||0)*15);
         return `<div class="dept-stat-item">
           <div class="dept-stat-left">
             <span style="color:var(--muted);font-size:.63rem;min-width:11px">${i+1}</span>
@@ -4002,7 +4020,7 @@
 
     // Ranking departamentos
     const rankingDepts = topDepts
-      .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15+8) }))
+      .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15) }))
       .slice(0, 8);
 
     // Incidentes destacados consolidados (sin dup tipo+lugar)
@@ -4203,7 +4221,7 @@ ${SEP}`;
 
       // Ranking de departamentos por actividad
       const ranking = [...DEPTS]
-        .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15+8) }))
+        .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15) }))
         .sort((a,b) => b.count - a.count)
         .slice(0, 8);
 
