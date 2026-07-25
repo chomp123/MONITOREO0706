@@ -592,9 +592,9 @@
     .dept-stat-count { color: var(--accent2); font-weight: 700; }
 
     /* Municipios estratégicos */
-    @keyframes city-pulse-ring { 0%{ r:8; opacity:.75; } 100%{ r:16; opacity:0; } }
-    @keyframes city-pulse-ring-fast { 0%{ r:8; opacity:.9; } 100%{ r:16; opacity:0; } }
-    .city-dot-ring { pointer-events: none; fill: none; }
+    @keyframes city-pulse-ring { 0%{ r:5; opacity:.3; } 100%{ r:9; opacity:0; } }
+    @keyframes city-pulse-ring-fast { 0%{ r:5; opacity:.3; } 100%{ r:9; opacity:0; } }
+    .city-dot-ring { pointer-events: none; fill: none; opacity: 0; }
     .city-dot-ring.ring-active { animation: city-pulse-ring 1.8s ease-out infinite; }
     .city-dot-ring.ring-fast   { animation: city-pulse-ring-fast .9s ease-out infinite; }
 
@@ -2466,15 +2466,6 @@
     { name:'San Lorenzo',       lon:-57.50, lat:-25.34, deptId:'dept-central'       },
   ];
 
-  // ── Río Paraguay (trazo aproximado norte→sur, referencia visual) ───────────
-  const RIO_PARAGUAY_COORDS = [
-    [-58.18, -19.30], [-58.10, -20.05], [-58.00, -20.70], [-57.92, -21.30],
-    [-57.85, -21.85], [-57.78, -22.30], [-57.70, -22.75], [-57.65, -23.15],
-    [-57.60, -23.60], [-57.58, -24.05], [-57.56, -24.55], [-57.60, -25.00],
-    [-57.63, -25.29], [-57.75, -25.55], [-57.90, -25.85], [-58.05, -26.20],
-    [-58.20, -26.55], [-58.35, -26.90], [-58.55, -27.20], [-58.62, -27.38],
-  ];
-
   // ── Indicadores OSINT ─────────────────────────────────────────────────────
   const OSINT_KWS       = ['fraude','acarreo','pelea','denuncia','compra de votos'];
   const OSINT_WINDOW_MS = 10 * 60 * 1000;  // 10 minutos
@@ -3066,17 +3057,6 @@
             .text('');
         });
 
-        // Río Paraguay — referencia visual norte→sur
-        mapG.append('path')
-          .attr('class', 'rio-paraguay')
-          .attr('d', pathGen({ type: 'LineString', coordinates: RIO_PARAGUAY_COORDS }))
-          .attr('fill', 'none')
-          .attr('stroke', '#4A90D9')
-          .attr('stroke-width', 1.5)
-          .attr('stroke-dasharray', 'none')
-          .attr('opacity', 0.6)
-          .style('pointer-events', 'none');
-
         // Municipios estratégicos — puntos actualizables por renderStrategicCityDots()
         const METRO_CITIES = ['Asunción', 'Luque', 'San Lorenzo'];
         const NON_METRO_CFG = {
@@ -3111,7 +3091,7 @@
           const [px, py] = projection([city.lon, city.lat]);
           const slug     = city.name.replace(/[\s.]/g,'');
           const isMetro  = METRO_CITIES.includes(city.name);
-          const baseR    = city.name === 'Asunción' ? 9 : 8;
+          const baseR    = 5;
 
           mapG.append('circle')
             .attr('id', `city-ring-${slug}`)
@@ -3126,10 +3106,7 @@
             .attr('fill', '#6b7280').attr('stroke', '#fff').attr('stroke-width', 1.2)
             .style('cursor', 'pointer')
             .on('mouseenter', function(event) {
-              const nCity = incidentesData.filter(i => i.estado !== 'cerrado' &&
-                ((i.lugar||'')+' '+(i.municipio||'')).toLowerCase()
-                  .includes(city.name.toLowerCase().replace('.',''))
-              ).length;
+              const nCity = getCityIncidentesActivos(city.name);
               tt.innerHTML = `<b>${city.name}</b><br><span style="color:var(--muted)">🚨 ${nCity} incidente${nCity!==1?'s':''} activo${nCity!==1?'s':''}</span>`;
               tt.style.display = 'block';
             })
@@ -3254,23 +3231,38 @@
     return '#e24b4a'; // alta | critico
   }
 
+  function getCityIncidentesActivos(cityName) {
+    return incidentesData.filter(i => i.estado !== 'cerrado' &&
+      ((i.lugar||'')+' '+(i.municipio||'')).toLowerCase()
+        .includes(cityName.toLowerCase().replace('.',''))
+    ).length;
+  }
+
   function renderStrategicCityDots() {
     STRATEGIC_CITIES.forEach(city => {
-      const dept  = DEPTS.find(d => d.id === city.deptId);
-      const score = dept ? getActivityScore(dept.name) : 0;
-      const lvl   = activityLevel(score);
-      const color = cityDotColorForLevel(lvl.key);
-      const slug  = city.name.replace(/[\s.]/g,'');
+      const dept   = DEPTS.find(d => d.id === city.deptId);
+      const score  = dept ? getActivityScore(dept.name) : 0;
+      const lvl    = activityLevel(score);
+      const color  = cityDotColorForLevel(lvl.key);
+      const slug   = city.name.replace(/[\s.]/g,'');
+      const nCity  = getCityIncidentesActivos(city.name);
+      const active = nCity > 0;
 
       const dot = document.getElementById(`city-dot-${slug}`);
-      if (dot) dot.setAttribute('fill', color);
+      if (dot) {
+        dot.setAttribute('fill', active ? color : '#6b7280');
+        dot.setAttribute('r', active ? 5 : 4);
+      }
 
       const ring = document.getElementById(`city-ring-${slug}`);
       if (ring) {
-        ring.setAttribute('stroke', color);
-        const isFast = lvl.key === 'alta' || lvl.key === 'critico';
-        ring.setAttribute('class',
-          `city-dot-ring${lvl.key === 'none' ? '' : (isFast ? ' ring-fast' : ' ring-active')}`);
+        if (active) {
+          const isFast = lvl.key === 'alta' || lvl.key === 'critico';
+          ring.setAttribute('stroke', color);
+          ring.setAttribute('class', `city-dot-ring${isFast ? ' ring-fast' : ' ring-active'}`);
+        } else {
+          ring.setAttribute('class', 'city-dot-ring');
+        }
       }
     });
     // Metro label: nivel de actividad del depto Central
