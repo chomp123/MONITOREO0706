@@ -737,6 +737,7 @@
       --al-critico: #e24b4a;
     }
     .rank-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; display:inline-block; }
+    .rank-dot-pulse { animation:pulse-dot-crit .8s infinite; }
     .rd-info    { background:var(--al-info);    box-shadow:0 0 5px var(--al-info); }
     .rd-medio   { background:var(--al-medio);   box-shadow:0 0 5px var(--al-medio); }
     .rd-alto    { background:var(--al-alto);    box-shadow:0 0 5px var(--al-alto); }
@@ -3380,20 +3381,25 @@
   }
 
   // ── Ranking con badges de alerta ─────────────────────────────────────────
+  // Misma fuente que el mapa (getActivityScore) para que el ranking y el
+  // mapa de calor siempre muestren exactamente los mismos deptos activos.
   function renderDeptStats() {
-    const top = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0)).slice(0,6);
+    const top = DEPTS
+      .map(d => ({ d, score: getActivityScore(d.name) }))
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 6);
     document.getElementById('dept-stats').innerHTML =
       '<div class="map-title" style="margin-bottom:.4rem;">Actividad por Departamento</div>' +
-      top.map((d,i) => {
-        const al  = alertLevel(heatData[d.id]);
-        const cnt = Math.round((heatData[d.id]||0)*15);
+      top.map(({d, score}, i) => {
+        const lvl = activityLevel(score);
         return `<div class="dept-stat-item">
           <div class="dept-stat-left">
             <span style="color:var(--muted);font-size:.63rem;min-width:11px">${i+1}</span>
-            <span class="rank-dot rd-${al.key}"></span>
+            <span class="rank-dot${lvl.key === 'critico' ? ' rank-dot-pulse' : ''}"
+                  style="background:${lvl.color};box-shadow:0 0 5px ${lvl.color}"></span>
             <span class="dept-stat-name">${d.name}</span>
           </div>
-          <span class="dept-stat-count">${cnt}</span>
+          <span class="dept-stat-count">${score}</span>
         </div>`;
       }).join('');
   }
@@ -3950,7 +3956,7 @@
     const incCerrados = incidentesData.filter(i => i.estado === 'cerrado').length;
     const totalRSS = rssAllItems.length;
     const numFuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].length;
-    const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0];
+    const topDept = [...DEPTS].sort((a,b) => getActivityScore(b.name) - getActivityScore(a.name))[0];
     const catCounts = {};
     rssAllItems.forEach(item => {
       const t = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -4000,7 +4006,7 @@
     const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado');
     const incCriticosArr = incidentesData.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico');
 
-    const topDepts = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0));
+    const topDepts = [...DEPTS].sort((a,b) => getActivityScore(b.name) - getActivityScore(a.name));
     const topDept  = topDepts[0];
 
     const catCounts = {};
@@ -4020,7 +4026,7 @@
 
     // Ranking departamentos
     const rankingDepts = topDepts
-      .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15) }))
+      .map(d => ({ name: d.name, count: getActivityScore(d.name) }))
       .slice(0, 8);
 
     // Incidentes destacados consolidados (sin dup tipo+lugar)
@@ -4180,7 +4186,7 @@ ${SEP}`;
       const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado').length;
 
       // Top dept
-      const topDept = [...DEPTS].sort((a,b) => (heatData[b.id]||0) - (heatData[a.id]||0))[0]?.name || '—';
+      const topDept = [...DEPTS].sort((a,b) => getActivityScore(b.name) - getActivityScore(a.name))[0]?.name || '—';
 
       // Tendencia principal
       const catCounts = {};
@@ -4221,7 +4227,7 @@ ${SEP}`;
 
       // Ranking de departamentos por actividad
       const ranking = [...DEPTS]
-        .map(d => ({ name: d.name, count: Math.round((heatData[d.id]||0)*15) }))
+        .map(d => ({ name: d.name, count: getActivityScore(d.name) }))
         .sort((a,b) => b.count - a.count)
         .slice(0, 8);
 
@@ -4524,6 +4530,9 @@ ${SEP}`;
       renderIncidentes();
       updateIncidenteBadge();
       updateNivelNacional();
+      // Los incidentes pesan en getActivityScore() → refrescar mapa y ranking ya.
+      renderHeatMap();
+      renderDeptStats();
     } catch (e) {
       const el = document.getElementById('inc-list');
       if (el) el.innerHTML = `<div style="color:#f87171;text-align:center;padding:2rem">Error: ${escHtml(e.message)}</div>`;
