@@ -570,26 +570,78 @@
     .map-title { font-size: .68rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-bottom: .65rem; }
     .map-svg-wrap { position: relative; }
     .map-svg-wrap svg { width: 100%; height: auto; display: block; }
-    .dept-path { fill: #1a1a2e; stroke: #3b3b60; stroke-width: .8; cursor: pointer; transition: fill .35s; }
-    .dept-path:hover { stroke: var(--accent2); stroke-width: 1.6; filter: brightness(1.4); }
-    /* Heat = niveles de alerta: azul → amarillo → naranja → rojo */
-    .heat-0{fill:#0d1520} .heat-1{fill:#0f2235} .heat-2{fill:#163258}
-    .heat-3{fill:#2a2000} .heat-4{fill:#4a3b00}
-    .heat-5{fill:#3d1600} .heat-6{fill:#6b2600}
-    .heat-7{fill:#520c0c;animation:pulse-crit 1.1s infinite}
-    .heat-8{fill:#820f0f;animation:pulse-crit  .7s infinite}
-    @keyframes pulse-crit{0%,100%{opacity:1}50%{opacity:.6}}
+    .dept-path { fill: #1a1a2e; stroke: rgba(255,255,255,0.2); stroke-width: 1.2; cursor: pointer; transition: fill .35s; }
+    .dept-path:hover { stroke: var(--accent2); stroke-width: 1.8; filter: brightness(1.35); }
+    .dept-path.dept-critical-pulse { animation: pulse-crit 1s infinite; }
+    @keyframes pulse-crit{0%,100%{opacity:1}50%{opacity:.62}}
     .dept-tooltip {
       position: absolute; background: var(--card); border: 1px solid var(--accent);
       border-radius: 6px; padding: .35rem .65rem; font-size: .73rem;
       pointer-events: none; display: none; z-index: 10; white-space: nowrap; color: var(--text);
     }
+    .dept-count-label { font-family: sans-serif; }
     .heat-legend { display: flex; align-items: center; gap: .5rem; margin-top: .7rem; font-size: .68rem; color: var(--muted); }
     .heat-bar { flex: 1; height: 7px; border-radius: 4px; background: linear-gradient(to right, #1a1a2e, #5521a8, #a855f7, #e879f9); }
+    .activity-legend { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .6rem; font-size: .64rem; color: var(--muted); }
+    .al2-legend-item { display: flex; align-items: center; gap: .3rem; }
+    .al2-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
     .dept-stats { margin-top: .9rem; }
     .dept-stat-item { display: flex; justify-content: space-between; align-items: center; padding: .3rem 0; border-bottom: 1px solid var(--border); font-size: .77rem; }
     .dept-stat-item:last-child { border-bottom: none; }
     .dept-stat-count { color: var(--accent2); font-weight: 700; }
+
+    /* Municipios estratégicos */
+    @keyframes city-pulse-ring { 0%{ r:8; opacity:.75; } 100%{ r:16; opacity:0; } }
+    @keyframes city-pulse-ring-fast { 0%{ r:8; opacity:.9; } 100%{ r:16; opacity:0; } }
+    .city-dot-ring { pointer-events: none; fill: none; }
+    .city-dot-ring.ring-active { animation: city-pulse-ring 1.8s ease-out infinite; }
+    .city-dot-ring.ring-fast   { animation: city-pulse-ring-fast .9s ease-out infinite; }
+
+    /* Panel de detalle de departamento */
+    .dept-detail-backdrop {
+      position: fixed; inset: 0; background: #00000088; backdrop-filter: blur(2px);
+      z-index: 1200; opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .dept-detail-backdrop.open { opacity: 1; pointer-events: auto; }
+    .dept-detail-panel {
+      position: fixed; top: 0; right: 0; height: 100vh; width: 100%; max-width: 360px;
+      background: var(--card); border-left: 1px solid var(--border);
+      box-shadow: -8px 0 40px #00000055; z-index: 1201;
+      display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform .3s ease;
+    }
+    .dept-detail-panel.open { transform: translateX(0); }
+    .dept-detail-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .dept-detail-title { font-size: 1rem; font-weight: 700; color: var(--accent2); letter-spacing: .04em; }
+    .dept-detail-close {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: .9rem;
+    }
+    .dept-detail-close:hover { color: var(--text); border-color: var(--muted); }
+    .dept-detail-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .8rem; }
+    .dept-detail-stat { font-size: .84rem; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+    .dept-detail-level { font-weight: 700; }
+    .dept-detail-inc-list { display: flex; flex-direction: column; gap: .4rem; }
+    .dept-detail-inc-row {
+      display: flex; align-items: center; gap: .45rem; padding: .4rem .55rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      font-size: .74rem; cursor: pointer; overflow: hidden;
+    }
+    .dept-detail-inc-row:hover { border-color: var(--accent); }
+    .dept-detail-inc-code { color: var(--accent2); font-weight: 700; flex-shrink: 0; }
+    .dept-detail-inc-nivel { font-weight: 700; flex-shrink: 0; }
+    .dept-detail-inc-desc { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dept-detail-kw { font-size: .78rem; color: var(--text); line-height: 1.5; }
+    .dept-detail-footer { padding: 1rem 1.2rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .dept-detail-btn {
+      width: 100%; padding: .65rem; border-radius: 8px; border: 1px solid var(--accent);
+      background: rgba(124,58,237,0.12); color: var(--accent2); font-size: .85rem; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+    }
+    .dept-detail-btn:hover { background: rgba(124,58,237,0.22); }
 
     /* Feed */
     .feed-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -1172,11 +1224,12 @@
             <div class="map-svg-wrap" id="map-wrap">
               <div class="dept-tooltip" id="dept-tooltip"></div>
             </div>
-            <div class="alert-legend">
-              <span class="al-legend-item"><span class="al-dot" style="background:#378ADD"></span>Informativo</span>
-              <span class="al-legend-item"><span class="al-dot" style="background:#eab308"></span>Medio</span>
-              <span class="al-legend-item"><span class="al-dot" style="background:#f97316"></span>Alto</span>
-              <span class="al-legend-item"><span class="al-dot" style="background:#e24b4a"></span>Crítico</span>
+            <div class="activity-legend" id="activity-legend">
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#1a1a2e;border:1px solid rgba(255,255,255,.15)"></span>Sin actividad</span>
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#2d1b4e"></span>Baja</span>
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#6b2fa0"></span>Media</span>
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#c2185b"></span>Alta</span>
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#e24b4a"></span>Crítico</span>
             </div>
             <div class="dept-stats" id="dept-stats"></div>
 
@@ -1475,6 +1528,19 @@
           <div class="inc-modal-body" id="dm-body">
             <div style="color:var(--muted);text-align:center;padding:2rem">Cargando…</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Panel de detalle de departamento (mapa de calor) -->
+      <div class="dept-detail-backdrop" id="dept-detail-backdrop" onclick="closeDeptDetailPanel()"></div>
+      <div class="dept-detail-panel" id="dept-detail-panel">
+        <div class="dept-detail-header">
+          <span class="dept-detail-title" id="dept-detail-title">Departamento</span>
+          <button class="dept-detail-close" onclick="closeDeptDetailPanel()">✕</button>
+        </div>
+        <div class="dept-detail-body" id="dept-detail-body"></div>
+        <div class="dept-detail-footer">
+          <button class="dept-detail-btn" id="dept-detail-btn-ver">Ver todos los incidentes →</button>
         </div>
       </div>
 
@@ -2300,6 +2366,65 @@
     return ALERT_LEVELS[0];
   }
 
+  // ── Nivel de actividad (mapa de calor: noticias + incidentes) ───────────────
+  const ACTIVITY_LEVELS = [
+    { key:'none',    min:0,  max:0,        color:'#1a1a2e', label:'Sin actividad' },
+    { key:'baja',    min:1,  max:3,        color:'#2d1b4e', label:'Baja'          },
+    { key:'media',   min:4,  max:8,        color:'#6b2fa0', label:'Media'         },
+    { key:'alta',    min:9,  max:15,       color:'#c2185b', label:'Alta'          },
+    { key:'critico', min:16, max:Infinity, color:'#e24b4a', label:'Crítico'       },
+  ];
+
+  function activityLevel(score) {
+    const s = score || 0;
+    for (const lvl of ACTIVITY_LEVELS) { if (s >= lvl.min && s <= lvl.max) return lvl; }
+    return ACTIVITY_LEVELS[0];
+  }
+
+  function itemMatchesDept(item, deptName) {
+    const text = ((item.title||'')+' '+(item.description||'')).toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return text.includes(normName(deptName));
+  }
+
+  function getDeptNoticias(deptName) {
+    return rssAllItems.filter(i => itemMatchesDept(i, deptName));
+  }
+
+  function getDeptIncidentesAbiertos(deptName) {
+    return incidentesData.filter(i =>
+      i.estado !== 'cerrado' && normName(i.departamento||'') === normName(deptName));
+  }
+
+  // Peso mayor para incidentes confirmados vs. simples menciones en noticias
+  function getActivityScore(deptName) {
+    const noticias    = getDeptNoticias(deptName).length;
+    const incidentes  = getDeptIncidentesAbiertos(deptName).length * 3;
+    return noticias + incidentes;
+  }
+
+  function activityColorScale(maxActivity) {
+    return d3.scaleSequential()
+      .domain([0, Math.max(1, maxActivity)])
+      .interpolator(d3.interpolateRgbBasis([
+        '#1a1a2e', '#2d1b4e', '#6b2fa0', '#c2185b', '#e24b4a',
+      ]));
+  }
+
+  // Nombre usado en <select> de filtros del Centro de Incidentes (difiere del de DEPTS)
+  const DEPT_FILTER_NAME = { 'Pdte. Hayes': 'Presidente Hayes' };
+
+  function prioridadNivel(inc) {
+    let p = (inc.prioridad || inc.nivel || 'media').toLowerCase();
+    if (p === 'critica') return 'critico';
+    if (p === 'alta')    return 'alto';
+    if (p === 'baja')    return 'informativo';
+    if (p === 'media')   return 'medio';
+    return p;
+  }
+  const NIVEL_LABEL_ES  = { informativo:'Informativo', medio:'Media', alto:'Alta', critico:'Crítico' };
+  const NIVEL_COLOR_ES  = { informativo:'#378ADD', medio:'#eab308', alto:'#f97316', critico:'#e24b4a' };
+
   let activeSources      = new Set(['all']);
 
   const DEFAULT_KEYWORDS = [
@@ -2337,6 +2462,15 @@
     { name:'Pedro Juan Cab.',   lon:-55.73, lat:-22.55, deptId:'dept-amambay'       },
     { name:'Luque',             lon:-57.48, lat:-25.27, deptId:'dept-central'       },
     { name:'San Lorenzo',       lon:-57.50, lat:-25.34, deptId:'dept-central'       },
+  ];
+
+  // ── Río Paraguay (trazo aproximado norte→sur, referencia visual) ───────────
+  const RIO_PARAGUAY_COORDS = [
+    [-58.18, -19.30], [-58.10, -20.05], [-58.00, -20.70], [-57.92, -21.30],
+    [-57.85, -21.85], [-57.78, -22.30], [-57.70, -22.75], [-57.65, -23.15],
+    [-57.60, -23.60], [-57.58, -24.05], [-57.56, -24.55], [-57.60, -25.00],
+    [-57.63, -25.29], [-57.75, -25.55], [-57.90, -25.85], [-58.05, -26.20],
+    [-58.20, -26.55], [-58.35, -26.90], [-58.55, -27.20], [-58.62, -27.38],
   ];
 
   // ── Indicadores OSINT ─────────────────────────────────────────────────────
@@ -2820,8 +2954,8 @@
     const wrap = document.getElementById('map-wrap');
     const W    = wrap.clientWidth  || 260;
     const H    = Math.round(W * 1.35);
-    const cx   = W * 0.44;
-    const cy   = H * 0.44;
+    const cx   = W * 0.46;
+    const cy   = H * 0.42;
 
     d3.select('#map-wrap svg').remove();
 
@@ -2834,8 +2968,8 @@
     const mapG = svg.append('g').attr('id', 'map-g');
 
     const projection = d3.geoMercator()
-      .center([-58.2, -23.8])
-      .scale(W * 3.9)
+      .center([-58.0, -23.2])
+      .scale(W * 4.2)
       .translate([cx, cy]);
 
     const pathGen = d3.geoPath().projection(projection);
@@ -2866,7 +3000,7 @@
           .data(geo.features)
           .enter()
           .append('path')
-          .attr('class', 'dept-path heat-0')
+          .attr('class', 'dept-path')
           .attr('d', pathGen)
           .attr('id', d => {
             const raw  = d.properties.name || d.properties.NAME || d.properties.ADM1_EN || '';
@@ -2877,11 +3011,15 @@
             d.properties.name || d.properties.NAME || d.properties.ADM1_EN || ''
           )
           .on('mouseenter', function(event) {
-            const id = this.getAttribute('id');
-            const nm = this.getAttribute('data-name');
-            const al = alertLevel(heatData[id]);
-            const cnt = Math.round((heatData[id]||0)*14+8);
-            tt.innerHTML = `<b>${nm}</b> &nbsp;${al.icon} ${al.label}<br><span style="color:var(--muted)">${cnt} menciones</span>`;
+            const id  = this.getAttribute('id');
+            const nm  = this.getAttribute('data-name');
+            const dep = DEPTS.find(x => x.id === id);
+            const score = dep ? getActivityScore(dep.name) : 0;
+            const lvl   = activityLevel(score);
+            const nInc  = dep ? getDeptIncidentesAbiertos(dep.name).length : 0;
+            const nNoti = dep ? getDeptNoticias(dep.name).length : 0;
+            tt.innerHTML = `<b>${nm}</b> &nbsp;<span style="color:${lvl.color}">${lvl.label}</span>`
+              + `<br><span style="color:var(--muted)">📰 ${nNoti} noticias · 🚨 ${nInc} incidentes</span>`;
             tt.style.display = 'block';
           })
           .on('mousemove', function(event) {
@@ -2892,6 +3030,8 @@
           .on('mouseleave', () => { tt.style.display = 'none'; })
           .on('click', function(event, d) {
             event.stopPropagation();
+            const id  = this.getAttribute('id');
+            const dep = DEPTS.find(x => x.id === id);
             const [[x0,y0],[x1,y1]] = pathGen.bounds(d);
             const scale = Math.min(6, 0.85 / Math.max((x1-x0)/W, (y1-y0)/H));
             svg.transition().duration(650).call(
@@ -2900,51 +3040,112 @@
                 .translate(cx - scale*(x0+x1)/2, cy - scale*(y0+y1)/2)
                 .scale(scale)
             );
+            if (dep) openDeptDetailPanel(dep.name);
           });
+
+        // Contador de incidentes activos sobre el centroide de cada depto
+        geo.features.forEach(feat => {
+          const raw  = feat.properties.name || feat.properties.NAME || feat.properties.ADM1_EN || '';
+          const norm = normName(raw);
+          const id   = DEPT_ID_FROM_NAME[norm] || ('dept-' + norm.replace(/\s+/g, '-'));
+          const [ctx, cty] = pathGen.centroid(feat);
+          mapG.append('text')
+            .attr('id', `dept-count-${id}`)
+            .attr('class', 'dept-count-label')
+            .attr('x', ctx).attr('y', cty)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', 10)
+            .attr('font-weight', 'bold')
+            .attr('fill', '#e24b4a')
+            .attr('stroke', '#07090f').attr('stroke-width', 2.2)
+            .attr('paint-order', 'stroke')
+            .style('pointer-events', 'none')
+            .text('');
+        });
+
+        // Río Paraguay — referencia visual norte→sur
+        mapG.append('path')
+          .attr('class', 'rio-paraguay')
+          .attr('d', pathGen({ type: 'LineString', coordinates: RIO_PARAGUAY_COORDS }))
+          .attr('fill', 'none')
+          .attr('stroke', '#4A90D9')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', 'none')
+          .attr('opacity', 0.6)
+          .style('pointer-events', 'none');
 
         // Municipios estratégicos — puntos actualizables por renderStrategicCityDots()
         const METRO_CITIES = ['Asunción', 'Luque', 'San Lorenzo'];
         const NON_METRO_CFG = {
-          'Ciudad del Este': { dx: 10, dy:   0, anchor: 'start' },
-          'Pedro Juan Cab.': { dx: 10, dy: -10, anchor: 'start' },
-          'Encarnación':     { dx: 10, dy:  12, anchor: 'start' },
+          'Ciudad del Este': { dx: 14, dy:   0, anchor: 'start' },
+          'Pedro Juan Cab.': { dx: 14, dy: -12, anchor: 'start' },
+          'Encarnación':     { dx: 14, dy:  14, anchor: 'start' },
         };
+
+        function appendLabelWithBg(id, x, y, text, anchor) {
+          const g = mapG.append('g').attr('id', `${id}-g`).style('pointer-events', 'none');
+          g.append('rect')
+            .attr('id', `${id}bg`)
+            .attr('rx', 4).attr('ry', 4)
+            .attr('fill', 'rgba(7,9,15,0.85)');
+          const txt = g.append('text')
+            .attr('id', id)
+            .attr('x', x).attr('y', y)
+            .attr('font-size', 9).attr('font-weight', 'bold')
+            .attr('fill', '#fff')
+            .attr('font-family', 'sans-serif')
+            .attr('text-anchor', anchor)
+            .attr('dominant-baseline', 'middle')
+            .text(text);
+          const bbox = txt.node().getBBox();
+          g.select('rect')
+            .attr('x', bbox.x - 6).attr('y', bbox.y - 2)
+            .attr('width', bbox.width + 12).attr('height', bbox.height + 4);
+          return g;
+        }
+
         STRATEGIC_CITIES.forEach(city => {
           const [px, py] = projection([city.lon, city.lat]);
           const slug     = city.name.replace(/[\s.]/g,'');
           const isMetro  = METRO_CITIES.includes(city.name);
+          const baseR    = city.name === 'Asunción' ? 9 : 8;
+
+          mapG.append('circle')
+            .attr('id', `city-ring-${slug}`)
+            .attr('class', 'city-dot-ring')
+            .attr('cx', px).attr('cy', py).attr('r', baseR)
+            .attr('stroke', '#6b7280').attr('stroke-width', 1.4);
+
           mapG.append('circle')
             .attr('id', `city-dot-${slug}`)
             .attr('cx', px).attr('cy', py)
-            .attr('r', city.name === 'Asunción' ? 5 : 3.5)
-            .attr('fill', '#4b5563').attr('stroke', '#fff').attr('stroke-width', .9)
-            .style('pointer-events', 'none');
+            .attr('r', baseR)
+            .attr('fill', '#6b7280').attr('stroke', '#fff').attr('stroke-width', 1.2)
+            .style('cursor', 'pointer')
+            .on('mouseenter', function(event) {
+              const nCity = incidentesData.filter(i => i.estado !== 'cerrado' &&
+                ((i.lugar||'')+' '+(i.municipio||'')).toLowerCase()
+                  .includes(city.name.toLowerCase().replace('.',''))
+              ).length;
+              tt.innerHTML = `<b>${city.name}</b><br><span style="color:var(--muted)">🚨 ${nCity} incidente${nCity!==1?'s':''} activo${nCity!==1?'s':''}</span>`;
+              tt.style.display = 'block';
+            })
+            .on('mousemove', function(event) {
+              const rect = wrap.getBoundingClientRect();
+              tt.style.left = (event.clientX - rect.left + 12) + 'px';
+              tt.style.top  = (event.clientY - rect.top  - 52) + 'px';
+            })
+            .on('mouseleave', () => { tt.style.display = 'none'; });
+
           if (!isMetro) {
-            const cfg = NON_METRO_CFG[city.name] || { dx: 5, dy: 3, anchor: 'start' };
-            mapG.append('text')
-              .attr('id', `city-lbl-${slug}`)
-              .attr('x', px + cfg.dx).attr('y', py + cfg.dy)
-              .attr('font-size', 9).attr('fill', '#e5e7eb')
-              .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
-              .attr('text-anchor', cfg.anchor)
-              .attr('stroke', '#07090f').attr('stroke-width', 2.5)
-              .attr('paint-order', 'stroke')
-              .style('pointer-events', 'none')
-              .text(city.name);
+            const cfg = NON_METRO_CFG[city.name] || { dx: 8, dy: 3, anchor: 'start' };
+            appendLabelWithBg(`city-lbl-${slug}`, px + cfg.dx, py + cfg.dy, city.name, cfg.anchor);
           }
         });
         // Label único área metropolitana (anclado a Asunción)
         const [asuX, asuY] = projection([-57.63, -25.29]);
-        mapG.append('text')
-          .attr('id', 'city-lbl-metro')
-          .attr('x', asuX - 60).attr('y', asuY - 15)
-          .attr('font-size', 9).attr('fill', '#e5e7eb')
-          .attr('font-family', 'sans-serif').attr('font-weight', 'bold')
-          .attr('text-anchor', 'start')
-          .attr('stroke', '#07090f').attr('stroke-width', 2.5)
-          .attr('paint-order', 'stroke')
-          .style('pointer-events', 'none')
-          .text('Área Metropolitana');
+        appendLabelWithBg('city-lbl-metro', asuX - 62, asuY - 18, 'Área Metropolitana', 'start');
 
         renderHeatMap();
   
@@ -3044,34 +3245,67 @@
 
   // ── Mapa de calor ─────────────────────────────────────────────────────────
   // ── Puntos de municipios estratégicos ────────────────────────────────────
+  function cityDotColorForLevel(lvlKey) {
+    if (lvlKey === 'none') return '#6b7280';
+    if (lvlKey === 'baja') return '#6b2fa0';
+    if (lvlKey === 'media') return '#c2185b';
+    return '#e24b4a'; // alta | critico
+  }
+
   function renderStrategicCityDots() {
     STRATEGIC_CITIES.forEach(city => {
-      const heat = heatData[city.deptId] || 0;
-      const al   = alertLevel(heat);
-      const slug = city.name.replace(/[\s.]/g,'');
-      const dot  = document.getElementById(`city-dot-${slug}`);
-      if (dot) {
-        dot.setAttribute('fill', heat >= 2 ? al.color : '#4b5563');
-        const baseR = city.name === 'Asunción' ? 5 : 3.5;
-        dot.setAttribute('r', heat >= 3 ? (baseR + 1) : baseR);
-        dot.style.animation = heat >= 5 ? 'pulse-crit .9s infinite' : 'none';
+      const dept  = DEPTS.find(d => d.id === city.deptId);
+      const score = dept ? getActivityScore(dept.name) : 0;
+      const lvl   = activityLevel(score);
+      const color = cityDotColorForLevel(lvl.key);
+      const slug  = city.name.replace(/[\s.]/g,'');
+
+      const dot = document.getElementById(`city-dot-${slug}`);
+      if (dot) dot.setAttribute('fill', color);
+
+      const ring = document.getElementById(`city-ring-${slug}`);
+      if (ring) {
+        ring.setAttribute('stroke', color);
+        const isFast = lvl.key === 'alta' || lvl.key === 'critico';
+        ring.setAttribute('class',
+          `city-dot-ring${lvl.key === 'none' ? '' : (isFast ? ' ring-fast' : ' ring-active')}`);
       }
-      const lbl = document.getElementById(`city-lbl-${slug}`);
-      if (lbl) lbl.setAttribute('fill', heat >= 2 ? '#e2e8f0' : '#6b7280');
     });
-    // Metro label: Central dept heat
-    const metroLbl  = document.getElementById('city-lbl-metro');
+    // Metro label: nivel de actividad del depto Central
+    const metroLbl = document.getElementById('city-lbl-metro');
     if (metroLbl) {
-      const metroHeat = heatData['dept-central'] || 0;
-      metroLbl.setAttribute('fill', metroHeat >= 2 ? '#e2e8f0' : '#6b7280');
+      const lvl = activityLevel(getActivityScore('Central'));
+      metroLbl.setAttribute('fill', lvl.key === 'none' ? '#9ca3af' : '#fff');
     }
   }
 
+  function renderDeptCounters() {
+    DEPTS.forEach(d => {
+      const cntEl = document.getElementById(`dept-count-${d.id}`);
+      if (!cntEl) return;
+      const count = getDeptIncidentesAbiertos(d.name).length;
+      cntEl.textContent = count > 0 ? String(count) : '';
+    });
+  }
+
   function renderHeatMap() {
+    let maxActivity = 0;
+    const scores = {};
+    DEPTS.forEach(d => {
+      const s = getActivityScore(d.name);
+      scores[d.id] = s;
+      if (s > maxActivity) maxActivity = s;
+    });
+    const colorScale = activityColorScale(maxActivity);
     DEPTS.forEach(d => {
       const el = document.getElementById(d.id);
-      if (el) el.setAttribute('class', `dept-path heat-${Math.round(heatData[d.id] || 0)}`);
+      if (!el) return;
+      const s   = scores[d.id];
+      const lvl = activityLevel(s);
+      el.setAttribute('fill', s > 0 ? colorScale(s) : '#1a1a2e');
+      el.classList.toggle('dept-critical-pulse', lvl.key === 'critico');
     });
+    renderDeptCounters();
     renderStrategicCityDots();
   }
 
@@ -3150,6 +3384,76 @@
           <span class="dept-stat-count" style="color:${al.color}">${cnt}</span>
         </div>`;
       }).join('');
+  }
+
+  // ── Panel de detalle de departamento (click en el mapa) ──────────────────
+  function getDeptKeywordCounts(deptName) {
+    const items = getDeptNoticias(deptName);
+    const kws   = [...new Set([...DEFAULT_KEYWORDS, ...scanKeywords])];
+    const counts = {};
+    items.forEach(item => {
+      const text = ((item.title||'')+' '+(item.description||'')).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      kws.forEach(kw => {
+        const kwn = kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        if (text.includes(kwn)) counts[kw] = (counts[kw]||0) + 1;
+      });
+    });
+    return Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,6);
+  }
+
+  function openDeptDetailPanel(deptName) {
+    const noticias   = getDeptNoticias(deptName);
+    const incAbiertos = getDeptIncidentesAbiertos(deptName);
+    const score      = getActivityScore(deptName);
+    const lvl        = activityLevel(score);
+    const topKw      = getDeptKeywordCounts(deptName);
+
+    const incRows = incAbiertos.slice(0, 10).map(inc => {
+      const nivel = prioridadNivel(inc);
+      const label = NIVEL_LABEL_ES[nivel] || 'Media';
+      const color = NIVEL_COLOR_ES[nivel] || '#eab308';
+      const desc  = escHtml((inc.descripcion || inc.tipo || '—').slice(0, 42));
+      return `<div class="dept-detail-inc-row" onclick="closeDeptDetailPanel();openDetalleIncidente('${escHtml(inc.codigo)}')">
+        <span class="dept-detail-inc-code">${escHtml(inc.codigo)}</span>
+        <span class="dept-detail-inc-nivel" style="color:${color}">${label}</span>
+        <span class="dept-detail-inc-desc">${desc}</span>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:.78rem;">✅ Sin incidentes activos</div>';
+
+    const kwText = topKw.length
+      ? topKw.map(([k,c]) => `${escHtml(k)}(${c})`).join(', ')
+      : '—';
+
+    document.getElementById('dept-detail-title').textContent = deptName;
+    document.getElementById('dept-detail-body').innerHTML = `
+      <div class="dept-detail-stat">📰 Noticias: <b>${noticias.length}</b></div>
+      <div class="dept-detail-stat">🚨 Incidentes activos: <b>${incAbiertos.length}</b></div>
+      <div class="dept-detail-inc-list">${incRows}</div>
+      <div class="dept-detail-kw">🔥 Keywords detectadas: ${kwText}</div>
+      <div class="dept-detail-stat">📊 Nivel de actividad:
+        <span class="dept-detail-level" style="color:${lvl.color}">${lvl.label.toUpperCase()}</span>
+      </div>
+    `;
+
+    const btnVer = document.getElementById('dept-detail-btn-ver');
+    btnVer.onclick = () => {
+      closeDeptDetailPanel();
+      showPanel('incidentes');
+      const sel = document.getElementById('inc-filter-dept');
+      if (sel) {
+        sel.value = DEPT_FILTER_NAME[deptName] || deptName;
+        renderIncidentes();
+      }
+    };
+
+    document.getElementById('dept-detail-panel').classList.add('open');
+    document.getElementById('dept-detail-backdrop').classList.add('open');
+  }
+
+  function closeDeptDetailPanel() {
+    document.getElementById('dept-detail-panel').classList.remove('open');
+    document.getElementById('dept-detail-backdrop').classList.remove('open');
   }
 
   // ── Fuentes ───────────────────────────────────────────────────────────────
