@@ -582,10 +582,11 @@
     .dept-count-label { font-family: sans-serif; }
     .heat-legend { display: flex; align-items: center; gap: .5rem; margin-top: .7rem; font-size: .68rem; color: var(--muted); }
     .heat-bar { flex: 1; height: 7px; border-radius: 4px; background: linear-gradient(to right, #1a1a2e, #5521a8, #a855f7, #e879f9); }
-    .activity-legend { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .6rem; font-size: .64rem; color: var(--muted); }
-    .al2-legend-item { display: flex; align-items: center; gap: .3rem; }
+    .activity-legend { display: flex; align-items: center; flex-wrap: nowrap; gap: 8px; margin-top: .6rem; font-size: 10px; color: var(--muted); overflow: hidden; }
+    .al2-legend-item { display: flex; align-items: center; gap: .25rem; white-space: nowrap; }
     .al2-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-    .dept-stats { margin-top: .9rem; }
+    .map-panel-divider { border: none; border-top: 1px solid var(--border); margin: .7rem 0; }
+    .dept-stats { margin-top: 0; }
     .dept-stat-item { display: flex; justify-content: space-between; align-items: center; padding: .3rem 0; border-bottom: 1px solid var(--border); font-size: .77rem; }
     .dept-stat-item:last-child { border-bottom: none; }
     .dept-stat-count { color: var(--accent2); font-weight: 700; }
@@ -735,7 +736,7 @@
       --al-alto:    #f97316;
       --al-critico: #e24b4a;
     }
-    .rank-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; display:inline-block; }
+    .rank-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; display:inline-block; }
     .rd-info    { background:var(--al-info);    box-shadow:0 0 5px var(--al-info); }
     .rd-medio   { background:var(--al-medio);   box-shadow:0 0 5px var(--al-medio); }
     .rd-alto    { background:var(--al-alto);    box-shadow:0 0 5px var(--al-alto); }
@@ -750,10 +751,10 @@
 
     /* Dept ranking rows */
     .dept-stat-item  { display:flex; justify-content:space-between; align-items:center;
-                       padding:.28rem 0; border-bottom:1px solid var(--border); font-size:.76rem; gap:.38rem; }
+                       padding:.24rem 0; border-bottom:1px solid var(--border); font-size:11px; gap:.38rem; }
     .dept-stat-left  { display:flex; align-items:center; gap:.4rem; flex:1; min-width:0; overflow:hidden; }
     .dept-stat-name  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .dept-stat-count { font-weight:700; flex-shrink:0; }
+    .dept-stat-count { font-weight:700; flex-shrink:0; color: var(--text3); }
 
     /* Radar overlay SVG */
     .map-svg-wrap { position:relative; overflow:hidden; }
@@ -1225,12 +1226,13 @@
               <div class="dept-tooltip" id="dept-tooltip"></div>
             </div>
             <div class="activity-legend" id="activity-legend">
-              <span class="al2-legend-item"><span class="al2-swatch" style="background:#1a1a2e;border:1px solid rgba(255,255,255,.15)"></span>Sin actividad</span>
+              <span class="al2-legend-item"><span class="al2-swatch" style="background:#1a1a2e;border:1px solid rgba(255,255,255,.15)"></span>Ninguna</span>
               <span class="al2-legend-item"><span class="al2-swatch" style="background:#2d1b4e"></span>Baja</span>
               <span class="al2-legend-item"><span class="al2-swatch" style="background:#6b2fa0"></span>Media</span>
               <span class="al2-legend-item"><span class="al2-swatch" style="background:#c2185b"></span>Alta</span>
               <span class="al2-legend-item"><span class="al2-swatch" style="background:#e24b4a"></span>Crítico</span>
             </div>
+            <hr class="map-panel-divider" />
             <div class="dept-stats" id="dept-stats"></div>
 
           </div>
@@ -3381,7 +3383,7 @@
             <span class="rank-dot rd-${al.key}"></span>
             <span class="dept-stat-name">${d.name}</span>
           </div>
-          <span class="dept-stat-count" style="color:${al.color}">${cnt}</span>
+          <span class="dept-stat-count">${cnt}</span>
         </div>`;
       }).join('');
   }
