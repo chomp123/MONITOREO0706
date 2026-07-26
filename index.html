@@ -175,10 +175,21 @@
 
     /* Sidebar */
     aside {
-      width: 220px; flex-shrink: 0;
+      width: 220px; min-width: 220px; flex-shrink: 0;
       background: var(--surface); border-right: 1px solid var(--border);
       padding: 1rem .75rem; display: flex; flex-direction: column; gap: .3rem;
+      overflow: visible;
+      transition: width .3s ease, min-width .3s ease, padding .3s ease, border-width .3s ease;
     }
+    #sidebar-toggle {
+      position: fixed; left: 220px; top: 50%; transform: translateY(-50%);
+      z-index: 100; background: var(--bg2); border: .5px solid var(--border2);
+      border-radius: 0 6px 6px 0; padding: 8px 4px; cursor: pointer;
+      color: var(--muted); font-size: 12px; line-height: 1;
+      transition: left .3s ease;
+    }
+    #sidebar-toggle:hover { color: var(--text); background: var(--card); }
+    body.ops-mode #sidebar-toggle { display: none; }
     .nav-label { font-size: .65rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; padding: .5rem .5rem .25rem; }
     .nav-btn {
       display: flex; align-items: center; gap: .6rem;
@@ -973,7 +984,7 @@
 
   <div class="app-body">
     <!-- Sidebar -->
-    <aside>
+    <aside id="sidebar">
       <div class="nav-label">Navegación</div>
       <button class="nav-btn" id="nav-monitor" onclick="showPanel('monitor')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -996,6 +1007,7 @@
         Usuarios
       </button>
     </aside>
+    <button id="sidebar-toggle" onclick="toggleSidebar()" title="Ocultar/mostrar menú">‹</button>
 
     <!-- Main -->
     <main>
@@ -1790,6 +1802,47 @@
     loadLiveConfig();
     showPanel('monitor');
     initTour();
+    initSidebar();
+  }
+
+  // ── Sidebar colapsable ───────────────────────────────────────────────────
+  let sidebarVisible          = true;
+  let sidebarVisibleBeforeOps = null;
+  const SIDEBAR_WIDTH = '220px';
+
+  function setSidebarVisible(visible, persist) {
+    const sidebar = document.getElementById('sidebar');
+    const btn     = document.getElementById('sidebar-toggle');
+    if (!sidebar || !btn) return;
+    sidebarVisible = visible;
+    if (visible) {
+      sidebar.style.width    = SIDEBAR_WIDTH;
+      sidebar.style.minWidth = SIDEBAR_WIDTH;
+      sidebar.style.padding  = '';
+      sidebar.style.border   = '';
+      sidebar.style.overflow = 'visible';
+      btn.style.left    = SIDEBAR_WIDTH;
+      btn.textContent   = '‹';
+    } else {
+      sidebar.style.width    = '0px';
+      sidebar.style.minWidth = '0px';
+      sidebar.style.padding  = '0px';
+      sidebar.style.border   = 'none';
+      sidebar.style.overflow = 'hidden';
+      btn.style.left    = '0px';
+      btn.textContent   = '›';
+    }
+    if (persist) localStorage.setItem('argos_sidebar', String(visible));
+  }
+
+  function toggleSidebar() {
+    setSidebarVisible(!sidebarVisible, true);
+  }
+
+  // Al iniciar sesión, respetar la preferencia guardada
+  function initSidebar() {
+    const saved = localStorage.getItem('argos_sidebar');
+    setSidebarVisible(saved !== 'false', false);
   }
 
   function doLogout() {
@@ -2831,9 +2884,17 @@
     if (opsMode) {
       countdown.style.display = '';
       startOpsCountdown();
+      // Ocultar el sidebar automáticamente al entrar en modo operaciones
+      sidebarVisibleBeforeOps = sidebarVisible;
+      setSidebarVisible(false, false);
     } else {
       countdown.style.display = 'none';
       if (opsCountdownTimer) { clearInterval(opsCountdownTimer); opsCountdownTimer = null; }
+      // Restaurar el sidebar al estado previo a activar modo operaciones
+      if (sidebarVisibleBeforeOps !== null) {
+        setSidebarVisible(sidebarVisibleBeforeOps, false);
+        sidebarVisibleBeforeOps = null;
+      }
     }
   }
   function startOpsCountdown() {
