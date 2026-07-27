@@ -94,15 +94,33 @@
     /* ── APP ────────────────────────────────────────────── */
     #screen-app { flex: 1; display: none; flex-direction: column; }
 
-    /* Header */
-    header {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: .75rem 1.5rem;
-      display: flex; align-items: center; gap: 1rem;
+    /* Header — Mission Control */
+    header#mission-bar {
+      background: linear-gradient(90deg, #07090f 0%, #0e1117 100%);
+      border-bottom: 1px solid rgba(55,138,221,0.3);
+      padding: 8px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
     }
     header svg { width: 32px; height: 32px; flex-shrink: 0; filter: drop-shadow(0 0 8px #a855f7); }
     header h1 { font-size: 1rem; letter-spacing: .15em; color: var(--accent2); flex: 1; }
+    .mb-logo { display: flex; align-items: center; gap: 10px; }
+    .mb-brand { font-size: 16px; font-weight: 700; letter-spacing: .1em; color: #378ADD; }
+    .mb-brand-sub { font-size: 9px; color: #4b5563; letter-spacing: .15em; }
+    .mb-stats { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .mission-stat { text-align: center; min-width: 60px; }
+    .mission-stat-label { font-size: 9px; color: #4b5563; letter-spacing: .04em; }
+    .mb-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .mb-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); }
+    .mission-clock { font-size: 13px; font-weight: 700; color: #378ADD; font-family: var(--mono, monospace); }
+    .sys-status {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--text3); font-family: var(--mono, monospace);
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #639922; display: inline-block; }
+    .status-dot.warn  { background: #eab308; }
+    .status-dot.error { background: #e24b4a; }
+    body.ops-mode .mb-stats, body.ops-mode .mb-brand-sub { display: none; }
     .badge {
       font-size: .7rem; padding: .25rem .65rem; border-radius: 999px;
       font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
@@ -331,12 +349,22 @@
     .dup-badge { display:inline-flex;align-items:center;gap:.18rem;font-size:.6rem;background:#78350f33;border:1px solid #b4530966;color:#fbbf24;border-radius:3px;padding:.1rem .35rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap; }
     .dup-badge:hover { background:#78350f66; }
     /* Toast notifications */
-    .toast-container { position:fixed;bottom:1.4rem;right:1.4rem;z-index:9999;display:flex;flex-direction:column;gap:.35rem;pointer-events:none; }
-    .toast { background:#1e293b;border:1px solid var(--border);border-radius:8px;padding:.55rem .95rem;font-size:.78rem;color:var(--text);box-shadow:0 4px 20px #0009;animation:toastIn .18s ease;pointer-events:all;max-width:280px; }
-    .toast.success { border-left:3px solid #4ade80; }
-    .toast.error   { border-left:3px solid #f87171; }
-    .toast.info    { border-left:3px solid #60a5fa; }
-    @keyframes toastIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .toast-container { position:fixed;top:70px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none;max-width:280px; }
+    .toast {
+      background:var(--bg2,#11111a); border:.5px solid var(--tc); border-left:3px solid var(--tc);
+      border-radius:6px; padding:10px 14px; font-size:12px; color:var(--text);
+      box-shadow:0 4px 12px rgba(0,0,0,0.3); animation:slideInRight .3s ease;
+      pointer-events:all; max-width:280px;
+    }
+    .toast.closing { animation:slideOutRight .3s ease forwards; }
+    .toast-title { font-weight:700; margin-bottom:2px; color:var(--tc); display:flex; align-items:center; gap:.35rem; }
+    .toast-time  { font-size:10px; color:var(--text3,#64748b); }
+    .toast.success { --tc:#639922; }
+    .toast.error   { --tc:#e24b4a; }
+    .toast.info    { --tc:#378ADD; }
+    .toast.warning { --tc:#eab308; }
+    @keyframes slideInRight  { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes slideOutRight { from{transform:translateX(0);opacity:1} to{transform:translateX(100%);opacity:0} }
     /* Fuente item en detalle incidente */
     .fuente-item { display:flex;flex-direction:column;gap:.1rem;padding:.35rem 0;border-bottom:1px solid #ffffff06;font-size:.75rem; }
     .fuente-item:last-child { border-bottom:none; }
@@ -781,6 +809,13 @@
     /* Sentiment */
     .widget-block  { padding:.55rem .7rem; border-bottom:1px solid var(--border); }
     .widget-title  { font-size:.62rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:.4rem; }
+    .ro-grid { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.55rem; }
+    .ro-cell { display:flex; flex-direction:column; gap:.15rem; background:var(--surface); border-radius:6px; padding:.4rem .55rem; }
+    .ro-cell-label { font-size:.63rem; color:var(--muted); }
+    .ro-cell-value { font-size:1.15rem; font-weight:700; color:var(--text); }
+    .ro-foot { border-top:1px solid var(--border); padding-top:.4rem; display:flex; flex-direction:column; gap:.22rem; }
+    .ro-foot-row { display:flex; justify-content:space-between; align-items:center; font-size:.7rem; color:var(--muted); }
+    .ro-foot-row span:last-child { color:var(--text); font-weight:600; }
     .s-row         { display:flex; align-items:center; gap:.4rem; margin-bottom:.28rem; }
     .s-label       { font-size:.7rem; width:20px; flex-shrink:0; }
     .s-bar-wrap    { flex:1; height:5px; background:#ffffff0e; border-radius:3px; overflow:hidden; }
@@ -803,12 +838,12 @@
     .timeline-hdr   { padding:.32rem .8rem; display:flex; align-items:center; justify-content:space-between;
                       border-bottom:1px solid var(--border); flex-shrink:0; background:var(--surface); }
     .tl-hdr-title   { font-size:.62rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
-    .tl-list        { flex:1; overflow-y:auto; padding:.28rem .65rem; display:flex; flex-direction:column;
-                      gap:.2rem; background:var(--bg); }
-    .tl-item        { display:flex; align-items:center; gap:.4rem; font-size:.7rem; }
-    .tl-time        { color:var(--muted); flex-shrink:0; font-family:monospace; font-size:.65rem; min-width:40px; }
-    .tl-icon        { flex-shrink:0; font-size:.72rem; }
-    .tl-text        { color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tl-chart-wrap  { flex:1; position:relative; padding:.4rem .65rem .1rem; background:var(--bg); }
+    .tl-tooltip {
+      position:absolute; background:var(--card); border:1px solid var(--accent);
+      border-radius:6px; padding:.3rem .6rem; font-size:.68rem; line-height:1.4;
+      pointer-events:none; display:none; z-index:10; white-space:nowrap; color:var(--text);
+    }
     @keyframes slideIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
     @keyframes spin    { to { transform: rotate(360deg); } }
 
@@ -829,6 +864,18 @@
                   font-size:.58rem; font-weight:700; padding:.1rem .32rem; border-radius:4px; flex-shrink:0; }
     .feed-item-link { cursor:pointer; }
     .feed-item-link:hover .feed-text { text-decoration:underline; text-decoration-color:#a78bfa44; }
+    .noticia-texto {
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden; transition:all .3s ease;
+    }
+    .feed-item.expanded .noticia-texto { -webkit-line-clamp:unset; overflow:visible; }
+    .feed-expand-extra {
+      max-height:0; opacity:0; overflow:hidden;
+      transition:max-height .3s ease, opacity .3s ease, margin-top .3s ease;
+    }
+    .feed-item.expanded .feed-expand-extra { max-height:600px; opacity:1; margin-top:.3rem; }
+    .feed-open-link { color:#4ade80; font-size:.68rem; cursor:pointer; flex-shrink:0; }
+    .feed-open-link:hover { text-decoration:underline; }
 
     /* RSS status badge (toolbar) */
     .rss-status-badge { display:flex; align-items:center; gap:.3rem; padding:.22rem .55rem;
@@ -940,22 +987,52 @@
 
 <!-- ══ APP ═════════════════════════════════════════════════════════════════ -->
 <div id="screen-app">
-  <header>
-    <svg viewBox="0 0 32 32" fill="none">
-      <ellipse cx="16" cy="16" rx="15" ry="9" stroke="#a855f7" stroke-width="1.5"/>
-      <circle cx="16" cy="16" r="5" fill="#7c3aed" opacity=".8"/>
-      <circle cx="16" cy="16" r="2.5" fill="#a855f7"/>
-      <circle cx="17.2" cy="14.8" r=".8" fill="#e9d5ff" opacity=".9"/>
-    </svg>
-    <h1>ARGOS</h1>
-    <span id="user-info"></span>
-    <span id="role-badge" class="badge"></span>
-    <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
-    <span id="nivel-nacional" style="display:none;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:20px;border:1px solid;cursor:default;"></span>
-    <button class="btn-sitrep-header" onclick="showSITREP()">📋 SITREP</button>
-    <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
-    <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
-    <button class="btn-logout" id="btn-logout">Salir</button>
+  <header id="mission-bar">
+    <div class="mb-logo">
+      <img src="01- LOGO DECCYB.png" style="height:36px;width:auto;" alt="DECCYB"/>
+      <div>
+        <div class="mb-brand">ARGOS</div>
+        <div class="mb-brand-sub">SISTEMA DE MONITOREO</div>
+      </div>
+    </div>
+
+    <div class="mb-stats">
+      <div class="mission-stat">
+        <div id="ms-riesgo" style="font-size:12px;font-weight:700;color:#86efac;">🟢 NORMAL</div>
+        <div class="mission-stat-label">RIESGO NACIONAL</div>
+      </div>
+      <div class="mission-stat">
+        <div id="ms-incidentes" style="font-size:18px;font-weight:700;color:#e24b4a;">0</div>
+        <div class="mission-stat-label">INCIDENTES</div>
+      </div>
+      <div class="mission-stat">
+        <div id="ms-noticias" style="font-size:18px;font-weight:700;color:#378ADD;">0</div>
+        <div class="mission-stat-label">NOTICIAS HOY</div>
+      </div>
+      <div class="mission-stat">
+        <div id="ms-fuentes" style="font-size:18px;font-weight:700;color:#639922;">—</div>
+        <div class="mission-stat-label">FUENTES ACTIVAS</div>
+      </div>
+      <div class="mission-stat">
+        <div id="ms-ultimo" style="font-size:12px;font-weight:700;color:#e2e8f0;">--:--</div>
+        <div class="mission-stat-label">ÚLTIMO EVENTO</div>
+      </div>
+    </div>
+
+    <div class="mb-right">
+      <div class="sys-status" id="ss-rss"><span class="status-dot"></span> RSS</div>
+      <div class="sys-status" id="ss-fb"><span class="status-dot"></span> FB</div>
+      <div class="mb-divider"></div>
+      <span id="mission-clock" class="mission-clock"></span>
+      <span id="user-info"></span>
+      <span id="role-badge" class="badge"></span>
+      <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
+      <span id="nivel-nacional" style="display:none;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:20px;border:1px solid;cursor:default;"></span>
+      <button class="btn-sitrep-header" onclick="showSITREP()">📋 SITREP</button>
+      <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
+      <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
+      <button class="btn-logout" id="btn-logout">Salir</button>
+    </div>
   </header>
 
   <!-- Modal cambio de contraseña -->
@@ -1274,14 +1351,33 @@
                 <div class="feed-more-indicator" id="feed-more-indicator"></div>
               </div>
 
-              <!-- Columna: OSINT + sentimiento + tendencias -->
+              <!-- Columna: Resumen ejecutivo + sentimiento + tendencias -->
               <div class="widgets-col">
-                <div class="widget-block">
-                  <div class="widget-title" style="display:flex;align-items:center;justify-content:space-between;">
-                    <span>Indicadores OSINT</span>
-                    <span style="font-size:.58rem;color:var(--muted);">10 min</span>
+                <div class="widget-block" id="resumen-operativo">
+                  <div class="widget-title">Resumen Operativo · Hoy</div>
+                  <div class="ro-grid">
+                    <div class="ro-cell">
+                      <span class="ro-cell-label">🚨 Total</span>
+                      <span class="ro-cell-value" id="ro-total">0</span>
+                    </div>
+                    <div class="ro-cell">
+                      <span class="ro-cell-label">✅ Cerrados</span>
+                      <span class="ro-cell-value" id="ro-cerrados" style="color:#4ade80;">0</span>
+                    </div>
+                    <div class="ro-cell">
+                      <span class="ro-cell-label">⏳ Abiertos</span>
+                      <span class="ro-cell-value" id="ro-abiertos" style="color:#eab308;">0</span>
+                    </div>
+                    <div class="ro-cell">
+                      <span class="ro-cell-label">🔴 Críticos</span>
+                      <span class="ro-cell-value" id="ro-criticos" style="color:#e24b4a;">0</span>
+                    </div>
                   </div>
-                  <div id="osint-indicators"></div>
+                  <div class="ro-foot">
+                    <div class="ro-foot-row"><span>Municipios afectados:</span><span id="ro-municipios">0</span></div>
+                    <div class="ro-foot-row"><span>Riesgo nacional:</span><span id="ro-riesgo">🟢 NORMAL</span></div>
+                    <div class="ro-foot-row"><span>Tendencia:</span><span id="ro-tendencia">→ estable</span></div>
+                  </div>
                 </div>
                 <div class="widget-block" id="widget-alertas-activas">
                   <div class="widget-title">🚨 Incidentes Abiertos</div>
@@ -1331,7 +1427,9 @@
                   <span style="font-size:.67rem;color:#22c55e">EN VIVO</span>
                 </div>
               </div>
-              <div class="tl-list" id="tl-list"></div>
+              <div class="tl-chart-wrap" id="tl-chart-wrap">
+                <div class="tl-tooltip" id="tl-tooltip"></div>
+              </div>
             </div>
 
           </div><!-- right-panel -->
@@ -2470,6 +2568,13 @@
 
   // Nombre usado en <select> de filtros del Centro de Incidentes (difiere del de DEPTS)
   const DEPT_FILTER_NAME = { 'Pdte. Hayes': 'Presidente Hayes' };
+  const DEPT_NAME_ALIASES = { 'Presidente Hayes': 'Pdte. Hayes' };
+
+  // Resuelve un depto de DEPTS a partir de su nombre "canónico" o del usado en selects/incidentes
+  function findDeptByAnyName(name) {
+    if (!name) return null;
+    return DEPTS.find(d => d.name === name) || DEPTS.find(d => d.name === DEPT_NAME_ALIASES[name]) || null;
+  }
 
   function prioridadNivel(inc) {
     let p = (inc.prioridad || inc.nivel || 'media').toLowerCase();
@@ -2544,6 +2649,7 @@
     OSINT_KWS.forEach(k => { osintLog[k] = []; osintAlertSent[k] = false; });
     renderHeatMap();
     renderDeptStats();
+    updateMissionBar();
   }
 
   function initMonitor() {
@@ -2555,6 +2661,8 @@
     renderKeywordTags();
     renderTrending();
     updateActiveAlerts();
+    updateMissionBar();
+    renderTimeline();
     showFeedLoading();
 
     // Decaimiento suave del mapa de calor cada 5 s (nunca por debajo de 0)
@@ -2591,22 +2699,97 @@
   }
 
 
-  // ── Timeline ─────────────────────────────────────────────────────────────
-  function addRSSToTimeline(item) {
-    const list = document.getElementById('tl-list');
-    if (!list) return;
-    const al   = ALERT_LEVELS.find(a => a.key === item.alertLevel) || ALERT_LEVELS[0];
-    const iso  = item.fecha || item.pubDate;
-    const time = iso
-      ? new Date(iso).toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'})
-      : new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
-    const el   = document.createElement('div');
-    el.className = 'tl-item';
-    el.style.animation = 'slideIn .25s ease';
-    const short = (item.title || '').length > 60 ? item.title.slice(0, 60) + '…' : (item.title || '');
-    el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">${al.icon}</span><span class="tl-text">${escHtml(short)}</span>`;
-    list.insertBefore(el, list.firstChild);
-    while (list.children.length > 20) list.removeChild(list.lastChild);
+  // ── Timeline (mini gráfico de barras, últimas 12 horas) ───────────────────
+  // Se recalcula por completo a partir de rssAllItems/incidentesData en cada
+  // render — evita mantener un contador aparte que se desincronice.
+  function buildTimelineBuckets() {
+    const now = Date.now();
+    const buckets = Array.from({ length: 12 }, (_, i) => {
+      const hoursAgo = 11 - i;
+      const hora = new Date(now - hoursAgo * 3600000);
+      return { hora, noticias: 0, incidentes: 0, levelCounts: { info:0, medio:0, alto:0, critico:0 } };
+    });
+    const bucketFor = (ts) => {
+      if (!ts) return null;
+      const t = new Date(ts).getTime();
+      if (isNaN(t)) return null;
+      const hoursAgo = Math.floor((now - t) / 3600000);
+      const idx = 11 - hoursAgo;
+      return (idx >= 0 && idx < 12) ? buckets[idx] : null;
+    };
+    rssAllItems.forEach(item => {
+      const b = bucketFor(item.fecha || item.pubDate);
+      if (!b) return;
+      b.noticias++;
+      const lvl = item.alertLevel;
+      if (b.levelCounts[lvl] !== undefined) b.levelCounts[lvl]++;
+    });
+    incidentesData.forEach(inc => {
+      const b = bucketFor(inc.created_at);
+      if (!b) return;
+      b.incidentes++;
+      b.levelCounts.critico++; // los incidentes pesan como actividad crítica en la barra
+    });
+    return buckets;
+  }
+
+  function renderTimeline() {
+    const wrap = document.getElementById('tl-chart-wrap');
+    if (!wrap) return;
+    const tt = document.getElementById('tl-tooltip');
+    const buckets = buildTimelineBuckets();
+    const W = wrap.clientWidth  || 400;
+    const H = wrap.clientHeight || 110;
+    const padL = 4, padR = 4, padB = 16, padT = 6;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+    const barGap = 4;
+    const barW = (chartW - barGap * (buckets.length - 1)) / buckets.length;
+    const maxVal = Math.max(1, ...buckets.map(b => b.noticias + b.incidentes));
+
+    d3.select(wrap).select('svg').remove();
+    const svg = d3.select(wrap).insert('svg', ':first-child')
+      .attr('width', '100%').attr('height', '100%')
+      .attr('viewBox', `0 0 ${W} ${H}`).style('display', 'block');
+
+    buckets.forEach((b, i) => {
+      const total = b.noticias + b.incidentes;
+      const h = total > 0 ? Math.max(2, (total / maxVal) * chartH) : 0;
+      const x = padL + i * (barW + barGap);
+      const y = padT + chartH - h;
+      const predominant = ['critico','alto','medio','info']
+        .find(k => b.levelCounts[k] === Math.max(...Object.values(b.levelCounts)) && b.levelCounts[k] > 0);
+      const color = total === 0 ? '#2a2a3d' : (ALERT_COLORS[predominant] || '#378ADD');
+
+      svg.append('rect')
+        .attr('x', x).attr('y', y).attr('width', barW).attr('height', Math.max(h, 2))
+        .attr('rx', 2).attr('fill', color).attr('opacity', total === 0 ? .5 : .9)
+        .style('cursor', total > 0 ? 'pointer' : 'default')
+        .on('mouseenter', function(event) {
+          if (!tt) return;
+          const hh = String(b.hora.getHours()).padStart(2,'0');
+          tt.innerHTML = `<b>${hh}:00</b><br>📰 ${b.noticias} noticias · 🚨 ${b.incidentes} incidentes`;
+          tt.style.display = 'block';
+          d3.select(this).attr('opacity', 1);
+        })
+        .on('mousemove', function(event) {
+          const rect = wrap.getBoundingClientRect();
+          tt.style.left = Math.min(rect.width - 130, event.clientX - rect.left + 8) + 'px';
+          tt.style.top  = (event.clientY - rect.top - 40) + 'px';
+        })
+        .on('mouseleave', function() {
+          if (tt) tt.style.display = 'none';
+          d3.select(this).attr('opacity', total === 0 ? .5 : .9);
+        });
+
+      if (i % 2 === 0) {
+        svg.append('text')
+          .attr('x', x + barW/2).attr('y', H - 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', 8).attr('fill', 'var(--muted)')
+          .text(String(b.hora.getHours()).padStart(2,'0') + 'h');
+      }
+    });
   }
 
   // ── Distribución de alertas ───────────────────────────────────────────────
@@ -3069,6 +3252,10 @@
         const geo    = topojson.feature(topo, topo.objects[objKey]);
         geoFeatures  = geo.features;
 
+        // Nota: varias features del topojson (p.ej. "Asunción") se agrupan bajo el
+        // mismo depto lógico (p.ej. Central) vía DEPT_ID_FROM_NAME. El id del <path>
+        // debe ser único por feature (para el DOM); data-dept-id es la clave de
+        // agrupación real usada para colorear/contar por departamento.
         mapG.selectAll('path')
           .data(geo.features)
           .enter()
@@ -3077,6 +3264,10 @@
           .attr('d', pathGen)
           .attr('id', d => {
             const raw  = d.properties.name || d.properties.NAME || d.properties.ADM1_EN || '';
+            return 'dept-shape-' + normName(raw).replace(/\s+/g, '-');
+          })
+          .attr('data-dept-id', d => {
+            const raw  = d.properties.name || d.properties.NAME || d.properties.ADM1_EN || '';
             const norm = normName(raw);
             return DEPT_ID_FROM_NAME[norm] || ('dept-' + norm.replace(/\s+/g, '-'));
           })
@@ -3084,7 +3275,7 @@
             d.properties.name || d.properties.NAME || d.properties.ADM1_EN || ''
           )
           .on('mouseenter', function(event) {
-            const id  = this.getAttribute('id');
+            const id  = this.getAttribute('data-dept-id');
             const nm  = this.getAttribute('data-name');
             const dep = DEPTS.find(x => x.id === id);
             const score = dep ? getActivityScore(dep.name) : 0;
@@ -3103,7 +3294,7 @@
           .on('mouseleave', () => { tt.style.display = 'none'; })
           .on('click', function(event, d) {
             event.stopPropagation();
-            const id  = this.getAttribute('id');
+            const id  = this.getAttribute('data-dept-id');
             const dep = DEPTS.find(x => x.id === id);
             const [[x0,y0],[x1,y1]] = pathGen.bounds(d);
             const scale = Math.min(6, 0.85 / Math.max((x1-x0)/W, (y1-y0)/H));
@@ -3116,11 +3307,22 @@
             if (dep) openDeptDetailPanel(dep.name);
           });
 
-        // Contador de incidentes activos sobre el centroide de cada depto
+        // Feature "canónica" por depto (la de mayor área) — usada para ubicar el
+        // contador y el origen de las ondas de propagación cuando un depto agrupa
+        // varias features del topojson (p.ej. Asunción dentro de Central).
+        const deptCanonicalFeature = {};
         geo.features.forEach(feat => {
           const raw  = feat.properties.name || feat.properties.NAME || feat.properties.ADM1_EN || '';
           const norm = normName(raw);
           const id   = DEPT_ID_FROM_NAME[norm] || ('dept-' + norm.replace(/\s+/g, '-'));
+          const area = Math.abs(pathGen.area(feat));
+          if (!deptCanonicalFeature[id] || area > deptCanonicalFeature[id].area) {
+            deptCanonicalFeature[id] = { feat, area };
+          }
+        });
+
+        // Contador de incidentes activos sobre el centroide de cada depto
+        Object.entries(deptCanonicalFeature).forEach(([id, { feat }]) => {
           const [ctx, cty] = pathGen.centroid(feat);
           mapG.append('text')
             .attr('id', `dept-count-${id}`)
@@ -3214,12 +3416,9 @@
           const active = DEPTS.filter(d => (heatData[d.id]||0) >= 3);
           if (!active.length) return;
           const dept = active[Math.floor(Math.random() * active.length)];
-          const feat = geoFeatures.find(f => {
-            const nm = normName(f.properties.name || f.properties.NAME || '');
-            return (DEPT_ID_FROM_NAME[nm] || 'dept-'+nm.replace(/\s+/g,'-')) === dept.id;
-          });
-          if (!feat) return;
-          const [px, py] = pathGen.centroid(feat);
+          const canon = deptCanonicalFeature[dept.id];
+          if (!canon) return;
+          const [px, py] = pathGen.centroid(canon.feat);
           const al = alertLevel(heatData[dept.id]);
           // Pulse ring dentro de mapG (se transforma con zoom)
           const ring = mapG.append('circle')
@@ -3292,14 +3491,37 @@
           heatData[d.id] = Math.min(8, (heatData[d.id] || 0) + boost);
           if (item.alertLevel === 'alto' || item.alertLevel === 'critico') {
             deptAlertTimes[d.id] = Date.now();
+            glowDept(d.name, item.alertLevel);
           }
         }
       });
     });
     renderHeatMap();
     renderDeptStats();
-    checkCritical();
     updateActiveAlerts();
+  }
+
+  // ── Mapa "con vida" — glow al detectar actividad nueva en un depto ────────
+  // Resuelve por data-dept-id (no por data-name) porque el nombre "canónico"
+  // de DEPTS puede diferir del nombre crudo del topojson (acentos/alias).
+  function glowDept(deptName, nivel) {
+    const dept = findDeptByAnyName(deptName);
+    if (!dept) return;
+    const shapes = document.querySelectorAll(`[data-dept-id="${dept.id}"]`);
+    if (!shapes.length) return;
+    const color = nivel === 'critico' ? '#e24b4a' :
+                  nivel === 'alto'    ? '#f97316' : '#eab308';
+    shapes.forEach(el => {
+      d3.select(el).interrupt()
+        .transition().duration(200)
+          .attr('filter', `drop-shadow(0 0 8px ${color})`)
+          .attr('stroke', color)
+          .attr('stroke-width', 2.5)
+        .transition().duration(1200)
+          .attr('filter', 'none')
+          .attr('stroke', 'rgba(255,255,255,0.2)')
+          .attr('stroke-width', 1.2);
+    });
   }
 
   // ── Mapa de calor ─────────────────────────────────────────────────────────
@@ -3372,12 +3594,14 @@
     });
     const colorScale = activityColorScale(maxActivity);
     DEPTS.forEach(d => {
-      const el = document.getElementById(d.id);
-      if (!el) return;
+      const shapes = document.querySelectorAll(`[data-dept-id="${d.id}"]`);
+      if (!shapes.length) return;
       const s   = scores[d.id];
       const lvl = activityLevel(s);
-      el.setAttribute('fill', s > 0 ? colorScale(s) : '#1a1a2e');
-      el.classList.toggle('dept-critical-pulse', lvl.key === 'critico');
+      shapes.forEach(el => {
+        el.setAttribute('fill', s > 0 ? colorScale(s) : '#1a1a2e');
+        el.classList.toggle('dept-critical-pulse', lvl.key === 'critico');
+      });
     });
     renderDeptCounters();
     renderStrategicCityDots();
@@ -3411,17 +3635,7 @@
   }
 
   function fireOSINTAlert(kw, cnt) {
-    const list = document.getElementById('tl-list');
-    if (list) {
-      const time = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
-      const el = document.createElement('div');
-      el.className = 'tl-item';
-      el.style.cssText = 'animation:slideIn .25s ease;background:#e24b4a11;border-radius:4px;padding:.15rem .4rem;';
-      el.innerHTML = `<span class="tl-time">${time}</span><span class="tl-icon">🔴</span>`
-                   + `<span class="tl-text" style="color:#f87171;font-weight:600;">OSINT ALERTA: "${kw}" — ${cnt} menciones en 10 min</span>`;
-      list.insertBefore(el, list.firstChild);
-      while (list.children.length > 20) list.removeChild(list.lastChild);
-    }
+    showToast(`Alerta: "${kw}" supera umbral OSINT — ${cnt} menciones en 10 min`, 'warning');
   }
 
   function renderOSINTIndicators() {
@@ -3698,6 +3912,8 @@
 
       // Actualizar badge
       badge.className = `fb-badge fb-badge-${data.status === 'ok' ? 'ok' : 'blocked'}`;
+      const ssFbDot = document.querySelector('#ss-fb .status-dot');
+      if (ssFbDot) ssFbDot.className = 'status-dot' + (data.status === 'ok' ? '' : ' warn');
       if (data.status === 'ok') {
         badgeTxt.textContent = `f EN VIVO (${data.total})`;
       } else if (data.status === 'login_wall') {
@@ -3844,6 +4060,7 @@
       }
 
       removeFeedLoading();
+      showToast(`RSS actualizado — ${newItems.length} noticia${newItems.length!==1?'s':''} nueva${newItems.length!==1?'s':''}`, 'info');
 
       // Agregar al master array, deduplicar, limitar a 90, ordenar descendente
       newItems.forEach(item => {
@@ -3872,7 +4089,7 @@
 
       // Actualizar mapa de calor, timeline, distribución alertas, tendencias, hot keywords, OSINT
       updateHeatFromRSS(newItems);
-      newItems.slice(0, 5).forEach(item => addRSSToTimeline(item));
+      renderTimeline();
       updateAlertDistribution();
       updateTrendingFromRSS(newItems);
       updateHotKeywords();
@@ -3880,35 +4097,104 @@
       updateActiveAlerts();
       updateNivelNacional();
       trackOSINT(newItems);
+      updateMissionBar();
 
     } catch {
       updateRSSSemaphore([], 0);
     }
   }
 
+  // ── Mission Control bar ───────────────────────────────────────────────────
+  function tickMissionClock() {
+    const el = document.getElementById('mission-clock');
+    if (el) el.textContent = new Date().toLocaleTimeString('es-PY');
+  }
+  setInterval(tickMissionClock, 1000);
+  tickMissionClock();
+
+  function updateMissionBar() {
+    const msInc = document.getElementById('ms-incidentes');
+    if (msInc) msInc.textContent = String(incidentesData.filter(i => i.estado !== 'cerrado').length);
+
+    const msNot = document.getElementById('ms-noticias');
+    if (msNot) {
+      const today = new Date().toDateString();
+      msNot.textContent = String(rssAllItems.filter(i => {
+        const d = i.fecha || i.pubDate;
+        return d && new Date(d).toDateString() === today;
+      }).length);
+    }
+
+    const msUlt = document.getElementById('ms-ultimo');
+    if (msUlt) {
+      const times = [
+        ...rssAllItems.map(i => i.fecha || i.pubDate),
+        ...incidentesData.map(i => i.created_at),
+      ].filter(Boolean).map(t => new Date(t).getTime()).filter(t => !isNaN(t));
+      msUlt.textContent = times.length
+        ? new Date(Math.max(...times)).toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' })
+        : '--:--';
+    }
+  }
+
   // ── Nivel Nacional ────────────────────────────────────────────────────────
-  function updateNivelNacional() {
+  // Única fuente de verdad para el nivel de riesgo nacional — usado por el
+  // badge del header, el ms-riesgo del mission-bar y el Resumen Operativo.
+  function computeNivelNacional() {
     const criticos = incidentesData.filter(i => i.estado !== 'cerrado' && (i.prioridad === 'critica' || i.prioridad === 'critico')).length;
     const altos    = incidentesData.filter(i => i.estado !== 'cerrado' && i.prioridad === 'alta').length;
 
-    let label, color, bg, border;
     if (criticos >= 3) {
-      label = '🔴 CRISIS';     color = '#fca5a5'; bg = 'rgba(226,75,74,0.18)'; border = '#e24b4a88';
+      return { label:'🔴 CRISIS',   color:'#fca5a5', bg:'rgba(226,75,74,0.18)', border:'#e24b4a88' };
     } else if (criticos >= 1 || altos >= 3) {
-      label = '🟠 TENSIÓN';    color = '#fdba74'; bg = 'rgba(249,115,22,0.18)'; border = '#f9731688';
+      return { label:'🟠 TENSIÓN',  color:'#fdba74', bg:'rgba(249,115,22,0.18)', border:'#f9731688' };
     } else if (altos >= 1) {
-      label = '🟡 ATENCIÓN';   color = '#fde68a'; bg = 'rgba(234,179,8,0.18)';  border = '#eab30888';
-    } else {
-      label = '🟢 NORMAL';     color = '#86efac'; bg = 'rgba(34,197,94,0.15)';  border = '#22c55e66';
+      return { label:'🟡 ATENCIÓN', color:'#fde68a', bg:'rgba(234,179,8,0.18)',  border:'#eab30888' };
     }
+    return { label:'🟢 NORMAL', color:'#86efac', bg:'rgba(34,197,94,0.15)', border:'#22c55e66' };
+  }
 
+  function updateNivelNacional() {
+    const { label, color, bg, border } = computeNivelNacional();
+
+    // Elemento oculto: solo sirve como fuente de texto para SITREP/informes
     const el = document.getElementById('nivel-nacional');
-    if (!el) return;
-    el.textContent = label;
-    el.style.color      = color;
-    el.style.background = bg;
-    el.style.borderColor = border;
-    el.style.display    = '';
+    if (el) {
+      el.textContent = label;
+      el.style.color      = color;
+      el.style.background = bg;
+      el.style.borderColor = border;
+    }
+    const ms = document.getElementById('ms-riesgo');
+    if (ms) { ms.textContent = label; ms.style.color = color; }
+    renderResumenOperativo();
+  }
+
+  // ── Resumen Operativo (reemplaza Indicadores OSINT) ───────────────────────
+  let _prevAbiertosCount = null;
+  function renderResumenOperativo() {
+    const total    = incidentesData.length;
+    const cerrados = incidentesData.filter(i => i.estado === 'cerrado').length;
+    const abiertosArr = incidentesData.filter(i => i.estado !== 'cerrado');
+    const abiertos = abiertosArr.length;
+    const criticos = abiertosArr.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico').length;
+    const municipios = new Set(abiertosArr.map(i => i.municipio || i.lugar).filter(Boolean)).size;
+
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt('ro-total', total);
+    setTxt('ro-cerrados', cerrados);
+    setTxt('ro-abiertos', abiertos);
+    setTxt('ro-criticos', criticos);
+    setTxt('ro-municipios', municipios);
+    setTxt('ro-riesgo', computeNivelNacional().label);
+
+    let tendencia = '→ estable';
+    if (_prevAbiertosCount !== null) {
+      if (abiertos > _prevAbiertosCount)      tendencia = '↑ en aumento';
+      else if (abiertos < _prevAbiertosCount) tendencia = '↓ en descenso';
+    }
+    _prevAbiertosCount = abiertos;
+    setTxt('ro-tendencia', tendencia);
   }
 
   // ── KPI Bar ───────────────────────────────────────────────────────────────
@@ -3990,6 +4276,13 @@
     const errList    = allFeeds.filter(f => f.error).map(f => `❌ ${f.name}: ${f.error}`).join('\n');
     const okList     = allFeeds.filter(f => !f.error).map(f => `✅ ${f.name}`).join('\n');
     const tooltip    = `${okList}\n${errList}`.trim();
+
+    const msFuentes = document.getElementById('ms-fuentes');
+    if (msFuentes) msFuentes.textContent = allFeeds.length ? String(ok) : '—';
+    const ssRssDot = document.querySelector('#ss-rss .status-dot');
+    if (ssRssDot) {
+      ssRssDot.className = 'status-dot' + (errored === 0 ? '' : errored < allFeeds.length ? ' warn' : ' error');
+    }
 
     if (errored === 0) {
       statusEl.className = 'rss-status-badge';
@@ -4472,30 +4765,33 @@ ${SEP}`;
       const el = document.createElement('div');
       el.className = `feed-item feed-source-noticias feed-item-link${isIncident ? ' feed-item-incident' : ''}`;
       el.style.borderLeftColor = isIncident ? '#e24b4a' : (item.portalColor || '#f59e0b');
-      if (item.url) el.addEventListener('click', () => window.open(item.url, '_blank', 'noopener,noreferrer'));
+      el.addEventListener('click', () => el.classList.toggle('expanded'));
 
       el.innerHTML = `
         <span class="feed-icon">${isIncident ? '🚨' : '📰'}</span>
         <div class="feed-content">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:.3rem;flex-wrap:wrap;">
             <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;">
-              <span style="font-size:.68rem;color:${alColor};font-weight:700;">${alIcon}</span>
               <span class="rss-badge" style="${rssBadgeStyle(item.portalColor||'#6b7280')}">${escHtml(item.portalName||'Noticias')}</span>
+              <span style="font-size:.62rem;color:${alColor};font-weight:700;">${alIcon} ${alLabel}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
+              <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;">${timeAgo}</span>
+              ${item.url ? `<span class="feed-open-link" title="Abrir artículo" onclick="event.stopPropagation();window.open('${escJs(item.url)}','_blank','noopener,noreferrer')">↗</span>` : ''}
+            </div>
+          </div>
+          <div class="feed-text noticia-texto" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
+          <div class="feed-expand-extra">
+            <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;margin-bottom:.2rem;">
               <span class="rss-real">● REAL</span>
               ${relBadge}
               ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
               ${item.posibleDuplicado ? `<span class="dup-badge" onclick="event.stopPropagation();openDetalleIncidente('${escHtml(item.posibleDuplicado)}')">⚠️ Dup → ${escHtml(item.posibleDuplicado)}</span>` : ''}
-              <span style="font-size:.62rem;color:${alColor};font-weight:600;">${alLabel}</span>
             </div>
-            <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;flex-shrink:0;">${timeAgo}</span>
-          </div>
-          <div class="feed-text" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
-          ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;margin-top:.1rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
-          <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
-            <div style="display:flex;align-items:center;gap:.35rem;flex-shrink:0;">
-              ${item.url ? '<span style="color:#4ade80;font-size:.62rem;">↗ Ver artículo</span>' : ''}
-              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}','${escJs(item.description||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;">🚨 Reportar</button>
+            ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
+            <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
+              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}','${escJs(item.description||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;flex-shrink:0;">🚨 Reportar</button>
             </div>
           </div>
         </div>`;
@@ -4594,6 +4890,8 @@ ${SEP}`;
       // Los incidentes pesan en getActivityScore() → refrescar mapa y ranking ya.
       renderHeatMap();
       renderDeptStats();
+      updateMissionBar();
+      renderTimeline();
     } catch (e) {
       const el = document.getElementById('inc-list');
       if (el) el.innerHTML = `<div style="color:#f87171;text-align:center;padding:2rem">Error: ${escHtml(e.message)}</div>`;
@@ -4828,7 +5126,9 @@ ${SEP}`;
           showToast(`Reporte ${data.codigo} enviado — pendiente de verificación`, 'success');
         } else {
           addCronoEvent(`Nuevo incidente: ${tipo}`, lugar||departamento||'—', confianza>=4?'alto':'medio');
+          showToast(`Nuevo incidente detectado en ${lugar||departamento||'—'}`, 'error');
         }
+        if (departamento) glowDept(departamento, confianza >= 4 ? 'critico' : 'alto');
         loadIncidentes();
       } else {
         msg.textContent = `❌ ${data.error||'Error'}`;
@@ -5086,10 +5386,14 @@ ${SEP}`;
         body: JSON.stringify({ estado }),
       });
       if (res.ok) {
-        showToast(`Estado → ${estado.toUpperCase()}`, 'success');
-        if (estado !== 'cerrado') {
+        const inc = incidentesData.find(i => i.codigo === codigo);
+        if (estado === 'cerrado') {
+          showToast(`Incidente ${codigo} cerrado`, 'success');
+        } else {
+          showToast(`Estado → ${estado.toUpperCase()}`, 'success');
           addCronoEvent(`${codigo} → ${estado.toUpperCase()}`, '—', estado === 'escalado' ? 'alto' : 'info');
         }
+        if (estado === 'escalado' && inc?.departamento) glowDept(inc.departamento, 'critico');
         loadIncidentes();
         openDetalleIncidente(codigo);
       } else { showToast('Error al cambiar estado', 'error'); }
@@ -5185,9 +5489,9 @@ ${SEP}`;
     // 7 — Reportar desde Red Social (NUEVO)
     { sel:'#btn-reportar-social', title:'Reportar desde Red Social', panel:'monitor',
       text:'Botón 📱 para registrar incidentes detectados en redes sociales. Elegí la plataforma (Facebook, X, TikTok, Instagram, YouTube, WhatsApp), ingresá la URL y describí el evento.' },
-    // 8 — Indicadores OSINT
-    { sel:'#osint-indicators', title:'Indicadores OSINT', panel:'monitor',
-      text:'Conteo de keywords críticas en tiempo real. Si "fraude" supera 5 menciones en 10 minutos, el sistema dispara alerta automática.' },
+    // 8 — Resumen Operativo
+    { sel:'#resumen-operativo', title:'Resumen Operativo', panel:'monitor',
+      text:'Métricas ejecutivas del día: incidentes totales, cerrados, abiertos y críticos, municipios afectados, riesgo nacional y tendencia. Las alertas OSINT (keywords que superan el umbral) ahora aparecen como notificación emergente.' },
     // 9 — Keywords compartidas (NUEVO)
     { sel:'#scan-group', title:'Keywords Compartidas', panel:'monitor',
       text:'Las palabras clave de monitoreo son compartidas entre todos los usuarios. Los operadores pueden agregar o quitar keywords y los cambios se aplican a todos en tiempo real.' },
@@ -5414,14 +5718,21 @@ ${SEP}`;
   }
 
   // ── Toast notifications ───────────────────────────────────────────────────
+  const TOAST_ICONS = { info:'🔵', success:'✅', warning:'🟡', error:'⚠️' };
   function showToast(msg, type = 'info') {
     const c = document.getElementById('toast-container');
     if (!c) return;
+    const icon = TOAST_ICONS[type] || TOAST_ICONS.info;
     const t = document.createElement('div');
     t.className = `toast ${type}`;
-    t.textContent = msg;
+    t.innerHTML = `
+      <div class="toast-title">${icon} ${escHtml(msg)}</div>
+      <div class="toast-time">${new Date().toLocaleTimeString('es-PY')}</div>`;
     c.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => {
+      t.classList.add('closing');
+      setTimeout(() => t.remove(), 300);
+    }, 4000);
   }
 
   // ── Restaurar sesión al cargar la página (F5) ─────────────────────────────
