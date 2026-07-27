@@ -2546,9 +2546,24 @@
     return rssAllItems.filter(i => itemMatchesDept(i, deptName));
   }
 
+  // Resuelve el depto (nombre canónico de DEPTS) de un incidente, incluso
+  // cuando "departamento" es en realidad una ciudad (p.ej. "Asunción", que
+  // administrativamente es capital, no uno de los 17 deptos), o falta y solo
+  // viene el "lugar"/"municipio".
+  function resolveDeptNameForIncidente(inc) {
+    const direct = findDeptByAnyName(inc.departamento);
+    if (direct) return direct.name;
+    const lugar = normName(inc.lugar || inc.municipio || '');
+    if (lugar) {
+      const ciudad = Object.keys(CIUDAD_A_DEPTO).find(c => lugar.includes(c));
+      if (ciudad) return CIUDAD_A_DEPTO[ciudad];
+    }
+    return null;
+  }
+
   function getDeptIncidentesAbiertos(deptName) {
     return incidentesData.filter(i =>
-      i.estado !== 'cerrado' && normName(i.departamento||'') === normName(deptName));
+      i.estado !== 'cerrado' && resolveDeptNameForIncidente(i) === deptName);
   }
 
   // Peso mayor para incidentes confirmados vs. simples menciones en noticias
@@ -2570,10 +2585,33 @@
   const DEPT_FILTER_NAME = { 'Pdte. Hayes': 'Presidente Hayes' };
   const DEPT_NAME_ALIASES = { 'Presidente Hayes': 'Pdte. Hayes' };
 
-  // Resuelve un depto de DEPTS a partir de su nombre "canónico" o del usado en selects/incidentes
+  // Ciudades/municipios que a veces llegan en el campo "departamento" (p.ej.
+  // "Asunción", que administrativamente es capital, no uno de los 17 deptos).
+  const CIUDAD_A_DEPTO = {
+    'asuncion':        'Central',
+    'lambare':         'Central',
+    'luque':           'Central',
+    'san lorenzo':     'Central',
+    'ciudad del este': 'Alto Paraná',
+    'hernandarias':    'Alto Paraná',
+    'encarnacion':     'Itapúa',
+    'pedro juan':      'Amambay',
+    'concepcion':      'Concepción',
+    'coronel oviedo':  'Caaguazú',
+    'villarrica':      'Guairá',
+  };
+
+  // Resuelve un depto de DEPTS a partir de su nombre "canónico", del usado en
+  // selects/incidentes, o de una ciudad/municipio conocido (ver CIUDAD_A_DEPTO).
   function findDeptByAnyName(name) {
     if (!name) return null;
-    return DEPTS.find(d => d.name === name) || DEPTS.find(d => d.name === DEPT_NAME_ALIASES[name]) || null;
+    const norm = normName(name);
+    const direct = DEPTS.find(d => normName(d.name) === norm);
+    if (direct) return direct;
+    const aliasKey = Object.keys(DEPT_NAME_ALIASES).find(k => normName(k) === norm);
+    if (aliasKey) return DEPTS.find(d => d.name === DEPT_NAME_ALIASES[aliasKey]) || null;
+    if (CIUDAD_A_DEPTO[norm]) return DEPTS.find(d => d.name === CIUDAD_A_DEPTO[norm]) || null;
+    return null;
   }
 
   function prioridadNivel(inc) {
@@ -2824,11 +2862,12 @@
   const TWO_HOURS = 2 * 60 * 60 * 1000;
 
   const CATEGORIAS_OSINT = {
-    'Violencia':     ['pelea','agresión','tiros','batalla','herido','violencia','campal'],
-    'Fraude':        ['fraude','compra de votos','acarreo','coacción'],
-    'Irregularidad': ['irregularidad','denuncia','impugnación','reclamo','suspensión'],
-    'Info TSJE':     ['tsje','máquina','padrón','habilitado','mesa','escrutinio','trep'],
-    'Político':      ['candidato','intendente','concejal','partido','anr','plra','lista']
+    'Violencia Electoral':     ['pelea','agresión','tiros','batalla','herido','violencia','campal'],
+    'Fraude Electoral':        ['fraude','compra de votos','acarreo','coacción','cédula ajena'],
+    'Irregularidad':           ['irregularidad','denuncia','impugnación','reclamo','suspensión','acreditación'],
+    'Operaciones TSJE':        ['tsje','máquina','padrón','habilitado','mesa','escrutinio','trep','kit'],
+    'Participación Electoral': ['candidato','intendente','concejal','partido','anr','plra','lista','municipales','internas'],
+    'Violación de Derechos':   ['coerción','intimidación','policías','funcionarios','advertidos'],
   };
 
   function updateHotKeywords() {
@@ -3095,32 +3134,17 @@
   }
 
   // ── Tendencias ────────────────────────────────────────────────────────────
-  const TREND_STOP_WORDS = new Set([
-    'de','la','el','en','y','a','los','las','del','un','una','que','con','por',
-    'para','se','al','no','es','su','sus','más','como','pero','sobre','ha','sido',
-    'este','esta','son','fue','entre','sin','desde','hasta','ante','tras',
-  ]);
-
-  // Keywords a monitorear en Tendencias: OSINT fijas + scanner activas
-  function getTrendKeywords() {
-    return [...new Set([...OSINT_KWS, ...scanKeywords])];
-  }
-
+  // Conteo por categoría OSINT (CATEGORIAS_OSINT), no por palabra suelta del
+  // título — evita que nombres propios/lugares ("camilo", "perez", "asuncion")
+  // aparezcan como "tendencia" en vez de la categoría real del hecho.
   function updateTrendingFromRSS(items) {
-    // Contar en nuevos ítems (acumular en trendingWords)
     items.forEach(item => {
       const text = ((item.title||'') + ' ' + (item.description||''))
         .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-      getTrendKeywords().forEach(kw => {
-        const k = kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-        if (text.includes(k)) trendingWords[k] = (trendingWords[k] || 0) + 1;
-      });
-      // también palabras sueltas del título para relleno
-      (item.title || '').split(/\s+/).forEach(word => {
-        const w = word.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
-        if (w.length < 4 || TREND_STOP_WORDS.has(w)) return;
-        trendingWords[w] = (trendingWords[w] || 0) + 1;
-      });
+      for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
+        const hit = kws.some(kw => text.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')));
+        if (hit) trendingWords[cat] = (trendingWords[cat] || 0) + 1;
+      }
     });
     renderTrending();
   }
@@ -3129,51 +3153,29 @@
     const el = document.getElementById('trending-list');
     if (!el) return;
 
-    // Priorizar keywords definidas con conteo > 0, luego resto
-    const definedKws = getTrendKeywords();
-    const definedEntries = definedKws
-      .map(kw => [kw, trendingWords[kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')] || 0])
+    const entries = Object.keys(CATEGORIAS_OSINT)
+      .map(cat => [cat, trendingWords[cat] || 0])
       .filter(([,n]) => n > 0)
-      .sort((a,b) => b[1]-a[1]);
-
-    const otherEntries = Object.entries(trendingWords)
-      .filter(([kw]) => !definedKws.some(dk => dk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') === kw))
-      .sort((a,b) => b[1]-a[1]);
-
-    const combined = [...definedEntries, ...otherEntries].slice(0, 6);
+      .sort((a,b) => b[1]-a[1])
+      .slice(0, 6);
 
     const trendBlock = el.closest('.widget-block');
-    if (!combined.length) {
+    if (!entries.length) {
       if (trendBlock) trendBlock.style.display = 'none';
       return;
     }
     if (trendBlock) trendBlock.style.display = '';
-    const max = combined[0][1];
-    el.innerHTML = combined.map(([kw, n]) => {
+    const max = entries[0][1];
+    el.innerHTML = entries.map(([cat, n]) => {
       const pct = max > 0 ? Math.round(n / max * 100) : 0;
-      const isKnown = definedKws.some(dk => dk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') === kw);
-      return `<div class="hotkey-item" onclick="addKeywordFromTrend('${escHtml(kw)}')" style="cursor:pointer" title="Agregar al scanner">
+      return `<div class="hotkey-item" title="${n} mención${n!==1?'es':''}">
         <div class="hotkey-top">
-          <span class="hotkey-kw" style="${isKnown?'color:#a855f7':''}">${escHtml(kw)}</span>
+          <span class="hotkey-kw" style="color:#a855f7">${escHtml(cat)}</span>
           <span class="hotkey-cnt">${n}</span>
         </div>
-        <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%;background:${isKnown?'#a855f7':'#60a5fa'}"></div></div>
+        <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%;background:#a855f7"></div></div>
       </div>`;
     }).join('');
-  }
-
-  async function addKeywordFromTrend(kw) {
-    if (!['admin','operador'].includes(userRole)) return;
-    const clean = kw.replace(/^#/, '');
-    if (scanKeywords.includes(clean)) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/keywords/agregar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ keyword: clean }),
-      });
-      if (res.ok) await loadKeywords();
-    } catch (e) { /* silencioso */ }
   }
 
   // ── Mapeo nombre TopoJSON → ID interno ──────────────────────────────────
