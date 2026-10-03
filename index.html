@@ -4244,86 +4244,8 @@ ${SEP}`;
     showToast('Generando SITREP DOCX…', 'info');
     try {
       const now  = new Date();
-      const hora = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
-      const fecha = now.toLocaleDateString('es', { day:'2-digit', month:'2-digit', year:'numeric' });
-      const usr  = document.getElementById('user-info')?.textContent?.trim() || '—';
-      const nivelEl = document.getElementById('nivel-nacional');
-      const nivelNacional = nivelEl ? nivelEl.textContent.trim() : '—';
-
-      // Conteos RSS
-      const counts = { info:0, medio:0, alto:0, critico:0 };
-      rssAllItems.forEach(i => { const l=(i.alertLevel||'').toLowerCase(); if(counts[l]!==undefined) counts[l]++; });
-
-      // Incidentes
-      const incAbiertos    = incidentesData.filter(i => i.estado !== 'cerrado').length;
-      const incVerificados = incidentesData.filter(i => i.estado === 'verificado').length;
-      const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado').length;
-
-      // Top dept
-      const topDept = [...DEPTS].sort((a,b) => getActivityScore(b.name) - getActivityScore(a.name))[0]?.name || '—';
-
-      // Tendencia principal
-      const catCounts = {};
-      rssAllItems.forEach(item => {
-        const t = ((item.title||'')+(item.description||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-        for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
-          for (const kw of kws) {
-            if (t.includes(kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) { catCounts[cat]=(catCounts[cat]||0)+1; break; }
-          }
-        }
-      });
-      const tendencia = Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'Sin datos';
-      const keywords  = Object.entries(catCounts).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
-
-      // Fuentes únicas
-      const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
-
-      // Incidentes destacados (alto+crítico, consolidados sin dup tipo+lugar)
-      const seenDocx = new Set();
-      const destacados = incidentesData
-        .filter(i => i.prioridad === 'alta' || ArgosDomain.incidentLevel(i) === 'critico')
-        .filter(i => {
-          const key = `${(i.tipo||'').toLowerCase()}|${([i.municipio||i.lugar,i.departamento].filter(Boolean).join('/')).toLowerCase()}`;
-          if (seenDocx.has(key)) return false;
-          seenDocx.add(key); return true;
-        })
-        .slice(0, 10)
-        .map(i => ({
-          codigo:           i.codigo,
-          tipo:             i.tipo,
-          nivel:            i.prioridad || '—',
-          lugar:            [i.municipio||i.lugar, i.departamento].filter(Boolean).join(', ') || '—',
-          estado:           i.estado,
-          primeraDeteccion: i.created_at ? new Date(i.created_at).toLocaleString('es',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—',
-          hora:             i.created_at ? new Date(i.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) : '—',
-          descripcion:      i.descripcion,
-        }));
-
-      // Ranking de departamentos por actividad
-      const ranking = [...DEPTS]
-        .map(d => ({ name: d.name, count: getActivityScore(d.name) }))
-        .sort((a,b) => b.count - a.count)
-        .slice(0, 8);
-
-      const datos = {
-        nivelNacional, usuario: usr,
-        horaCorte: hora, fechaCorte: fecha,
-        incAbiertos, incVerificados, incCerrados,
-        topDept, tendencia, fuentes,
-        incTotales: incidentesData.length,
-        incCriticos: incidentesData.filter(i=>ArgosDomain.incidentLevel(i)==='critico').length,
-        incAltos:    incidentesData.filter(i=>i.prioridad==='alta').length,
-        incMedios:   incidentesData.filter(i=>i.prioridad==='media').length,
-        incInfo:     incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length,
-        noticiasTotales: Object.values(counts).reduce((s,n)=>s+n,0),
-        noticiasCritico: counts.critico, noticiasAlto: counts.alto,
-        noticiasMedio: counts.medio,     noticiasInfo: counts.info,
-        fuentesActivas: fuentes.length,
-        destacados,
-        cronologia: cronologiaEvents.map(e => ({ hora: e.hora, desc: e.desc, lugar: e.lugar, nivel: e.nivel, auto_generado: e.auto_generado })),
-        keywords,
-        ranking,
-      };
+      // El servidor calcula el informe desde la base; no enviar fuentes como evidencias.
+      const datos = { periodoHoras: 48 };
 
       const res = await fetch(`${BACKEND_URL}/sitrep/exportar-docx`, {
         method: 'POST',
