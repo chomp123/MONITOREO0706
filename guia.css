@@ -12,6 +12,7 @@
 .guide-card{position:fixed;width:min(380px,calc(100vw - 24px));box-sizing:border-box;background:#182235;border:1px solid #5d4fb0;border-radius:14px;padding:18px 18px 14px;box-shadow:0 20px 60px #000a;color:var(--text)}
 .guide-card-center{left:50%!important;top:50%!important;transform:translate(-50%,-50%)}
 .guide-card-sheet{left:12px!important;right:12px;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;transform:none}
+.guide-card-sheet.guide-card-sheet-top{top:calc(12px + env(safe-area-inset-top,0px))!important;bottom:auto}
 .guide-step{margin:0 0 8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .guide-progress{height:4px;border-radius:99px;background:#2b374c;overflow:hidden;margin-bottom:12px}
 .guide-progress-bar{height:100%;background:#9787ff;border-radius:99px;transition:width .2s ease}

@@ -10,13 +10,23 @@ const GUIA_VISTA = 'visto-v2';
 const guiaEditor = () => ['admin', 'operador'].includes(userRole);
 const GUIA_PASOS = [
   { titulo: 'Bienvenido a ARGOS',
-    texto: () => 'En un minuto te mostramos lo esencial: ver la situación, reportar un hecho y darle seguimiento. Puedes salir cuando quieras con «Saltar guía» o la tecla Esc.' },
+    texto: () => 'En dos minutos te mostramos lo esencial: ver la situación, cargar un reporte y darle seguimiento. Puedes salir cuando quieras con «Saltar guía» o la tecla Esc.' },
   { panel: 'monitor', sel: '.home-metrics', titulo: 'Lo importante, en un vistazo',
     texto: () => '«Situación actual» resume la gravedad de los incidentes abiertos. «Incidentes pendientes» te lleva a la lista. «Noticias de hoy» cuenta noticias de fuentes externas: no son incidentes confirmados.' },
   { panel: 'monitor', sel: '.home-primary', titulo: 'Reportar un incidente',
-    texto: () => guiaEditor()
-      ? 'Registra aquí cualquier hecho. Solo la descripción es obligatoria. En «Opciones avanzadas» puedes indicar la confianza y las fuentes.'
-      : 'Si ves algo, repórtalo aquí. Solo la descripción es obligatoria. Un operador revisará tu reporte.' },
+    texto: () => 'Para cargar un reporte, toca este botón. Te mostramos el formulario paso a paso; en esta guía no se envía nada.' },
+  { panel: 'monitor', form: true, sel: '#cinc-tipos', titulo: 'Formulario: 1. Tipo de hecho',
+    texto: () => 'Elige el tipo de hecho que más se parezca. Si no estás seguro, elige «Otro / No sé»: se puede corregir después.' },
+  { panel: 'monitor', form: true, sel: '#cinc-desc', titulo: 'Formulario: 2. ¿Qué pasó?',
+    texto: () => 'Es lo único obligatorio. Cuenta qué viste, cuándo y quiénes participaron, con tus palabras. Evita datos personales que no sean necesarios.' },
+  { panel: 'monitor', form: true, sel: () => document.getElementById('cinc-dept')?.closest('fieldset'), titulo: 'Formulario: 3 y 4. Lugar y pruebas',
+    texto: () => 'Si lo sabes, indica el departamento y la ciudad, barrio o local. Debajo puedes pegar el enlace a una foto, un video o una publicación (empieza con https://). Ambos son opcionales.' },
+  { panel: 'monitor', form: true, sel: '#btn-save-inc', titulo: 'Formulario: enviar el reporte',
+    texto: () => 'Toca «Enviar reporte». Verás una confirmación con el código del incidente (por ejemplo, INC-073) y podrás verlo o reportar otro. ' +
+      (guiaEditor()
+        ? 'El incidente queda «Por verificar». En «Opciones avanzadas», justo arriba, puedes indicar la confianza y las fuentes.'
+        : 'Un operador lo revisará antes de registrarlo oficialmente.') +
+      ' Si cierras sin enviar, el texto queda guardado como borrador.' },
   { panel: 'incidentes', sel: '#inc-list .incx-card', alt: '#inc-list', titulo: 'Lista de incidentes',
     texto: () => 'Cada tarjeta muestra el estado («Por verificar», «Verificado», «Escalado» o «Cerrado») y la gravedad. Toca «Ver detalle» para ver el avance.' +
       (guiaEditor() ? ' El botón «Verificar» o «Escalar» avanza el incidente al siguiente paso.' : '') },
@@ -32,7 +42,25 @@ const GUIA_PASOS = [
     texto: () => 'Repite esta guía cuando quieras con «¿Cómo se usa?». Con el botón de la llave cambias tu contraseña.' },
 ];
 
-let guiaPasos = [], guiaIdx = 0, guiaAbierta = false, guiaOpener = null;
+let guiaPasos = [], guiaIdx = 0, guiaAbierta = false, guiaOpener = null, guiaFormAbierto = false;
+
+// Los pasos con `form: true` muestran el formulario de reporte (sin enviar nada); al salir de ellos se cierra.
+function guiaFormulario(abrir) {
+  const modal = document.getElementById('modal-crear-inc');
+  if (!modal) return false;
+  const abierto = modal.classList.contains('open');
+  if (abrir && !abierto && typeof openCrearIncidente === 'function') {
+    openCrearIncidente(); guiaFormAbierto = true;
+    const det = document.getElementById('cinc-advanced'); if (det) det.open = false;
+    return true;
+  }
+  if (!abrir && abierto && guiaFormAbierto) {
+    if (typeof closeCrearIncidente === 'function') closeCrearIncidente(); else modal.classList.remove('open');
+    guiaFormAbierto = false;
+  }
+  if (!abrir) guiaFormAbierto = false;
+  return false;
+}
 
 function guiaClave() { return `argos_tour_${userName || 'anon'}`; }
 function guiaVista() { try { return localStorage.getItem(guiaClave()) === GUIA_VISTA; } catch { return false; } }
@@ -50,7 +78,7 @@ function guiaVisible(el) {
 }
 function guiaObjetivo(paso) {
   if (!paso.sel) return null;
-  const a = document.querySelector(paso.sel);
+  const a = typeof paso.sel === 'function' ? paso.sel() : document.querySelector(paso.sel);
   if (guiaVisible(a)) return a;
   const b = paso.alt && document.querySelector(paso.alt);
   return guiaVisible(b) ? b : null;
@@ -73,6 +101,7 @@ function abrirGuia() {
 function cerrarGuia(completa) {
   if (!guiaAbierta) return;
   guiaAbierta = false;
+  guiaFormulario(false);
   guiaMarcarVista(); guiaActualizarInvitacion();
   document.getElementById('guide-layer').hidden = true;
   document.removeEventListener('keydown', guiaTeclas, true);
@@ -87,10 +116,16 @@ async function guiaMostrar(idx) {
   if (idx >= guiaPasos.length) { cerrarGuia(true); return; }
   guiaIdx = idx;
   const paso = guiaPasos[idx];
+  if (!paso.form) guiaFormulario(false);
   const panelActual = ['monitor', 'incidentes', 'admin'].find(p => document.getElementById('panel-' + p)?.style.display === 'flex');
   if (paso.panel && paso.panel !== panelActual) {
     showPanel(paso.panel);
     await new Promise(r => setTimeout(r, paso.panel === 'incidentes' ? 450 : 150));
+    if (!guiaAbierta || guiaIdx !== idx) return;
+  }
+  if (paso.form && guiaFormulario(true)) {
+    // Esperar a que el formulario se muestre (y a que termine su propio foco inicial).
+    await new Promise(r => setTimeout(r, 80));
     if (!guiaAbierta || guiaIdx !== idx) return;
   }
   const objetivo = guiaObjetivo(paso);
@@ -112,6 +147,7 @@ function guiaReubicar() {
   const card = document.getElementById('guide-card');
   const vw = window.innerWidth, vh = window.innerHeight, m = 12;
   card.classList.toggle('guide-card-sheet', vw < 600);
+  card.classList.remove('guide-card-sheet-top');
   if (!objetivo) {
     luz.hidden = true;
     card.classList.add('guide-card-center');
@@ -122,7 +158,11 @@ function guiaReubicar() {
   const r = objetivo.getBoundingClientRect(), pad = 6;
   luz.hidden = false;
   Object.assign(luz.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
-  if (vw < 600) { card.style.left = card.style.top = ''; return; } // hoja fija abajo en celulares
+  if (vw < 600) { // hoja fija en celulares: abajo, o arriba si taparía el elemento señalado
+    card.style.left = card.style.top = '';
+    card.classList.toggle('guide-card-sheet-top', r.bottom + pad > vh - card.offsetHeight - 24);
+    return;
+  }
   const cw = card.offsetWidth, ch = card.offsetHeight;
   let top = r.bottom + pad + 12;
   if (top + ch > vh - m) top = r.top - pad - 12 - ch;
