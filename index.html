@@ -953,8 +953,14 @@
     .tour-arrow.arr-left   { left:-16px;top:22px;border-right-color:var(--accent); }
     .tour-arrow.arr-right  { right:-16px;top:22px;border-left-color:var(--accent); }
   </style>
+  <link rel="stylesheet" href="simple.css">
+  <link rel="stylesheet" href="incidentes.css">
+  <link rel="stylesheet" href="usuarios.css">
+  <link rel="stylesheet" href="guia.css">
+  <script src="domain.js"></script>
+  <script src="config.js"></script>
 </head>
-<body>
+<body class="simple-view">
 
 <!-- ══ LOGIN ═══════════════════════════════════════════════════════════════ -->
 <div id="screen-login">
@@ -973,11 +979,11 @@
     <p>SISTEMA DE MONITOREO · REDES SOCIALES · TIEMPO REAL</p>
     <p style="text-align:center;font-size:.7rem;color:#475569;margin-top:-.5rem;margin-bottom:2rem;letter-spacing:.1em;">Departamento de Cibercrimen · PNP</p>
     <div class="form-group">
-      <label>Usuario</label>
+      <label for="login-user">Usuario</label>
       <input type="text" id="login-user" placeholder="usuario" autocomplete="username" />
     </div>
     <div class="form-group">
-      <label>Contraseña</label>
+      <label for="login-pass">Contraseña</label>
       <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" />
     </div>
     <button class="btn-primary" id="btn-login">INGRESAR</button>
@@ -1028,8 +1034,9 @@
       <span id="role-badge" class="badge"></span>
       <span class="ops-countdown" id="ops-countdown" style="display:none"></span>
       <span id="nivel-nacional" style="display:none;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:20px;border:1px solid;cursor:default;"></span>
-      <button class="btn-sitrep-header" onclick="showSITREP()">📋 SITREP</button>
-      <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleOpsMode()">🖥️ MODO OPERACIONES</button>
+      <button class="btn-sitrep-header" onclick="showSITREP()">Informes</button>
+      <button type="button" class="btn-guide" id="btn-guide" aria-label="¿Cómo se usa? Guía de ARGOS" onclick="abrirGuia()"><span class="guide-long">¿Cómo se usa?</span><span class="guide-short" aria-hidden="true">Ayuda</span></button>
+      <button class="btn-ops-mode" id="btn-ops-mode" onclick="toggleDetailedView()">Vista detallada</button>
       <button class="btn-account" id="btn-account" title="Cambiar contraseña" onclick="openPasswordModal()">🔑</button>
       <button class="btn-logout" id="btn-logout">Salir</button>
     </div>
@@ -1044,7 +1051,7 @@
         <input type="password" id="pwd-actual" placeholder="••••••••" autocomplete="current-password" />
       </div>
       <div class="modal-field">
-        <label>Contraseña nueva (mín. 8 caracteres)</label>
+        <label>Contraseña nueva (mín. 12 caracteres)</label>
         <input type="password" id="pwd-nueva" placeholder="••••••••" autocomplete="new-password" />
       </div>
       <div class="modal-field">
@@ -1065,7 +1072,7 @@
       <div class="nav-label">Navegación</div>
       <button class="nav-btn" id="nav-monitor" onclick="showPanel('monitor')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Monitor Electoral
+        Inicio
       </button>
       <button class="nav-btn" id="nav-osint" onclick="showPanel('osint')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -1092,7 +1099,7 @@
       <!-- Incidentes -->
       <div id="panel-incidentes">
         <div class="inc-toolbar">
-          <span class="inc-toolbar-title">🚨 CENTRO DE INCIDENTES</span>
+          <h2 class="inc-toolbar-title">Incidentes</h2>
           <button class="btn-new-inc" id="btn-new-inc" onclick="openCrearIncidente()">+ Nuevo Incidente</button>
           <div style="margin-left:auto;display:flex;align-items:center;gap:.5rem;">
             <span style="font-size:.7rem;color:var(--muted)" id="inc-total-label">0 incidentes</span>
@@ -1104,13 +1111,15 @@
           </div>
         </div>
         <div class="inc-filter-bar">
+          <label class="incx-sr" for="inc-search">Buscar incidentes</label>
+          <input type="search" id="inc-search" class="incx-search" placeholder="Buscar por código, tipo o lugar…" autocomplete="off"/>
           <button class="inc-filter-btn active" data-fest="todos"       onclick="setIncFiltroEstado('todos')">Todos</button>
-          <button class="inc-filter-btn"        data-fest="detectado"   onclick="setIncFiltroEstado('detectado')">Detectados</button>
+          <button class="inc-filter-btn"        data-fest="detectado"   onclick="setIncFiltroEstado('detectado')">Por verificar</button>
           <button class="inc-filter-btn"        data-fest="verificado"  onclick="setIncFiltroEstado('verificado')">Verificados</button>
           <button class="inc-filter-btn"        data-fest="escalado"    onclick="setIncFiltroEstado('escalado')">Escalados</button>
           <button class="inc-filter-btn"        data-fest="cerrado"     onclick="setIncFiltroEstado('cerrado')">Cerrados</button>
           <select class="inc-filter-select" id="inc-filter-dept"  onchange="renderIncidentes()">
-            <option value="">Todos los dptos.</option>
+            <option value="">Todos los departamentos</option>
             <option>Alto Paraguay</option><option>Alto Paraná</option><option>Amambay</option>
             <option>Boquerón</option><option>Caaguazú</option><option>Caazapá</option>
             <option>Canindeyú</option><option>Central</option><option>Concepción</option>
@@ -1137,42 +1146,55 @@
 
       <!-- Admin -->
       <div id="panel-admin">
-        <div class="admin-tabs-bar">
-          <button class="admin-tab active" data-tab="usuarios"       onclick="switchAdminTab('usuarios')">👥 Usuarios</button>
-          <button class="admin-tab"        data-tab="actividad"      onclick="switchAdminTab('actividad')">📋 Actividad</button>
-          <button class="admin-tab"        data-tab="sesiones"       onclick="switchAdminTab('sesiones')">🔌 Sesiones</button>
-          <button class="admin-tab"        data-tab="configuracion"  onclick="switchAdminTab('configuracion')">⚙️ Configuración</button>
+        <div class="admin-tabs-bar" role="tablist" aria-label="Administración">
+          <button class="admin-tab active" data-tab="usuarios"       onclick="switchAdminTab('usuarios')">Usuarios</button>
+          <button class="admin-tab"        data-tab="actividad"      onclick="switchAdminTab('actividad')">Actividad</button>
+          <button class="admin-tab"        data-tab="sesiones"       onclick="switchAdminTab('sesiones')">Conectados ahora</button>
+          <button class="admin-tab"        data-tab="configuracion"  onclick="switchAdminTab('configuracion')">Transmisión en vivo</button>
         </div>
 
-        <!-- TAB 1: Usuarios -->
+        <!-- TAB 1: Usuarios (renderizado en usuarios.js) -->
         <div id="admin-tab-usuarios" class="admin-tab-pane active">
-          <div class="admin-pane-hdr">
-            <button class="btn-new-user" onclick="openUserModal()">+ Nuevo Usuario</button>
-            <div id="admin-msg" class="admin-msg"></div>
+          <div class="usrx-head">
+            <div>
+              <h2 class="usrx-title">Usuarios</h2>
+              <p class="incx-muted">Quién puede entrar a ARGOS y qué puede hacer cada persona.</p>
+            </div>
+            <button type="button" class="incx-btn incx-btn-primary" onclick="openUserModal()">+ Agregar usuario</button>
           </div>
-          <div style="overflow-x:auto;"><table class="users-table" id="users-table">
-            <thead><tr>
-              <th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th>
-              <th>Última conexión</th><th>Escaneos</th><th>Acciones</th>
-            </tr></thead>
-            <tbody id="users-tbody"><tr><td colspan="7" style="color:var(--muted);padding:1rem">Cargando…</td></tr></tbody>
-          </table></div>
+          <div id="admin-msg" class="admin-msg" role="status"></div>
+          <section id="usrx-secret" class="usrx-secret" hidden aria-live="polite"></section>
+          <dl class="usrx-roles" aria-label="Qué puede hacer cada rol">
+            <div><dt><span class="usrx-role usrx-role-visualizador">Visualizador</span></dt><dd>Ve la información y envía reportes. Un operador los revisa.</dd></div>
+            <div><dt><span class="usrx-role usrx-role-operador">Operador</span></dt><dd>Además registra, verifica, escala y cierra incidentes.</dd></div>
+            <div><dt><span class="usrx-role usrx-role-admin">Administrador</span></dt><dd>Además gestiona usuarios, actividad y configuración.</dd></div>
+          </dl>
+          <div class="usrx-tools">
+            <label class="incx-sr" for="usrx-search">Buscar usuarios</label>
+            <input type="search" id="usrx-search" class="incx-search" placeholder="Buscar por nombre o usuario…" autocomplete="off"/>
+            <div class="incx-seg" role="group" aria-label="Filtrar por estado" id="usrx-filter">
+              <button type="button" class="incx-seg-btn" data-filter="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="incx-seg-btn" data-filter="activos" aria-pressed="false">Activos</button>
+              <button type="button" class="incx-seg-btn" data-filter="desactivados" aria-pressed="false">Desactivados</button>
+            </div>
+            <span class="incx-muted" id="usrx-count"></span>
+          </div>
+          <div id="users-list" class="usrx-list"><div class="incx-loading" role="status"><span class="incx-spinner" aria-hidden="true"></span>Cargando usuarios…</div></div>
         </div>
 
         <!-- TAB 2: Actividad -->
         <div id="admin-tab-actividad" class="admin-tab-pane">
           <div class="admin-pane-hdr">
-            <select class="admin-filter" id="act-filter-user"  onchange="renderActivityLog()"><option value="">Todos</option></select>
+            <label class="incx-sr" for="act-filter-user">Usuario</label>
+            <select class="admin-filter" id="act-filter-user"  onchange="renderActivityLog()"><option value="">Todas las personas</option></select>
+            <label class="incx-sr" for="act-filter-tipo">Tipo de acción</label>
             <select class="admin-filter" id="act-filter-tipo"  onchange="renderActivityLog()">
               <option value="">Todas las acciones</option>
-              <option value="LOGIN_OK">Login OK</option>
-              <option value="LOGIN_FALLIDO">Login Fallido</option>
-              <option value="CUENTA_BLOQUEADA">Bloqueada</option>
-              <option value="CREAR_USUARIO">Crear</option>
-              <option value="EDITAR_USUARIO">Editar</option>
-              <option value="ELIMINAR_USUARIO">Eliminar</option>
-              <option value="RESET_PASSWORD">Reset PWD</option>
-              <option value="CERRAR_SESION_REMOTA">Cerrar Sesión</option>
+              <option value="ingreso">Ingresos</option>
+              <option value="alerta">Ingresos fallidos y bloqueos</option>
+              <option value="usuarios">Cambios en usuarios</option>
+              <option value="incidentes">Incidentes</option>
+              <option value="otros">Otras</option>
             </select>
             <button class="btn-export" onclick="exportActivityCSV()">⬇ Exportar CSV</button>
             <button class="btn-export" onclick="downloadInformeEstadistico()" style="background:#1a2e4433;border-color:#378ADD55;color:#60a5fa;">📊 Informe Estadístico Hoy</button>
@@ -1180,7 +1202,7 @@
           </div>
           <div style="overflow-x:auto;" id="activity-wrap">
             <table class="log-table" id="activity-table">
-              <thead><tr><th>Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead>
+              <thead><tr><th>Cuándo</th><th>Quién</th><th>Qué hizo</th><th>Detalle</th></tr></thead>
               <tbody id="activity-tbody"></tbody>
             </table>
           </div>
@@ -1189,7 +1211,7 @@
         <!-- TAB 3: Sesiones -->
         <div id="admin-tab-sesiones" class="admin-tab-pane">
           <div class="admin-pane-hdr">
-            <span style="font-size:.72rem;color:var(--muted)">Actualización cada 30s</span>
+            <span class="incx-muted">Personas con actividad en los últimos 30 minutos. Se actualiza cada 30 segundos.</span>
             <button class="aact-btn" onclick="loadSessions()" style="margin-left:auto;">↺ Actualizar</button>
           </div>
           <div id="sessions-wrap" style="display:flex;flex-direction:column;gap:.45rem;"></div>
@@ -1252,41 +1274,83 @@
         </div>
       </div>
 
-      <!-- Modal crear/editar usuario -->
+      <!-- Modal crear/editar usuario (lógica en usuarios.js) -->
       <div class="modal-overlay" id="modal-user">
-        <div class="modal-box">
-          <div class="modal-title" id="modal-user-title">+ NUEVO USUARIO</div>
-          <div class="modal-field">
-            <label>Username (solo minúsculas/números/_)</label>
-            <input type="text" id="mu-username" placeholder="ej: jperez" autocomplete="off"/>
-          </div>
-          <div class="modal-field">
-            <label>Nombre completo</label>
-            <input type="text" id="mu-name" placeholder="Juan Pérez" autocomplete="off"/>
-          </div>
-          <div class="modal-field">
-            <label>Rol</label>
-            <select id="mu-role">
-              <option value="visualizador">Visualizador</option>
-              <option value="operador">Operador</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div class="modal-field" id="mu-pwd-field">
-            <label>Contraseña inicial (mín. 8 caracteres)</label>
-            <input type="password" id="mu-password" placeholder="••••••••" autocomplete="new-password"/>
-          </div>
-          <div class="modal-msg" id="modal-user-msg"></div>
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
-            <button class="btn-primary" id="btn-save-user" onclick="saveUser()">Guardar</button>
-          </div>
+        <div class="modal-box incx-modal" role="dialog" aria-modal="true" aria-labelledby="modal-user-title">
+          <form id="usrx-form" novalidate>
+            <div class="incx-modal-head">
+              <div>
+                <h2 class="incx-modal-title" id="modal-user-title">Agregar usuario</h2>
+                <p class="incx-muted" id="mu-subtitle">La persona podrá entrar a ARGOS con estos datos.</p>
+              </div>
+              <button type="button" class="incx-close" onclick="closeUserModal()" aria-label="Cerrar formulario">✕</button>
+            </div>
+            <div class="incx-field">
+              <label for="mu-name">Nombre completo</label>
+              <input type="text" id="mu-name" class="incx-input" maxlength="200" autocomplete="off" placeholder="Ej.: María González" aria-describedby="mu-name-error"/>
+              <span class="incx-error-text" id="mu-name-error" hidden></span>
+            </div>
+            <div class="incx-field">
+              <label for="mu-username">Usuario para ingresar</label>
+              <small class="incx-hint" id="mu-username-hint">Solo minúsculas, números y guion bajo. Se sugiere a partir del nombre.</small>
+              <input type="text" id="mu-username" class="incx-input incx-mono" maxlength="50" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ej.: mgonzalez" aria-describedby="mu-username-hint mu-username-error"/>
+              <span class="incx-error-text" id="mu-username-error" hidden></span>
+            </div>
+            <fieldset class="incx-fieldset">
+              <legend>¿Qué podrá hacer?</legend>
+              <div class="incx-options usrx-role-options" id="mu-roles">
+                <label class="incx-option"><input type="radio" name="mu-role" value="visualizador" checked><span><strong>Visualizador</strong><small>Ver información y enviar reportes</small></span></label>
+                <label class="incx-option"><input type="radio" name="mu-role" value="operador"><span><strong>Operador</strong><small>Además gestionar incidentes</small></span></label>
+                <label class="incx-option"><input type="radio" name="mu-role" value="admin"><span><strong>Administrador</strong><small>Además gestionar usuarios</small></span></label>
+              </div>
+            </fieldset>
+            <fieldset class="incx-fieldset" id="mu-pwd-field">
+              <legend>Contraseña inicial</legend>
+              <div class="usrx-pwd-choice">
+                <label><input type="radio" name="mu-pwd-mode" value="auto" checked> Generar una contraseña segura (recomendado)</label>
+                <label><input type="radio" name="mu-pwd-mode" value="manual"> Escribirla yo</label>
+              </div>
+              <div class="incx-field" id="mu-pwd-manual" hidden>
+                <label for="mu-password">Contraseña (mínimo 12 caracteres)</label>
+                <div class="usrx-pwd-row">
+                  <input type="password" id="mu-password" class="incx-input" autocomplete="new-password" aria-describedby="mu-password-error"/>
+                  <button type="button" class="incx-btn" id="mu-password-toggle" aria-pressed="false">Mostrar</button>
+                </div>
+                <span class="incx-error-text" id="mu-password-error" hidden></span>
+              </div>
+            </fieldset>
+            <p class="incx-note" id="mu-edit-note" hidden>Al guardar, se cerrarán las sesiones abiertas de esta persona para aplicar los cambios.</p>
+            <p class="incx-form-msg" id="modal-user-msg" role="alert"></p>
+            <div class="incx-actions">
+              <button type="button" class="incx-btn" id="mu-cancel" onclick="closeUserModal()">Cancelar</button>
+              <button type="submit" class="incx-btn incx-btn-primary" id="btn-save-user">Agregar usuario</button>
+            </div>
+          </form>
         </div>
       </div>
 
       <!-- Monitor Electoral -->
       <div id="panel-monitor">
-        <div class="monitor-toolbar">
+        <section id="simple-dashboard" aria-label="Resumen de monitoreo">
+          <div class="home-heading"><div><p class="eyebrow">CENTRO DE MONITOREO</p><h1>Lo importante, en un vistazo.</h1><p class="home-subtitle">Revisa la situación y da seguimiento a los reportes.</p></div>
+            <button class="home-primary" onclick="openCrearIncidente()">+ Reportar incidente</button></div>
+          <div id="guide-invite" class="guide-invite" hidden>
+            <p><strong>¿Primera vez en ARGOS?</strong> Una guía de un minuto te muestra lo esencial.</p>
+            <div class="guide-invite-actions"><button type="button" class="incx-btn incx-btn-primary" onclick="abrirGuia()">Ver cómo se usa</button><button type="button" class="incx-btn" onclick="cerrarInvitacionGuia()">Ahora no</button></div>
+          </div>
+          <div id="home-status" class="home-status" role="status">Cargando información…</div>
+          <div class="home-metrics">
+            <article class="home-metric"><span>Situación actual</span><strong id="home-risk">Cargando…</strong><small>Según incidentes abiertos y su gravedad</small></article>
+            <button class="home-metric actionable" onclick="showPanel('incidentes')"><span>Incidentes pendientes</span><strong id="home-open">—</strong><small id="home-critical">Ver todos los incidentes →</small></button>
+            <article class="home-metric"><span>Noticias de hoy</span><strong id="home-news-count">—</strong><small>Fecha de Paraguay · archivo de noticias</small></article>
+          </div>
+          <div class="home-columns">
+            <section class="home-card"><div class="home-card-heading"><div><h2>Qué necesita atención</h2><p>Primero los incidentes de mayor gravedad</p></div><button class="home-link" onclick="showPanel('incidentes')">Ver todos →</button></div><div id="home-pending" class="home-list" aria-live="polite"></div></section>
+            <section class="home-card"><div class="home-card-heading"><div><h2>Últimas noticias</h2><p>Información de fuentes externas, pendiente de verificación</p></div><button class="home-link" onclick="toggleDetailedView(true)">Explorar →</button></div><div id="home-news" class="home-list"></div><div class="home-card-footer" id="home-news-status">Esperando actualización de fuentes</div></section>
+          </div>
+          <div class="home-footer"><span>Una alerta de noticia no equivale a un incidente confirmado.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
+        </section>
+        <div class="monitor-toolbar"><button class="source-btn" onclick="toggleDetailedView(false)">← Volver al resumen</button><button class="source-btn" onclick="videoRequested=true;loadLiveConfig()">Abrir transmisión</button>
           <button class="source-btn active-all" id="src-all"      onclick="toggleSource('all')">🌐 Todas</button>
           <button class="source-btn"            id="src-x"        onclick="toggleSource('x')">✕ X/Twitter</button>
           <button class="source-btn"            id="src-facebook" onclick="toggleSource('facebook')">f Facebook</button>
@@ -1334,16 +1398,16 @@
               <!-- Feed -->
               <div class="feed-panel">
                 <div class="feed-header">
-                  <span class="feed-header-title">Feed · Tiempo real</span>
+                  <span class="feed-header-title">Noticias recibidas</span>
                   <div style="display:flex;align-items:center;gap:.5rem;">
                     <span style="font-size:.65rem;color:var(--muted);letter-spacing:.02em;">📅 Últimas 48 horas</span>
                     <div class="live-dot"></div>
-                    <span style="font-size:.7rem;color:#22c55e;">EN VIVO</span>
+                    <span style="font-size:.7rem;color:#22c55e;">Actualización periódica</span>
                   </div>
                 </div>
                 <div class="feed-tabs">
                   <button class="feed-tab active" id="feed-tab-noticias"   onclick="switchFeedTab('noticias')">📰 Noticias <span id="feed-tab-cnt-noticias" style="font-size:.6rem;color:var(--muted)"></span></button>
-                  <button class="feed-tab feed-tab-incidents" id="feed-tab-incidentes" onclick="switchFeedTab('incidentes')">🚨 Incidentes <span id="feed-tab-cnt-incidentes" style="font-size:.6rem;color:var(--muted)"></span></button>
+                  <button class="feed-tab feed-tab-incidents" id="feed-tab-incidentes" onclick="switchFeedTab('incidentes')">Alertas de noticias <span id="feed-tab-cnt-incidentes" style="font-size:.6rem;color:var(--muted)"></span></button>
                 </div>
                 <div id="feed-container">
                   <div class="feed-list" id="feed-list"></div>
@@ -1354,7 +1418,7 @@
               <!-- Columna: Resumen ejecutivo + sentimiento + tendencias -->
               <div class="widgets-col">
                 <div class="widget-block" id="resumen-operativo">
-                  <div class="widget-title">Resumen Operativo · Hoy</div>
+                  <div class="widget-title">Resumen de incidentes · Todos</div>
                   <div class="ro-grid">
                     <div class="ro-cell">
                       <span class="ro-cell-label">🚨 Total</span>
@@ -1504,65 +1568,84 @@
         </div>
       </div>
 
-      <!-- Modal Crear Incidente -->
+      <!-- Modal Reportar Incidente (formulario simplificado: incidentes.js) -->
       <div class="modal-overlay" id="modal-crear-inc">
-        <div class="modal-box" style="max-width:520px;gap:.75rem;">
-          <div class="modal-title" id="cinc-modal-title">🚨 NUEVO INCIDENTE</div>
-          <div class="modal-field">
-            <label>Tipo</label>
-            <select id="cinc-tipo" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.9rem;outline:none;">
-              <option>Violencia</option><option>Fraude</option><option>Acarreo</option>
-              <option>Compra de votos</option><option>Irregularidad</option><option>Otro</option>
-            </select>
-          </div>
-          <div class="modal-field">
-            <label>Descripción</label>
-            <textarea id="cinc-desc" rows="3" placeholder="Describe el incidente detectado…" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.88rem;outline:none;resize:vertical;width:100%;box-sizing:border-box;font-family:inherit;"></textarea>
-          </div>
-          <div style="display:flex;gap:.6rem;">
-            <div class="modal-field" style="flex:1">
-              <label>Lugar</label>
-              <input type="text" id="cinc-lugar" placeholder="Ej: Luque, Central" autocomplete="off"/>
+        <div class="modal-box incx-modal" role="dialog" aria-modal="true" aria-labelledby="cinc-modal-title">
+          <form id="cinc-form" novalidate>
+            <div id="cinc-form-view">
+              <div class="incx-modal-head">
+                <div>
+                  <h2 class="incx-modal-title" id="cinc-modal-title">Reportar un incidente</h2>
+                  <p class="incx-muted">Cuenta qué pasó. Solo la descripción es obligatoria.</p>
+                </div>
+                <button type="button" class="incx-close" onclick="closeCrearIncidente()" aria-label="Cerrar formulario">✕</button>
+              </div>
+              <p class="incx-note" id="cinc-draft-msg" hidden>Se recuperó el texto que dejaste sin enviar. <button type="button" class="incx-link" onclick="descartarBorrador()">Empezar de nuevo</button></p>
+              <fieldset class="incx-fieldset">
+                <legend>1. ¿Qué tipo de hecho es?</legend>
+                <div class="incx-options" id="cinc-tipos"></div>
+              </fieldset>
+              <div class="incx-field">
+                <label for="cinc-desc">2. ¿Qué pasó? <span class="incx-req">(obligatorio)</span></label>
+                <small class="incx-hint" id="cinc-desc-hint">Indica qué viste, cuándo y quiénes participaron. Evita datos personales que no sean necesarios.</small>
+                <textarea id="cinc-desc" class="incx-input" rows="4" maxlength="5000" required aria-describedby="cinc-desc-hint cinc-desc-error cinc-desc-count"></textarea>
+                <div class="incx-field-foot"><span class="incx-error-text" id="cinc-desc-error" hidden></span><small id="cinc-desc-count" class="incx-muted">0 / 5000</small></div>
+              </div>
+              <fieldset class="incx-fieldset">
+                <legend>3. ¿Dónde ocurrió? <span class="incx-opt">(si lo sabes)</span></legend>
+                <div class="incx-row">
+                  <div class="incx-field"><label for="cinc-dept">Departamento</label>
+                    <select id="cinc-dept" class="incx-input"><option value="">— No lo sé —</option></select></div>
+                  <div class="incx-field"><label for="cinc-lugar">Ciudad, barrio o local</label>
+                    <input type="text" id="cinc-lugar" class="incx-input" maxlength="200" placeholder="Ej.: Luque, escuela central" autocomplete="off"/></div>
+                </div>
+              </fieldset>
+              <div class="incx-field">
+                <label for="cinc-evidencia">4. Enlace a foto, video o publicación <span class="incx-opt">(opcional)</span></label>
+                <input type="url" id="cinc-evidencia" class="incx-input" inputmode="url" placeholder="https://…" autocomplete="off" aria-describedby="cinc-evidencia-error"/>
+                <span class="incx-error-text" id="cinc-evidencia-error" hidden></span>
+              </div>
+              <details class="incx-details" id="cinc-advanced">
+                <summary>Opciones avanzadas (operadores)</summary>
+                <div class="incx-field" id="cinc-row-confianza">
+                  <label for="cinc-confianza">Confianza en la información</label>
+                  <select id="cinc-confianza" class="incx-input">
+                    <option value="1">1 — Rumor, sin verificar</option>
+                    <option value="2" selected>2 — Una sola fuente</option>
+                    <option value="3">3 — Dos fuentes</option>
+                    <option value="4">4 — Medio reconocido</option>
+                    <option value="5">5 — Confirmado oficialmente</option>
+                  </select>
+                </div>
+                <div class="incx-field" id="cinc-row-fuentes">
+                  <label for="cinc-fuentes">Fuentes (un enlace por línea)</label>
+                  <textarea id="cinc-fuentes" class="incx-input incx-mono" rows="2" placeholder="https://…" aria-describedby="cinc-fuentes-error"></textarea>
+                  <span class="incx-error-text" id="cinc-fuentes-error" hidden></span>
+                </div>
+                <div class="incx-field">
+                  <label for="cinc-evidencias">Más pruebas (un enlace por línea)</label>
+                  <textarea id="cinc-evidencias" class="incx-input incx-mono" rows="2" placeholder="https://…" aria-describedby="cinc-evidencias-error"></textarea>
+                  <span class="incx-error-text" id="cinc-evidencias-error" hidden></span>
+                </div>
+              </details>
+              <p class="incx-note" id="cinc-viz-msg" hidden>Un operador revisará tu reporte antes de registrarlo oficialmente.</p>
+              <p class="incx-form-msg" id="cinc-msg" role="alert"></p>
+              <div class="incx-actions">
+                <button type="button" class="incx-btn" id="cinc-cancel" onclick="closeCrearIncidente()">Cancelar</button>
+                <button type="submit" class="incx-btn incx-btn-primary" id="btn-save-inc">Enviar reporte</button>
+              </div>
             </div>
-            <div class="modal-field" style="flex:1">
-              <label>Departamento</label>
-              <select id="cinc-dept" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.88rem;outline:none;width:100%;">
-                <option value="">— Seleccionar —</option>
-                <option>Alto Paraguay</option><option>Alto Paraná</option><option>Amambay</option>
-                <option>Boquerón</option><option>Caaguazú</option><option>Caazapá</option>
-                <option>Canindeyú</option><option>Central</option><option>Concepción</option>
-                <option>Cordillera</option><option>Guairá</option><option>Itapúa</option>
-                <option>Misiones</option><option>Ñeembucú</option><option>Paraguarí</option>
-                <option>Presidente Hayes</option><option>San Pedro</option>
-              </select>
+            <div id="cinc-done" class="incx-done" hidden>
+              <div class="incx-done-icon" aria-hidden="true">✓</div>
+              <h2 class="incx-modal-title" id="cinc-done-title" tabindex="-1">Reporte enviado</h2>
+              <p id="cinc-done-text" class="incx-muted"></p>
+              <div class="incx-actions">
+                <button type="button" class="incx-btn" onclick="reportarOtro()">Reportar otro</button>
+                <button type="button" class="incx-btn" id="cinc-done-ver">Ver el reporte</button>
+                <button type="button" class="incx-btn incx-btn-primary" onclick="closeCrearIncidente()">Listo</button>
+              </div>
             </div>
-          </div>
-          <div id="cinc-row-confianza" class="modal-field">
-            <label>Nivel de confianza (1=Rumor · 3=Dos fuentes · 5=Confirmado)</label>
-            <select id="cinc-confianza" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.88rem;outline:none;width:100%;">
-              <option value="1">1 — Rumor / Sin verificar</option>
-              <option value="2" selected>2 — Fuente única</option>
-              <option value="3">3 — Dos fuentes</option>
-              <option value="4">4 — Medio reconocido</option>
-              <option value="5">5 — Confirmado oficialmente</option>
-            </select>
-          </div>
-          <div id="cinc-row-fuentes" class="modal-field">
-            <label>Fuentes iniciales (URLs, una por línea)</label>
-            <textarea id="cinc-fuentes" rows="2" placeholder="https://…" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.82rem;outline:none;resize:vertical;width:100%;box-sizing:border-box;font-family:monospace;"></textarea>
-          </div>
-          <div class="modal-field">
-            <label>URL de evidencia (opcional)</label>
-            <textarea id="cinc-evidencias" rows="2" placeholder="https://…" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;color:var(--text);font-size:.82rem;outline:none;resize:vertical;width:100%;box-sizing:border-box;font-family:monospace;"></textarea>
-          </div>
-          <div id="cinc-viz-msg" style="display:none;background:rgba(245,158,11,0.08);border:1px solid #f59e0b44;border-radius:6px;padding:.6rem .9rem;font-size:.82rem;color:#fbbf24;">
-            ⚠️ Tu reporte será revisado por un operador antes de ser registrado oficialmente.
-          </div>
-          <div class="modal-msg" id="cinc-msg"></div>
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeCrearIncidente()">Cancelar</button>
-            <button class="btn-primary" id="btn-save-inc" onclick="saveIncidente()">Crear Incidente</button>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -1611,7 +1694,7 @@
             <label>Tipo de incidente</label>
             <select id="rs-tipo" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.9rem;outline:none;width:100%;">
               <option>Violencia</option><option>Fraude</option><option>Acarreo</option>
-              <option>Irregularidad</option><option>Otro</option>
+              <option>Compra de votos</option><option>Irregularidad</option><option>Otro</option>
             </select>
           </div>
           <div class="modal-field">
@@ -1629,18 +1712,22 @@
         </div>
       </div>
 
-      <!-- Modal Detalle Incidente -->
+      <!-- Modal Detalle Incidente (renderizado en incidentes.js) -->
       <div class="modal-overlay" id="modal-detalle-inc">
-        <div class="inc-modal-box">
-          <div class="inc-modal-hdr">
-            <span class="inc-modal-codigo" id="dm-codigo">INC-000</span>
-            <span class="inc-estado-badge" id="dm-estado-badge">—</span>
-            <span style="font-size:.78rem;color:var(--muted);flex:1" id="dm-tipo-lugar"></span>
-            <button class="inc-btn" style="background:none;border-color:var(--border);color:var(--muted)" onclick="closeDetalleIncidente()">✕</button>
+        <div class="inc-modal-box incx-detail" role="dialog" aria-modal="true" aria-labelledby="dm-title">
+          <div class="incx-detail-head">
+            <div class="incx-detail-titles">
+              <p class="incx-detail-code"><span id="dm-codigo">—</span> <span id="dm-refresh" class="incx-refresh" hidden>Actualizando…</span></p>
+              <h2 id="dm-title">Incidente</h2>
+              <p class="incx-muted" id="dm-tipo-lugar"></p>
+              <div class="incx-chips" id="dm-estado-badge" hidden></div>
+            </div>
+            <div class="incx-detail-head-actions">
+              <button type="button" class="incx-btn" id="dm-tools-btn" hidden onclick="abrirHerramientasAvanzadas()">Herramientas avanzadas</button>
+              <button type="button" class="incx-close" id="dm-close" onclick="closeDetalleIncidente()" aria-label="Cerrar detalle">✕</button>
+            </div>
           </div>
-          <div class="inc-modal-body" id="dm-body">
-            <div style="color:var(--muted);text-align:center;padding:2rem">Cargando…</div>
-          </div>
+          <div class="inc-modal-body incx-detail-body" id="dm-body"></div>
         </div>
       </div>
 
@@ -1842,8 +1929,16 @@
 </div>
 
 <script>
-  const BACKEND_URL = 'https://argos-backend-production-ede7.up.railway.app';
+  let dashboardData=null,dashboardError='',newsError='',newsUpdatedAt=null,mustChangePassword=false,videoRequested=false;
+  let rssLoading=false,dashboardLoading=false,monitorGeneration=0;
+  const monitorTimers=new Set();
+  function startMonitorTimer(fn,ms){const id=setInterval(()=>{if(token)fn();},ms);monitorTimers.add(id);return id;}
+  function stopMonitorTimers(){monitorGeneration++;for(const id of monitorTimers)clearInterval(id);monitorTimers.clear();if(hotKeywordsInterval)clearInterval(hotKeywordsInterval);if(adminSessionsInterval)clearInterval(adminSessionsInterval);monitorInitialized=false;}
+  const BACKEND_URL = window.ARGOS_CONFIG.backendUrl;
+  const nativeFetch=window.fetch.bind(window);
+  const fetch=(url,options={})=>nativeFetch(url,{...options,signal:options.signal||AbortSignal.timeout(30000)});
 
+  localStorage.removeItem('argos_token'); // retire persistent tokens from older clients
   // ── Estado ──────────────────────────────────────────────────────────────
   let token = null, userRole = null, userName = null;
 
@@ -1867,8 +1962,10 @@
       token    = data.token;
       userRole = data.role;
       userName = data.username;
-      localStorage.setItem('argos_token', token);
-      initApp();
+      sessionStorage.setItem('argos_token', token);
+      mustChangePassword=!!data.mustChangePassword;
+      if(mustChangePassword){document.getElementById('screen-login').style.display='none';document.getElementById('screen-app').style.display='flex';openPasswordModal();}
+      else initApp();
     } catch (e) {
       errEl.textContent = e.message;
       errEl.style.display = 'block';
@@ -1878,7 +1975,10 @@
   }
 
   function initApp() {
+    if(mustChangePassword){document.getElementById('screen-login').style.display='none';document.getElementById('screen-app').style.display='flex';openPasswordModal();return;}
     resetMonitorState();
+    dashboardData=null;
+    renderSimpleDashboard();
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('screen-app').style.display  = 'flex';
     document.getElementById('user-info').textContent = userName;
@@ -1889,7 +1989,7 @@
 
     // Ocultar Usuarios para roles no-admin
     const navAdmin = document.getElementById('nav-admin');
-    if (userRole !== 'admin') navAdmin.style.display = 'none';
+    navAdmin.style.display = userRole === 'admin' ? '' : 'none';
 
     // Ocultar add-keyword para visualizadores
     const scanGroup = document.getElementById('scan-group');
@@ -1899,7 +1999,7 @@
     loadSources();
     loadLiveConfig();
     showPanel('monitor');
-    initTour();
+    // Help is opened explicitly, never on every first login.
     initSidebar();
   }
 
@@ -1943,8 +2043,14 @@
     setSidebarVisible(saved !== 'false', false);
   }
 
-  function doLogout() {
-    localStorage.removeItem('argos_token');
+  async function doLogout() {
+    const oldToken=token;
+    if(oldToken) fetch(BACKEND_URL+'/api/logout',{method:'POST',headers:{Authorization:'Bearer '+oldToken}}).catch(()=>{});
+    stopMonitorTimers();
+    closeLive();
+    mustChangePassword=false;
+    dashboardData=null;
+    sessionStorage.removeItem('argos_token');
     token = null; userRole = null; userName = null;
     if (feedInterval)   { clearInterval(feedInterval);   feedInterval   = null; monitorInitialized = false; }
     if (fbPollInterval) { clearInterval(fbPollInterval); fbPollInterval = null; }
@@ -1993,7 +2099,7 @@
   }
 
   async function verifyToken() {
-    const saved = localStorage.getItem('argos_token');
+    const saved = sessionStorage.getItem('argos_token');
     if (!saved) return;
     token = saved;
 
@@ -2006,6 +2112,7 @@
         });
         if (res.ok) {
           const data = await res.json();
+          mustChangePassword=!!data.mustChangePassword;
           userRole = data.role;
           userName = data.username || data.name;
           if (data.resetTour && userName) {
@@ -2025,7 +2132,7 @@
 
     // 5 intentos fallidos → limpiar y mostrar login
     hideReconnecting();
-    localStorage.removeItem('argos_token');
+    sessionStorage.removeItem('argos_token');
     token = null;
     document.getElementById('screen-login').style.display = 'flex';
   }
@@ -2122,191 +2229,9 @@
       : `<span>${abs}</span>`;
   }
 
-  async function loadUsers() {
-    try {
-      const res  = await fetch(`${BACKEND_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-      const list = await res.json();
-      const tbody = document.getElementById('users-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = list.map(u => {
-        const prot = u.username === 'jblanco';
-        const statusDot = u.activo
-          ? `<span class="status-dot sd-on" title="Activo"></span>`
-          : `<span class="status-dot sd-off" title="Desactivado"></span>`;
-        const statusTxt = u.activo
-          ? '<span style="color:#4ade80;font-size:.72rem;">Activo</span>'
-          : '<span style="color:#f87171;font-size:.72rem;">Desactivado</span>';
-        const onlineDot = u.enLinea
-          ? ' <span style="font-size:.62rem;color:#4ade80;">● en línea</span>' : '';
-        const toggleBtn = !prot
-          ? `<button class="aact-btn" title="${u.activo?'Desactivar':'Activar'}"
-               onclick="adminToggleUser('${escHtml(u.username)}',${u.activo})">${u.activo?'🔴':'🟢'}</button>`
-          : '';
-        const delBtn = !prot
-          ? `<button class="aact-btn danger" title="Eliminar"
-               onclick="adminDeleteUser('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🗑️</button>`
-          : '';
-        const sessBtn = !prot
-          ? `<button class="aact-btn" title="Cerrar sesión remota"
-               onclick="adminCloseSession('${escHtml(u.username)}')">⏏️</button>`
-          : '';
-        return `<tr>
-          <td style="font-weight:600;font-family:monospace">${escHtml(u.username)}${onlineDot}</td>
-          <td style="color:var(--muted)">${escHtml(u.name||'')}</td>
-          <td><span class="badge badge-${roleColor(u.role)}">${escHtml(u.role)}</span></td>
-          <td style="display:flex;align-items:center;gap:.35rem">${statusDot}${statusTxt}</td>
-          <td style="font-size:.75rem">${fmtDate(u.lastLogin)}</td>
-          <td style="font-size:.75rem;color:var(--accent2)">${u.totalScans||0}</td>
-          <td style="display:flex;gap:.3rem;flex-wrap:wrap">
-            <button class="aact-btn" title="Editar"
-              onclick="openUserModal('${escHtml(u.username)}','${escHtml(u.name||'')}','${escHtml(u.role)}')">✏️</button>
-            <button class="aact-btn" title="Resetear contraseña"
-              onclick="adminResetPassword('${escHtml(u.username)}','${escHtml(u.name||u.username)}')">🔑</button>
-            ${!prot ? `<button class="aact-btn" title="Resetear tour guiado" onclick="adminResetTour('${escHtml(u.username)}')">🎓</button>` : ''}
-            ${sessBtn}${toggleBtn}${delBtn}
-          </td></tr>`;
-      }).join('');
-    } catch (e) {
-      const tb = document.getElementById('users-tbody');
-      if (tb) tb.innerHTML = `<tr><td colspan="7" style="color:#f87171">Error: ${escHtml(e.message)}</td></tr>`;
-    }
-  }
-
-  // ── Modal crear/editar usuario ────────────────────────────────────────────
-  let editingUsername = null;
-
-  function openUserModal(username, name, role) {
-    editingUsername = username || null;
-    const isEdit = !!username;
-    document.getElementById('modal-user-title').textContent = isEdit ? '✏️ EDITAR USUARIO' : '+ NUEVO USUARIO';
-    document.getElementById('mu-username').value  = username || '';
-    document.getElementById('mu-username').disabled = isEdit;
-    document.getElementById('mu-name').value      = name    || '';
-    document.getElementById('mu-role').value      = role    || 'visualizador';
-    document.getElementById('mu-pwd-field').style.display = isEdit ? 'none' : '';
-    document.getElementById('mu-password').value  = '';
-    document.getElementById('modal-user-msg').textContent = '';
-    document.getElementById('modal-user-msg').className = 'modal-msg';
-    document.getElementById('btn-save-user').disabled = false;
-    document.getElementById('modal-user').classList.add('open');
-  }
-
-  function closeUserModal() {
-    document.getElementById('modal-user').classList.remove('open');
-    editingUsername = null;
-  }
-
-  async function saveUser() {
-    const username = document.getElementById('mu-username').value.trim().toLowerCase();
-    const nombre   = document.getElementById('mu-name').value.trim();
-    const rol      = document.getElementById('mu-role').value;
-    const password = document.getElementById('mu-password').value;
-    const msg      = document.getElementById('modal-user-msg');
-    const btn      = document.getElementById('btn-save-user');
-    msg.textContent = ''; msg.className = 'modal-msg';
-
-    if (!editingUsername && (!username || !nombre || !password))
-      return Object.assign(msg, { textContent:'❌ Todos los campos son requeridos', className:'modal-msg err' });
-    if (editingUsername && (!nombre))
-      return Object.assign(msg, { textContent:'❌ El nombre es requerido', className:'modal-msg err' });
-
-    btn.disabled = true; btn.textContent = 'Guardando…';
-    try {
-      let url = editingUsername ? `${BACKEND_URL}/admin/usuarios/editar` : `${BACKEND_URL}/admin/usuarios/crear`;
-      let method = editingUsername ? 'PUT' : 'POST';
-      let body = editingUsername
-        ? { username: editingUsername, nombre, rol }
-        : { username, nombre, rol, password };
-
-      const res  = await fetch(url, {
-        method, headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        closeUserModal();
-        showAdminMsg(editingUsername ? `✅ Usuario ${editingUsername} actualizado` : `✅ Usuario ${username} creado`, 'ok');
-        loadUsers();
-      } else {
-        msg.textContent = `❌ ${data.error || 'Error'}`;
-        msg.className = 'modal-msg err';
-      }
-    } catch (e) {
-      msg.textContent = `❌ ${e.message}`;
-      msg.className = 'modal-msg err';
-    } finally {
-      btn.disabled = false; btn.textContent = 'Guardar';
-    }
-  }
-
-  async function adminResetPassword(username, nombre) {
-    if (!confirm(`¿Resetear contraseña de ${nombre} a PNP2026*?`)) return;
-    try {
-      const res  = await fetch(`${BACKEND_URL}/api/reset-password`, {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ username }),
-      });
-      const data = await res.json();
-      showAdminMsg(res.ok && data.ok ? `✅ Contraseña de ${nombre} reseteada` : `❌ ${data.error||'Error'}`,
-                   res.ok && data.ok ? 'ok' : 'err');
-    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
-  }
-
-  async function adminToggleUser(username, activo) {
-    const accion = activo ? 'desactivar' : 'activar';
-    if (!confirm(`¿${accion.charAt(0).toUpperCase()+accion.slice(1)} usuario ${username}?`)) return;
-    try {
-      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/toggle`, {
-        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ username }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) { showAdminMsg(`✅ Usuario ${username} ${data.activo?'activado':'desactivado'}`, 'ok'); loadUsers(); }
-      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
-    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
-  }
-
-  async function adminDeleteUser(username, nombre) {
-    if (!confirm(`¿Eliminar usuario ${nombre} (${username})? Esta acción no se puede deshacer.`)) return;
-    try {
-      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/eliminar`, {
-        method:'DELETE', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ username }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) { showAdminMsg(`✅ Usuario ${username} eliminado`, 'ok'); loadUsers(); }
-      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
-    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
-  }
-
-  async function adminCloseSession(username) {
-    if (!confirm(`¿Cerrar sesión remota de ${username}?`)) return;
-    try {
-      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/cerrar-sesion`, {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ username }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) { showAdminMsg(`✅ Sesión de ${username} cerrada`, 'ok'); loadUsers(); }
-      else showAdminMsg(`❌ ${data.error||'Error'}`, 'err');
-    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
-  }
+  // Usuarios, formulario y acciones de administración: ver usuarios.js
 
   // ── TAB 2: Actividad ──────────────────────────────────────────────────────
-  async function loadActivity() {
-    try {
-      const res  = await fetch(`${BACKEND_URL}/admin/logs`, { headers:{'Authorization':`Bearer ${token}`} });
-      adminActivityData = await res.json();
-      // Poblar filtro de usuarios
-      const users = [...new Set(adminActivityData.map(e => e.usuario))].sort();
-      const sel = document.getElementById('act-filter-user');
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">Todos</option>' +
-        users.map(u => `<option value="${escHtml(u)}"${u===cur?' selected':''}>${escHtml(u)}</option>`).join('');
-      renderActivityLog();
-    } catch (e) { console.warn('[admin]', e.message); }
-  }
-
   function logTypeClass(accion) {
     if (!accion) return '';
     if (accion.includes('LOGIN_OK'))      return 'log-login';
@@ -2317,68 +2242,6 @@
     if (accion.includes('SCAN') || accion.includes('MONITOR')) return 'log-scan';
     if (accion.includes('BLOQUEADO')) return 'log-block';
     return '';
-  }
-
-  function renderActivityLog() {
-    const filterUser = document.getElementById('act-filter-user')?.value || '';
-    const filterTipo = document.getElementById('act-filter-tipo')?.value || '';
-    const data = adminActivityData.filter(e =>
-      (!filterUser || e.usuario === filterUser) &&
-      (!filterTipo || (e.accion||'').includes(filterTipo))
-    ).slice(0, 200);
-
-    const tbody = document.getElementById('activity-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = data.map(e => {
-      const cls = logTypeClass(e.accion);
-      const ts  = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
-      const day = e.timestamp ? new Date(e.timestamp).toLocaleDateString('es',{day:'2-digit',month:'2-digit'}) : '';
-      return `<tr class="${cls}">
-        <td style="white-space:nowrap;color:var(--muted)">${day} ${ts}</td>
-        <td style="font-weight:600">${escHtml(e.usuario||'')}</td>
-        <td>${escHtml(e.accion||'')}</td>
-        <td style="color:var(--muted)">${escHtml(e.detalle||'')}</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="4" style="color:var(--muted);padding:.8rem">Sin registros</td></tr>`;
-  }
-
-  async function exportActivityCSV() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/admin/logs/exportar`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `argos-log-${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-    } catch (e) { showAdminMsg(`❌ ${e.message}`, 'err'); }
-  }
-
-  // ── TAB 3: Sesiones activas ───────────────────────────────────────────────
-  async function loadSessions() {
-    try {
-      const res  = await fetch(`${BACKEND_URL}/admin/usuarios/sesiones`, { headers:{'Authorization':`Bearer ${token}`} });
-      const data = await res.json();
-      const wrap = document.getElementById('sessions-wrap');
-      if (!wrap) return;
-      const online = data.filter(u => u.enLinea);
-      if (!online.length) {
-        wrap.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Sin sesiones activas ahora mismo</div>';
-        return;
-      }
-      wrap.innerHTML = online.map(u => `
-        <div class="sess-card">
-          <span class="status-dot sd-on"></span>
-          <div style="flex:1">
-            <div class="sess-name">${escHtml(u.username)} <span class="badge badge-${roleColor(u.role)}" style="font-size:.6rem">${escHtml(u.role)}</span></div>
-            <div class="sess-meta">${escHtml(u.name||'')} · Última actividad: ${fmtDate(u.lastActivity)} · IP: ${escHtml(u.ip||'—')}</div>
-          </div>
-          ${u.username !== 'jblanco'
-            ? `<button class="aact-btn" onclick="adminCloseSession('${escHtml(u.username)}');loadSessions()">⏏️ Cerrar</button>`
-            : ''}
-        </div>`).join('');
-    } catch (e) { console.warn('[sessions]', e.message); }
   }
 
   // ── Resetear contraseña (función legacy para compatibilidad) ─────────────
@@ -2397,6 +2260,7 @@
   }
 
   function closePasswordModal() {
+    if(mustChangePassword)return;
     document.getElementById('modal-password').classList.remove('open');
   }
 
@@ -2413,14 +2277,11 @@
       msg.textContent = '❌ Las contraseñas no coinciden';
       msg.className = 'modal-msg err'; return;
     }
-    if (nueva.length < 8) {
-      msg.textContent = '❌ La contraseña nueva debe tener al menos 8 caracteres';
+    if (nueva.length < 12) {
+      msg.textContent = '❌ La contraseña nueva debe tener al menos 12 caracteres';
       msg.className = 'modal-msg err'; return;
     }
-    if (nueva === 'PNP2026*') {
-      msg.textContent = '❌ No puede usar la contraseña inicial como nueva contraseña';
-      msg.className = 'modal-msg err'; return;
-    }
+
 
     btn.disabled = true; btn.textContent = 'Cambiando…';
     try {
@@ -2437,7 +2298,9 @@
 
       if (res.ok && data.ok) {
         msg.textContent = '✅ Contraseña actualizada correctamente';
-        msg.className = 'modal-msg ok';
+        if(data.token){token=data.token;sessionStorage.setItem('argos_token',token);}
+      const wasRequired=mustChangePassword;mustChangePassword=false;if(wasRequired)initApp();
+      msg.className = 'modal-msg ok';
         setTimeout(closePasswordModal, 1800);
         return;
       }
@@ -2474,9 +2337,11 @@
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function escJs(s, max = 300) {
-    return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ').slice(0, max);
+  function escJs(s, max = 2000) {
+    return escHtml(String(s).slice(0,max).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n]/g,' '));
   }
+  function safeLink(s) { return ArgosDomain.safeUrl(s); }
+
 
   // ── Event listeners ──────────────────────────────────────────────────────
   document.getElementById('btn-login').addEventListener('click', doLogin);
@@ -2562,7 +2427,7 @@
   }
 
   function getDeptIncidentesAbiertos(deptName) {
-    return incidentesData.filter(i =>
+    return (dashboardData?.incidentesAbiertos||[]).filter(i =>
       i.estado !== 'cerrado' && resolveDeptNameForIncidente(i) === deptName);
   }
 
@@ -2614,14 +2479,9 @@
     return null;
   }
 
-  function prioridadNivel(inc) {
-    let p = (inc.prioridad || inc.nivel || 'media').toLowerCase();
-    if (p === 'critica') return 'critico';
-    if (p === 'alta')    return 'alto';
-    if (p === 'baja')    return 'informativo';
-    if (p === 'media')   return 'medio';
-    return p;
-  }
+  function prioridadNivel(inc) { const level=ArgosDomain.incidentLevel(inc);return level==='info'?'informativo':level; }
+
+
   const NIVEL_LABEL_ES  = { informativo:'Informativo', medio:'Media', alto:'Alta', critico:'Crítico' };
   const NIVEL_COLOR_ES  = { informativo:'#378ADD', medio:'#eab308', alto:'#f97316', critico:'#e24b4a' };
 
@@ -2693,6 +2553,7 @@
   function initMonitor() {
     if (monitorInitialized) return;
     monitorInitialized = true;
+    monitorGeneration++;
     DEPTS.forEach(d => { heatData[d.id] = 0; });
     renderHeatMap();
     renderDeptStats();
@@ -2703,17 +2564,9 @@
     renderTimeline();
     showFeedLoading();
 
-    // Decaimiento suave del mapa de calor cada 5 s (nunca por debajo de 0)
-    feedInterval = setInterval(() => {
-      DEPTS.forEach(d => {
-        const delta = (Math.random() - 0.6) * 0.15;
-        heatData[d.id] = Math.max(0, Math.min(8, (heatData[d.id] || 0) + delta));
-      });
-      renderHeatMap();
-      renderDeptStats();
-    }, 5000);
 
-    initD3Map();
+
+    if(document.body.classList.contains('detailed-view')) initD3Map();
 
     // Polling de datos reales
     fetchFacebookPosts();
@@ -2727,10 +2580,10 @@
 
     // Polling incidentes para badge (cada 60 s)
     loadIncidentes();
-    setInterval(() => { loadIncidentes(); }, 60000);
+    startMonitorTimer(loadIncidentes,60000);
 
     // Polling incidentes abiertos (cada 30 s)
-    setInterval(updateActiveAlerts, 30000);
+    startMonitorTimer(updateActiveAlerts,30000);
 
     loadCronologia();
     loadOperadores();
@@ -2772,6 +2625,7 @@
   }
 
   function renderTimeline() {
+    if(typeof d3==='undefined')return;
     const wrap = document.getElementById('tl-chart-wrap');
     if (!wrap) return;
     const tt = document.getElementById('tl-tooltip');
@@ -2937,14 +2791,8 @@
     return _LUGARES_PY_FE.some(l => full.includes(l));
   }
 
-  function isIncidentItem(item) {
-    if (!isItemFromParaguay(item)) return false;
-    const text = ((item.title || '') + ' ' + (item.description || ''))
-      .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    return INCIDENT_KEYWORDS.some(kw => text.includes(norm(kw))) ||
-           scanKeywords.some(kw => text.includes(norm(kw)));
-  }
+  function isIncidentItem(item) { return ['alto','critico'].includes(item.alertLevel); }
+
 
   function switchFeedTab(tab) {
     activeFeedTab = tab;
@@ -2983,32 +2831,13 @@
   }
 
   // addCronoEvent: persiste en DB si hay token y rol, actualiza array local siempre
-  async function addCronoEvent(desc, lugar, nivel, ts, autoGenerado) {
-    lugar = lugar || '—';
-    const now = ts instanceof Date ? ts : new Date();
-    const hora = now.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
-    const iso  = now.toISOString();
-    const entry = { hora, desc, lugar, nivel, iso, auto_generado: !!autoGenerado };
-
-    // Intentar persistir en DB (solo si rol puede escribir)
-    if (token && ['admin','operador'].includes(userRole)) {
-      try {
-        const res = await fetch(`${BACKEND_URL}/cronologia/agregar`, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-          body: JSON.stringify({ evento: desc, lugar: lugar !== '—' ? lugar : '', nivel }),
-        });
-        if (res.ok) {
-          // Recargar desde DB para obtener el id real
-          await loadCronologia();
-          return;
-        }
-      } catch { /* fallback a memoria */ }
-    }
-
-    // Fallback: solo en memoria
-    cronologiaEvents.unshift(entry);
-    renderCronologia();
+  async function addCronoEvent(desc,lugar,nivel) {
+    if(!token||!['admin','operador'].includes(userRole))return showToast('No tienes permiso para registrar eventos','err');
+    try{
+      const res=await fetch(BACKEND_URL+'/cronologia/agregar',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({evento:desc,lugar:lugar||'',nivel})});
+      const result=await res.json();if(!res.ok)throw new Error(result.error||'No se pudo guardar');
+      await loadCronologia();showToast('Evento guardado','ok');
+    }catch(error){showToast(error.message,'err');}
   }
 
   async function loadCronologia() {
@@ -3412,25 +3241,8 @@
 
         renderHeatMap();
   
-        // Ondas de propagación desde depts activos cada 3 s
-        setInterval(() => {
-          if (!geoFeatures) return;
-          const active = DEPTS.filter(d => (heatData[d.id]||0) >= 3);
-          if (!active.length) return;
-          const dept = active[Math.floor(Math.random() * active.length)];
-          const canon = deptCanonicalFeature[dept.id];
-          if (!canon) return;
-          const [px, py] = pathGen.centroid(canon.feat);
-          const al = alertLevel(heatData[dept.id]);
-          // Pulse ring dentro de mapG (se transforma con zoom)
-          const ring = mapG.append('circle')
-            .attr('cx', px).attr('cy', py).attr('r', 0)
-            .attr('fill', 'none')
-            .attr('stroke', al.color).attr('stroke-width', 1.3).attr('opacity', .9)
-            .style('pointer-events', 'none');
-          ring.transition().duration(1700).ease(d3.easeLinear)
-            .attr('r', 20).attr('opacity', 0).remove();
-        }, 2900);
+
+
       })
       .catch(err => {
         wrap.insertAdjacentHTML('beforeend',
@@ -3587,6 +3399,7 @@
   }
 
   function renderHeatMap() {
+    if(typeof d3==='undefined')return;
     let maxActivity = 0;
     const scores = {};
     DEPTS.forEach(d => {
@@ -3709,7 +3522,7 @@
       const label = NIVEL_LABEL_ES[nivel] || 'Media';
       const color = NIVEL_COLOR_ES[nivel] || '#eab308';
       const desc  = escHtml((inc.descripcion || inc.tipo || '—').slice(0, 42));
-      return `<div class="dept-detail-inc-row" onclick="closeDeptDetailPanel();openDetalleIncidente('${escHtml(inc.codigo)}')">
+      return `<div class="dept-detail-inc-row" onclick="closeDeptDetailPanel();openDetalleIncidente('${escJs(inc.codigo)}')">
         <span class="dept-detail-inc-code">${escHtml(inc.codigo)}</span>
         <span class="dept-detail-inc-nivel" style="color:${color}">${label}</span>
         <span class="dept-detail-inc-desc">${desc}</span>
@@ -3843,12 +3656,17 @@
   }
 
   function renderKeywordTags() {
-    const canEdit = ['admin','operador'].includes(userRole);
-    document.getElementById('keyword-tags').innerHTML = scanKeywords
-      .map(k => `<span class="keyword-tag">${escHtml(k)}${canEdit ? `<button onclick="removeKeyword('${escJs(k)}')" title="Quitar">×</button>` : ''}</span>`)
-      .join('');
-    updateSearchPanelDisplay();
+    const container=document.getElementById('keyword-tags');container.replaceChildren();
+    scanKeywords.forEach(keyword=>{
+      const tag=document.createElement('span');tag.className='keyword-tag';tag.textContent=keyword;
+      if(['admin','operador'].includes(userRole)){
+        const button=document.createElement('button');button.type='button';button.textContent='×';
+        button.setAttribute('aria-label','Quitar '+keyword);button.addEventListener('click',()=>removeKeyword(keyword));tag.append(button);
+      }
+      container.append(tag);
+    });updateSearchPanelDisplay();
   }
+
 
   // ── Búsqueda rápida en redes ──────────────────────────────────────────────
   function updateSearchPanelDisplay() {
@@ -4035,78 +3853,27 @@
   }
 
   async function fetchRSSNews() {
-    if (!token) return;
-    const statusEl = document.getElementById('rss-status-badge');
-    const textEl   = document.getElementById('rss-badge-text');
+    if(!token||rssLoading)return;
+    rssLoading=true;const generation=monitorGeneration;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/rss`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-
-      updateRSSSemaphore(data.feeds || [], data.total || 0);
-
-      const list     = document.getElementById('feed-list');
-      const newItems = (data.items || []).filter(i => i.title && !rssSeenTitles.has(i.title));
-
-      // Actualizar contador con total real
-      const countEl = document.getElementById('scan-count');
-      if (countEl) countEl.textContent = `${data.total || 0} noticias`;
-
-      // Sin noticias en el rango → mostrar mensaje vacío
-      if (!newItems.length) {
-        removeFeedLoading();
-        if ((data.total || 0) === 0) showNoNewsInRange();
-        return;
-      }
-
-      removeFeedLoading();
-      showToast(`RSS actualizado — ${newItems.length} noticia${newItems.length!==1?'s':''} nueva${newItems.length!==1?'s':''}`, 'info');
-
-      // Agregar al master array, deduplicar, limitar a 90, ordenar descendente
-      newItems.forEach(item => {
-        rssSeenTitles.add(item.title);
-        rssAllItems.push(item);
-      });
-      rssAllItems.sort((a, b) =>
-        new Date(b.fecha||b.pubDate||0) - new Date(a.fecha||a.pubDate||0)
-      );
-      if (rssAllItems.length > 90) rssAllItems = rssAllItems.slice(0, 90);
-
-      // Auto-agregar incidentes de nivel alto/crítico a la cronología
-      const newIncidents = newItems.filter(i => isIncidentItem(i));
-      newIncidents.forEach(item => {
-        // Solo críticos van a cronología automática
-        if (item.alertLevel === 'critico') {
-          const loc = detectLocation((item.title||'')+' '+(item.description||''));
-          addCronoEvent(item.title.slice(0,80), loc||'—', 'critico', new Date(item.fecha||item.pubDate||Date.now()), true);
-        }
-      });
-
-      // Beep suave si hay incidentes nuevos
-      if (newIncidents.length) playIncidentBeep();
-
-      renderFeedFromCache();
-
-      // Actualizar mapa de calor, timeline, distribución alertas, tendencias, hot keywords, OSINT
-      updateHeatFromRSS(newItems);
-      renderTimeline();
-      updateAlertDistribution();
-      updateTrendingFromRSS(newItems);
-      updateHotKeywords();
-      updateKPIBar();
-      updateActiveAlerts();
-      updateNivelNacional();
-      trackOSINT(newItems);
-      updateMissionBar();
-
-    } catch {
-      updateRSSSemaphore([], 0);
-    }
+      const res=await fetch(BACKEND_URL+'/api/rss',{headers:{Authorization:'Bearer '+token}});
+      if(!res.ok)throw new Error(res.status===401?'La sesión expiró':'No se pudieron actualizar las noticias');
+      const data=await res.json();if(generation!==monitorGeneration||!token)return;
+      const before=new Set(rssAllItems.map(i=>i.url||i.title));
+      rssAllItems=ArgosDomain.recentNews(data.items||[]);
+      const newItems=rssAllItems.filter(i=>!before.has(i.url||i.title));
+      rssSeenTitles.clear();rssAllItems.forEach(i=>rssSeenTitles.add(i.title));
+      newsUpdatedAt=data.lastFetch;newsError='';
+      updateRSSSemaphore(data.feeds||[],data.total||0);
+      removeFeedLoading();renderFeedFromCache();updateHeatFromRSS(newItems);
+      renderTimeline();updateAlertDistribution();updateTrendingFromRSS(newItems);
+      updateHotKeywords();updateKPIBar();updateMissionBar();renderSimpleDashboard();
+    } catch(e) { newsError=e.message;renderSimpleDashboard(); }
+    finally {rssLoading=false;}
   }
 
-  // ── Mission Control bar ───────────────────────────────────────────────────
+
+
   function tickMissionClock() {
     const el = document.getElementById('mission-clock');
     if (el) el.textContent = new Date().toLocaleTimeString('es-PY');
@@ -4116,16 +3883,11 @@
 
   function updateMissionBar() {
     const msInc = document.getElementById('ms-incidentes');
-    if (msInc) msInc.textContent = String(incidentesData.filter(i => i.estado !== 'cerrado').length);
+    if (msInc) msInc.textContent = dashboardData ? String(dashboardData.abiertos) : '—';
 
     const msNot = document.getElementById('ms-noticias');
-    if (msNot) {
-      const today = new Date().toDateString();
-      msNot.textContent = String(rssAllItems.filter(i => {
-        const d = i.fecha || i.pubDate;
-        return d && new Date(d).toDateString() === today;
-      }).length);
-    }
+    if(msNot)msNot.textContent=dashboardData?String(dashboardData.noticiasHoy):'—';
+
 
     const msUlt = document.getElementById('ms-ultimo');
     if (msUlt) {
@@ -4143,18 +3905,12 @@
   // Única fuente de verdad para el nivel de riesgo nacional — usado por el
   // badge del header, el ms-riesgo del mission-bar y el Resumen Operativo.
   function computeNivelNacional() {
-    const criticos = incidentesData.filter(i => i.estado !== 'cerrado' && (i.prioridad === 'critica' || i.prioridad === 'critico')).length;
-    const altos    = incidentesData.filter(i => i.estado !== 'cerrado' && i.prioridad === 'alta').length;
-
-    if (criticos >= 3) {
-      return { label:'🔴 CRISIS',   color:'#fca5a5', bg:'rgba(226,75,74,0.18)', border:'#e24b4a88' };
-    } else if (criticos >= 1 || altos >= 3) {
-      return { label:'🟠 TENSIÓN',  color:'#fdba74', bg:'rgba(249,115,22,0.18)', border:'#f9731688' };
-    } else if (altos >= 1) {
-      return { label:'🟡 ATENCIÓN', color:'#fde68a', bg:'rgba(234,179,8,0.18)',  border:'#eab30888' };
-    }
-    return { label:'🟢 NORMAL', color:'#86efac', bg:'rgba(34,197,94,0.15)', border:'#22c55e66' };
+    const risk=dashboardData?.riesgo;
+    const palette={NORMAL:['Situación normal','#86efac'],ATENCION:['Requiere atención','#fde68a'],TENSION:['Atención prioritaria','#fdba74'],CRISIS:['Situación crítica','#fca5a5']};
+    const [label,color]=palette[risk]||['Sin datos actualizados','#cbd5e1'];
+    return {label,color,bg:color+'18',border:color+'66'};
   }
+
 
   function updateNivelNacional() {
     const { label, color, bg, border } = computeNivelNacional();
@@ -4175,29 +3931,16 @@
   // ── Resumen Operativo (reemplaza Indicadores OSINT) ───────────────────────
   let _prevAbiertosCount = null;
   function renderResumenOperativo() {
-    const total    = incidentesData.length;
-    const cerrados = incidentesData.filter(i => i.estado === 'cerrado').length;
-    const abiertosArr = incidentesData.filter(i => i.estado !== 'cerrado');
-    const abiertos = abiertosArr.length;
-    const criticos = abiertosArr.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico').length;
-    const municipios = new Set(abiertosArr.map(i => i.municipio || i.lugar).filter(Boolean)).size;
-
-    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setTxt('ro-total', total);
-    setTxt('ro-cerrados', cerrados);
-    setTxt('ro-abiertos', abiertos);
-    setTxt('ro-criticos', criticos);
-    setTxt('ro-municipios', municipios);
-    setTxt('ro-riesgo', computeNivelNacional().label);
-
-    let tendencia = '→ estable';
-    if (_prevAbiertosCount !== null) {
-      if (abiertos > _prevAbiertosCount)      tendencia = '↑ en aumento';
-      else if (abiertos < _prevAbiertosCount) tendencia = '↓ en descenso';
+    const d=dashboardData;
+    for(const [id,key] of [['ro-total','total'],['ro-cerrados','cerrados'],['ro-abiertos','abiertos'],['ro-criticos','criticos'],['ro-municipios','municipios']]){
+      const el=document.getElementById(id);if(el)el.textContent=d?d[key]:'—';
     }
-    _prevAbiertosCount = abiertos;
-    setTxt('ro-tendencia', tendencia);
+    document.getElementById('ro-riesgo').textContent=computeNivelNacional().label;
+    document.getElementById('ro-tendencia').textContent='Sin comparación temporal';
+    renderSimpleDashboard();
   }
+
+
 
   // ── KPI Bar ───────────────────────────────────────────────────────────────
   function updateKPIBar() {
@@ -4232,41 +3975,16 @@
 
   // ── Incidentes abiertos ───────────────────────────────────────────────────
   async function updateActiveAlerts() {
-    const el = document.getElementById('active-alerts-list');
-    if (!el || !token) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/incidentes`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      const incidents = (Array.isArray(data) ? data : (data.incidentes || []))
-        .filter(i => i.estado !== 'cerrado')
-        .slice(0, 5);
-      if (!incidents.length) {
-        el.innerHTML = '<div style="color:#4ade80;font-size:.72rem;padding:.2rem 0;">✅ Sin incidentes activos</div>';
-        return;
-      }
-      const NIVEL_COLOR = { critico:'#e24b4a', alto:'#f97316', medio:'#eab308', informativo:'#378ADD' };
-      const NIVEL_ICON  = { critico:'🚨', alto:'🔴', medio:'🟡', informativo:'🔵' };
-      el.innerHTML = incidents.map(inc => {
-        const nivel = (inc.prioridad || inc.nivel || 'medio').toLowerCase();
-        const color = NIVEL_COLOR[nivel] || '#f97316';
-        const icon  = NIVEL_ICON[nivel]  || '🚨';
-        const lugar = inc.municipio || inc.lugar || inc.departamento || '—';
-        return `<div class="active-alert-row" style="cursor:pointer;" onclick="openDetalleIncidente('${escHtml(inc.codigo)}')">
-          <span style="font-size:.75rem;flex-shrink:0;">${icon}</span>
-          <span class="active-alert-dept">${escHtml(inc.codigo)}</span>
-          <span style="font-size:.65rem;color:var(--text2);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escHtml(lugar)}</span>
-          <span style="font-size:.62rem;color:${color};font-weight:700;flex-shrink:0;text-transform:capitalize;">${escHtml(nivel)}</span>
-        </div>`;
-      }).join('');
-    } catch (e) {
-      console.warn('[alertas] updateActiveAlerts:', e.message);
-      el.innerHTML = '<div style="color:var(--muted);font-size:.72rem;">—</div>';
-    }
+    if(!token)return;
+    await loadDashboard();
+    const el=document.getElementById('active-alerts-list');if(!el)return;
+    el.replaceChildren();
+    (dashboardData?.incidentesAbiertos||[]).slice(0,5).forEach(inc=>{
+      const row=document.createElement('button');row.className='active-alert-row';row.textContent=inc.codigo+' · '+(inc.lugar||'Ubicación pendiente')+' · '+prioridadNivel(inc);
+      row.addEventListener('click',()=>openDetalleIncidente(inc.codigo));el.append(row);
+    });
   }
 
-  // ── Semáforo RSS ──────────────────────────────────────────────────────────
   function updateRSSSemaphore(feeds, total) {
     const statusEl = document.getElementById('rss-status-badge');
     const textEl   = document.getElementById('rss-badge-text');
@@ -4307,7 +4025,7 @@
     const nivelEl  = document.getElementById('nivel-nacional');
     const nivelTxt = nivelEl ? nivelEl.textContent.trim() : '—';
     const nivelNorm = nivelTxt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    const incCriticos = incidentesData.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico').length;
+    const incCriticos = incidentesData.filter(i => ArgosDomain.incidentLevel(i) === 'critico').length;
     const incAbiertos = incidentesData.filter(i => i.estado !== 'cerrado').length;
     const incCerrados = incidentesData.filter(i => i.estado === 'cerrado').length;
     const totalRSS = rssAllItems.length;
@@ -4360,7 +4078,7 @@
     const incAbiertos    = incidentesData.filter(i => i.estado !== 'cerrado');
     const incVerificados = incidentesData.filter(i => i.estado === 'verificado');
     const incCerrados    = incidentesData.filter(i => i.estado === 'cerrado');
-    const incCriticosArr = incidentesData.filter(i => i.prioridad === 'critica' || i.prioridad === 'critico');
+    const incCriticosArr = incidentesData.filter(i => ArgosDomain.incidentLevel(i) === 'critico');
 
     const topDepts = [...DEPTS].sort((a,b) => getActivityScore(b.name) - getActivityScore(a.name));
     const topDept  = topDepts[0];
@@ -4388,7 +4106,7 @@
     // Incidentes destacados consolidados (sin dup tipo+lugar)
     const seenInc = new Set();
     const destacados = incidentesData
-      .filter(i => i.prioridad === 'alta' || i.prioridad === 'critica' || i.prioridad === 'critico')
+      .filter(i => i.prioridad === 'alta' || ArgosDomain.incidentLevel(i) === 'critico')
       .filter(i => {
         const key = `${(i.tipo||'').toLowerCase()}|${([i.municipio||i.lugar,i.departamento].filter(Boolean).join('/')).toLowerCase()}`;
         if (seenInc.has(key)) return false;
@@ -4563,7 +4281,7 @@ ${SEP}`;
       // Incidentes destacados (alto+crítico, consolidados sin dup tipo+lugar)
       const seenDocx = new Set();
       const destacados = incidentesData
-        .filter(i => i.prioridad === 'alta' || i.prioridad === 'critica' || i.prioridad === 'critico')
+        .filter(i => i.prioridad === 'alta' || ArgosDomain.incidentLevel(i) === 'critico')
         .filter(i => {
           const key = `${(i.tipo||'').toLowerCase()}|${([i.municipio||i.lugar,i.departamento].filter(Boolean).join('/')).toLowerCase()}`;
           if (seenDocx.has(key)) return false;
@@ -4593,7 +4311,7 @@ ${SEP}`;
         incAbiertos, incVerificados, incCerrados,
         topDept, tendencia, fuentes,
         incTotales: incidentesData.length,
-        incCriticos: incidentesData.filter(i=>i.prioridad==='critica'||i.prioridad==='critico').length,
+        incCriticos: incidentesData.filter(i=>ArgosDomain.incidentLevel(i)==='critico').length,
         incAltos:    incidentesData.filter(i=>i.prioridad==='alta').length,
         incMedios:   incidentesData.filter(i=>i.prioridad==='media').length,
         incInfo:     incidentesData.filter(i=>i.prioridad==='baja'||i.prioridad==='informativo').length,
@@ -4779,7 +4497,7 @@ ${SEP}`;
             </div>
             <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
               <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;">${timeAgo}</span>
-              ${item.url ? `<span class="feed-open-link" title="Abrir artículo" onclick="event.stopPropagation();window.open('${escJs(item.url)}','_blank','noopener,noreferrer')">↗</span>` : ''}
+              ${item.url ? `<span class="feed-open-link" title="Abrir artículo" onclick="event.stopPropagation();window.open('${escJs(safeLink(item.url))}','_blank','noopener,noreferrer')">↗</span>` : ''}
             </div>
           </div>
           <div class="feed-text noticia-texto" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
@@ -4788,12 +4506,12 @@ ${SEP}`;
               <span class="rss-real">● REAL</span>
               ${relBadge}
               ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
-              ${item.posibleDuplicado ? `<span class="dup-badge" onclick="event.stopPropagation();openDetalleIncidente('${escHtml(item.posibleDuplicado)}')">⚠️ Dup → ${escHtml(item.posibleDuplicado)}</span>` : ''}
+              ${item.posibleDuplicado ? `<span class="dup-badge" onclick="event.stopPropagation();openDetalleIncidente('${escJs(item.posibleDuplicado)}')">⚠️ Dup → ${escHtml(item.posibleDuplicado)}</span>` : ''}
             </div>
             ${item.description ? `<div class="feed-text" style="color:var(--muted);font-size:.71rem;line-height:1.35;">${escHtml(item.description)}</div>` : ''}
             <div class="feed-meta" style="margin-top:.25rem;display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:.65rem;color:var(--muted);">${location ? `📍 ${escHtml(location)}  •  ` : ''}${fullDt}</span>
-              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(item.url||'')}','${escJs(location||'')}','${escJs(item.description||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;flex-shrink:0;">🚨 Reportar</button>
+              <button onclick="event.stopPropagation();reportarDesdeNoticia('${escJs(item.title)}','${escJs(safeLink(item.url))}','${escJs(location||'')}','${escJs(item.description||'')}')" style="font-size:.62rem;padding:1px 7px;background:rgba(226,75,74,0.1);border:0.5px solid rgba(226,75,74,0.4);color:#e24b4a;border-radius:99px;cursor:pointer;line-height:1.6;flex-shrink:0;">🚨 Reportar</button>
             </div>
           </div>
         </div>`;
@@ -4883,9 +4601,13 @@ ${SEP}`;
     }
     try {
       const q = [];
-      if (incFiltroEstado && incFiltroEstado !== 'todos') q.push(`estado=${encodeURIComponent(incFiltroEstado)}`);
+
       const res  = await fetch(`${BACKEND_URL}/incidentes?${q.join('&')}`, { headers:{ 'Authorization':`Bearer ${token}` } });
-      incidentesData = await res.json();
+      if(!res.ok)throw new Error('No se pudieron actualizar los incidentes');
+      const items=await res.json();
+      if(!Array.isArray(items))throw new Error('Respuesta de incidentes inválida');
+      incidentesData=items;
+      await loadDashboard();
       renderIncidentes();
       updateIncidenteBadge();
       updateNivelNacional();
@@ -4905,61 +4627,7 @@ ${SEP}`;
     document.querySelectorAll('.inc-filter-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.fest === estado);
     });
-    loadIncidentes();
-  }
-
-  function renderIncidentes() {
-    const list   = document.getElementById('inc-list');
-    const fDept  = (document.getElementById('inc-filter-dept')?.value  || '').toLowerCase();
-    const fTipo  = (document.getElementById('inc-filter-tipo')?.value  || '').toLowerCase();
-    if (!list) return;
-
-    const filtered = incidentesData.filter(i =>
-      (!fDept || (i.departamento||'').toLowerCase() === fDept) &&
-      (!fTipo || (i.tipo||'').toLowerCase() === fTipo)
-    );
-
-    const label = document.getElementById('inc-total-label');
-    if (label) label.textContent = `${filtered.length} incidente${filtered.length!==1?'s':''}`;
-
-    if (!filtered.length) {
-      list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;font-size:.85rem">Sin incidentes para los filtros seleccionados</div>';
-      return;
-    }
-
-    list.innerHTML = filtered.map(inc => {
-      const next    = ESTADO_NEXT[inc.estado];
-      const confBars = Array.from({length:5}, (_,i) =>
-        `<div class="inc-conf-bar${i < (inc.confianza||1) ? ' filled':''}"></div>`).join('');
-      const fCnt = Array.isArray(inc.fuentes)   ? inc.fuentes.length   : 0;
-      const eCnt = Array.isArray(inc.evidencias) ? inc.evidencias.length : 0;
-      const ago  = formatTimeAgo(inc.created_at);
-      const lugar = [inc.lugar, inc.departamento].filter(Boolean).join(' · ');
-      return `<div class="inc-card inc-card-${inc.estado}" onclick="openDetalleIncidente('${escHtml(inc.codigo)}')">
-        <div class="inc-card-hdr">
-          <span class="inc-codigo">${escHtml(inc.codigo)}</span>
-          <span class="inc-estado-badge inc-est-${inc.estado}">${escHtml(inc.estado.toUpperCase())}</span>
-        </div>
-        <div class="inc-tipo-lugar">${escHtml(inc.tipo||'—')}${lugar ? ' · '+escHtml(lugar) : ''}</div>
-        <div class="inc-conf-row">
-          <span class="inc-conf-label">Confianza:</span>
-          <div class="inc-conf-bars">${confBars}</div>
-          <span class="inc-conf-label">${inc.confianza||1}/5 — ${CONF_LABELS[inc.confianza||1]}</span>
-        </div>
-        <div class="inc-meta">
-          <span class="inc-meta-item">📎 ${fCnt} fuente${fCnt!==1?'s':''}</span>
-          <span class="inc-meta-item">🖼 ${eCnt} evidencia${eCnt!==1?'s':''}</span>
-          <span class="inc-meta-item">🕐 ${ago}</span>
-          <span class="inc-meta-item">👤 ${escHtml(inc.responsable||'—')}</span>
-        </div>
-        <div class="inc-actions" onclick="event.stopPropagation()">
-          <button class="inc-btn inc-btn-detail" onclick="openDetalleIncidente('${escHtml(inc.codigo)}')">Ver detalle</button>
-          ${next ? `<button class="inc-btn inc-btn-avanzar" onclick="cambiarEstadoIncidente('${escHtml(inc.codigo)}','${next}')">→ ${next.charAt(0).toUpperCase()+next.slice(1)}</button>` : ''}
-          ${inc.estado !== 'cerrado' ? `<button class="inc-btn inc-btn-cerrar" onclick="cambiarEstadoIncidente('${escHtml(inc.codigo)}','cerrado')">✓ Cerrar</button>` : ''}
-          <button class="inc-btn" style="color:#60a5fa;border-color:#378ADD44" onclick="exportarDocx('${escHtml(inc.codigo)}')">📄 DOCX</button>
-        </div>
-      </div>`;
-    }).join('');
+    renderIncidentes();
   }
 
   function updateIncidenteBadge() {
@@ -4974,7 +4642,8 @@ ${SEP}`;
   function detectarTipoIncidente(text) {
     const t = (text||'').toLowerCase();
     if (['pelea','agresión','agresion','violencia','herido','tiros','disparos'].some(w=>t.includes(w))) return 'Violencia';
-    if (['fraude','compra de votos','coaccion','coacción'].some(w=>t.includes(w))) return 'Fraude';
+    if (['compra de votos','compra de voto','compran votos'].some(w=>t.includes(w))) return 'Compra de votos';
+    if (['fraude','coaccion','coacción'].some(w=>t.includes(w))) return 'Fraude';
     if (['acarreo','transporte de votantes'].some(w=>t.includes(w))) return 'Acarreo';
     if (['irregularidad','denuncia','reclamo','impugnacion','impugnación'].some(w=>t.includes(w))) return 'Irregularidad';
     return 'Otro';
@@ -5056,306 +4725,7 @@ ${SEP}`;
     }
   }
 
-  // ── Modal crear incidente ─────────────────────────────────────────────────
-  function openCrearIncidente(prefill = {}) {
-    ['cinc-tipo','cinc-desc','cinc-lugar','cinc-fuentes','cinc-evidencias'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = id === 'cinc-tipo' ? 'Violencia' : '';
-    });
-    document.getElementById('cinc-confianza').value = '2';
-    document.getElementById('cinc-dept').value      = '';
-    document.getElementById('cinc-msg').textContent  = '';
-    document.getElementById('cinc-msg').className    = 'modal-msg';
-    document.getElementById('btn-save-inc').disabled = false;
-
-    // Pre-llenar si se pasan datos (desde "Reportar desde noticia")
-    if (prefill.tipo)        document.getElementById('cinc-tipo').value    = prefill.tipo;
-    if (prefill.descripcion) document.getElementById('cinc-desc').value    = prefill.descripcion;
-    if (prefill.lugar)       document.getElementById('cinc-lugar').value   = prefill.lugar;
-    if (prefill.evidencia)   document.getElementById('cinc-evidencias').value = prefill.evidencia;
-
-    // Adaptar modal para visualizadores
-    const isViz = userRole === 'visualizador';
-    const rowConf = document.getElementById('cinc-row-confianza');
-    const rowFuen = document.getElementById('cinc-row-fuentes');
-    if (rowConf) rowConf.style.display = isViz ? 'none' : '';
-    if (rowFuen) rowFuen.style.display = isViz ? 'none' : '';
-    const vizMsg = document.getElementById('cinc-viz-msg');
-    if (vizMsg) vizMsg.style.display = isViz ? '' : 'none';
-    const titleEl = document.getElementById('cinc-modal-title');
-    if (titleEl) titleEl.textContent = isViz ? '🚨 REPORTAR INCIDENTE' : '🚨 NUEVO INCIDENTE';
-    const btnSave = document.getElementById('btn-save-inc');
-    if (btnSave) btnSave.textContent = isViz ? 'Enviar Reporte' : 'Crear Incidente';
-
-    document.getElementById('modal-crear-inc').classList.add('open');
-  }
-
-  function closeCrearIncidente() {
-    document.getElementById('modal-crear-inc').classList.remove('open');
-  }
-
-  async function saveIncidente() {
-    const tipo         = document.getElementById('cinc-tipo').value;
-    const descripcion  = document.getElementById('cinc-desc').value.trim();
-    const lugar        = document.getElementById('cinc-lugar').value.trim();
-    const departamento = document.getElementById('cinc-dept').value;
-    const msg = document.getElementById('cinc-msg');
-    const btn = document.getElementById('btn-save-inc');
-
-    if (!descripcion) {
-      msg.textContent = '❌ La descripción es requerida';
-      msg.className = 'modal-msg err'; return;
-    }
-
-    const isViz      = userRole === 'visualizador';
-    const confianza  = isViz ? 1 : parseInt(document.getElementById('cinc-confianza').value, 10);
-    const fuentesRaw = isViz ? '' : (document.getElementById('cinc-fuentes').value || '').trim();
-    const evidRaw    = (document.getElementById('cinc-evidencias').value || '').trim();
-    const fuentes    = fuentesRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), titulo:'' }));
-    const evidencias = evidRaw.split('\n').filter(Boolean).map(u => ({ tipo:'link', url:u.trim(), descripcion:'' }));
-
-    btn.disabled = true; btn.textContent = isViz ? 'Enviando…' : 'Creando…';
-    try {
-      const res = await fetch(`${BACKEND_URL}/incidentes/crear`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ tipo, descripcion, lugar, departamento, confianza, fuentes, evidencias }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        closeCrearIncidente();
-        if (isViz) {
-          showToast(`Reporte ${data.codigo} enviado — pendiente de verificación`, 'success');
-        } else {
-          addCronoEvent(`Nuevo incidente: ${tipo}`, lugar||departamento||'—', confianza>=4?'alto':'medio');
-          showToast(`Nuevo incidente detectado en ${lugar||departamento||'—'}`, 'error');
-        }
-        if (departamento) glowDept(departamento, confianza >= 4 ? 'critico' : 'alto');
-        loadIncidentes();
-      } else {
-        msg.textContent = `❌ ${data.error||'Error'}`;
-        msg.className = 'modal-msg err';
-      }
-    } catch (e) {
-      msg.textContent = `❌ ${e.message}`;
-      msg.className = 'modal-msg err';
-    } finally {
-      const isStillViz = userRole === 'visualizador';
-      btn.disabled = false; btn.textContent = isStillViz ? 'Enviar Reporte' : 'Crear Incidente';
-    }
-  }
-
-  // ── Modal detalle incidente ────────────────────────────────────────────────
-  async function openDetalleIncidente(codigo) {
-    detalleIncidenteCodigo = codigo;
-    document.getElementById('dm-codigo').textContent = codigo;
-    document.getElementById('dm-body').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem">Cargando…</div>';
-    document.getElementById('modal-detalle-inc').classList.add('open');
-    try {
-      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}`, {
-        headers:{'Authorization':`Bearer ${token}`}
-      });
-      const inc = await res.json();
-      renderDetalleIncidente(inc);
-    } catch (e) {
-      document.getElementById('dm-body').innerHTML = `<div style="color:#f87171">Error: ${escHtml(e.message)}</div>`;
-    }
-  }
-
-  function closeDetalleIncidente() {
-    document.getElementById('modal-detalle-inc').classList.remove('open');
-    detalleIncidenteCodigo = null;
-  }
-
-  function renderDetalleIncidente(inc) {
-    const estadoBadge = document.getElementById('dm-estado-badge');
-    estadoBadge.textContent = (inc.estado||'—').toUpperCase();
-    estadoBadge.className = `inc-estado-badge inc-est-${inc.estado}`;
-    document.getElementById('dm-tipo-lugar').textContent =
-      [inc.tipo, inc.municipio||inc.lugar, inc.departamento].filter(Boolean).join(' · ');
-
-    const curIdx = ESTADO_IDX[inc.estado] ?? 0;
-    const stepperHtml = ESTADO_LIST.map((s, i) => {
-      const cls = i < curIdx ? 'done' : i === curIdx ? 'current' : '';
-      const icon = i < curIdx ? '✓' : '';
-      return `<div class="inc-step ${cls}">
-        <div class="inc-step-dot">${icon}</div>
-        <div class="inc-step-lbl">${s}</div>
-      </div>`;
-    }).join('');
-
-    const confBars = Array.from({length:5}, (_,i) =>
-      `<div class="inc-conf-bar${i < (inc.confianza||1) ? ' filled':''}"></div>`).join('');
-
-    const fuentes    = Array.isArray(inc.fuentes)    ? inc.fuentes    : [];
-    const evidencias = Array.isArray(inc.evidencias) ? inc.evidencias : [];
-    const historial  = Array.isArray(inc.historial)  ? inc.historial  : [];
-    const relacionados = Array.isArray(inc.relacionados) ? inc.relacionados : [];
-
-    const evIcon = { foto:'🖼', video:'▶️', link:'🔗', captura:'📸', nota:'📝', rss:'📰', web:'🌐', social:'💬', oficial:'🏛' };
-    const prioActual = inc.prioridad || 'media';
-
-    const canEdit = ['admin','operador'].includes(userRole);
-    const isNotClosed = inc.estado !== 'cerrado';
-    const IS = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.28rem .55rem;color:var(--text);font-size:.75rem;outline:none;';
-
-    // Historial: color por tipo de acción
-    function histClass(accion) {
-      const a = (accion||'').toLowerCase();
-      if (a.includes('cread'))   return 'hist-verde';
-      if (a.includes('estado') || a.includes('pasar')) return a.includes('escalad') ? 'hist-naranja' : 'hist-azul';
-      if (a.includes('evidencia') || a.includes('fuente')) return 'hist-amarillo';
-      if (a.includes('observ') || a.includes('ubicac') || a.includes('asign') || a.includes('prioridad') || a.includes('relacionad') || a.includes('confianza')) return 'hist-gris';
-      return 'hist-gris';
-    }
-
-    const dptosOptions = DEPARTAMENTOS_PY.map(d =>
-      `<option value="${escHtml(d)}"${inc.departamento===d?' selected':''}>${escHtml(d)}</option>`
-    ).join('');
-    const opOptions = operadoresList.map(o =>
-      `<option value="${escHtml(o.username)}"${inc.responsable===o.username?' selected':''}>${escHtml(o.name)}</option>`
-    ).join('');
-
-    document.getElementById('dm-body').innerHTML = `
-      <!-- Meta info -->
-      <div style="display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;font-size:.71rem;color:var(--muted);">
-        <span>🕐 ${fmtDate(inc.created_at)}</span>
-        ${inc.departamento ? `<span>📍 ${escHtml([inc.municipio||inc.lugar, inc.departamento].filter(Boolean).join(' · '))}</span>` : ''}
-        ${inc.local_votacion ? `<span>🏛 ${escHtml(inc.local_votacion)}</span>` : ''}
-      </div>
-      <!-- Descripción + Prioridad + Asignación en fila -->
-      <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
-        <div style="flex:1;min-width:160px;">
-          <div class="inc-section-title">Descripción</div>
-          <div style="font-size:.81rem;line-height:1.5;color:var(--text)">${escHtml(inc.descripcion||'—')}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:.45rem;min-width:130px;">
-          <div>
-            <div class="inc-section-title">Prioridad</div>
-            <div style="display:flex;gap:.28rem;">
-              ${['alta','media','baja'].map(p => `<button class="prio-btn prio-${p}${prioActual===p?' active':''}" onclick="${canEdit?`setPrioridad('${inc.codigo}','${p}')`:''}"> ${p.charAt(0).toUpperCase()+p.slice(1)}</button>`).join('')}
-            </div>
-          </div>
-          ${canEdit ? `
-          <div>
-            <div class="inc-section-title">Asignar a</div>
-            <select style="${IS}width:100%" onchange="asignarIncidente('${inc.codigo}',this.value)">
-              <option value="">— sin asignar —</option>
-              ${opOptions}
-            </select>
-          </div>` : `<div style="font-size:.72rem;color:var(--muted)">👤 ${escHtml(inc.responsable||'sistema')}</div>`}
-        </div>
-      </div>
-      <!-- Ubicación -->
-      ${canEdit ? `
-      <div>
-        <div class="inc-section-title">📍 Ubicación</div>
-        <div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;">
-          <select id="ub-dpto" style="${IS}flex:1;min-width:120px;"><option value="">— Departamento —</option>${dptosOptions}</select>
-          <input type="text" id="ub-municipio" value="${escHtml(inc.municipio||inc.lugar||'')}" placeholder="Municipio / Ciudad" style="${IS}flex:1;min-width:110px;">
-          <input type="text" id="ub-local" value="${escHtml(inc.local_votacion||'')}" placeholder="Local de votación" style="${IS}flex:1;min-width:110px;">
-          <button class="inc-btn inc-btn-avanzar" style="white-space:nowrap" onclick="guardarUbicacion('${inc.codigo}')">💾 Guardar</button>
-        </div>
-      </div>` : ''}
-      <!-- Escalamiento -->
-      <div>
-        <div class="inc-section-title">Escalamiento</div>
-        <div class="inc-stepper" style="margin:.5rem 0 .55rem;">${stepperHtml}</div>
-        ${canEdit && isNotClosed ? `
-          <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-            ${ESTADO_NEXT[inc.estado] ? `<button class="inc-btn inc-btn-avanzar" onclick="cambiarEstadoIncidente('${inc.codigo}','${ESTADO_NEXT[inc.estado]}')">→ Pasar a ${ESTADO_NEXT[inc.estado]}</button>` : ''}
-            <button class="inc-btn inc-btn-cerrar" onclick="cambiarEstadoIncidente('${inc.codigo}','cerrado')">✓ Cerrar incidente</button>
-          </div>` : ''}
-      </div>
-      <!-- Confianza -->
-      <div>
-        <div class="inc-section-title">Confianza</div>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;">
-          <div class="inc-conf-bars">${confBars}</div>
-          <span style="font-size:.78rem;font-weight:700;">${inc.confianza||1}/5</span>
-          <span class="conf-desc">${CONF_LABELS[inc.confianza||1]}</span>
-        </div>
-        ${canEdit ? `
-          <div style="display:flex;gap:.3rem;">
-            ${[1,2,3,4,5].map(n => `<button class="inc-btn${inc.confianza===n?' inc-btn-avanzar':''}" style="padding:.18rem .55rem;font-size:.65rem" onclick="setConfianza('${inc.codigo}',${n})">${n}</button>`).join('')}
-          </div>` : ''}
-      </div>
-      <!-- Fuentes -->
-      <div>
-        <div class="inc-section-title">Fuentes (${fuentes.length})</div>
-        ${fuentes.map(f => `
-          <div class="fuente-item">
-            <div class="fuente-item-hdr">
-              <span class="ev-icon">${evIcon[f.tipo]||'📰'}</span>
-              <span class="fuente-portal">${escHtml(f.fuente||f.tipo||'Fuente')}</span>
-              ${f.url ? `<a class="ev-link" style="font-size:.7rem;" href="${escHtml(f.url)}" target="_blank" rel="noopener">↗ Ver artículo</a>` : ''}
-            </div>
-            ${f.titulo ? `<div class="fuente-meta" style="padding-left:1.5rem;">${escHtml(f.titulo.slice(0,90))}${f.titulo.length>90?'…':''}</div>` : ''}
-          </div>`).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin fuentes</div>'}
-        ${canEdit ? `
-          <div style="display:flex;gap:.35rem;align-items:center;margin-top:.4rem;flex-wrap:wrap">
-            <input type="text" id="fuente-url"    placeholder="URL" style="flex:2;min-width:120px;${IS}">
-            <input type="text" id="fuente-titulo" placeholder="Título (opcional)" style="flex:3;min-width:100px;${IS}">
-            <select id="fuente-tipo" style="${IS}"><option value="rss">RSS</option><option value="web">Web</option><option value="social">Social</option><option value="oficial">Oficial</option></select>
-            <button class="inc-btn inc-btn-detail" onclick="agregarFuente('${inc.codigo}')">+ Fuente</button>
-          </div>` : ''}
-      </div>
-      <!-- Evidencias -->
-      <div>
-        <div class="inc-section-title">Evidencias (${evidencias.length})</div>
-        ${evidencias.map(e => `<div class="ev-item"><span class="ev-icon">${evIcon[e.tipo]||'🔗'}</span><a class="ev-link" href="${escHtml(e.url||'#')}" target="_blank" rel="noopener">${escHtml(e.descripcion||e.url||'Link')}</a></div>`).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin evidencias</div>'}
-        ${canEdit ? `
-          <div style="display:flex;gap:.35rem;align-items:center;margin-top:.4rem;flex-wrap:wrap">
-            <input type="text" id="ev-url"  placeholder="URL de evidencia" style="flex:2;min-width:130px;${IS}">
-            <input type="text" id="ev-desc" placeholder="Descripción" style="flex:3;min-width:100px;${IS}">
-            <select id="ev-tipo" style="${IS}"><option value="foto">📷 Foto</option><option value="video">🎥 Video</option><option value="link">🔗 Link</option><option value="captura">📸 Captura</option></select>
-            <button class="inc-btn inc-btn-detail" onclick="agregarEvidencia('${inc.codigo}')">+ Agregar</button>
-          </div>` : ''}
-      </div>
-      <!-- Observaciones -->
-      <div>
-        <div class="inc-section-title">Observaciones</div>
-        ${canEdit ? `
-          <textarea id="obs-textarea" style="width:100%;box-sizing:border-box;${IS}resize:vertical;min-height:54px;font-family:inherit;line-height:1.45;">${escHtml(inc.observaciones||'')}</textarea>
-          <button class="inc-btn inc-btn-avanzar" style="margin-top:.32rem" onclick="guardarObservacion('${inc.codigo}')">💾 Guardar observación</button>
-        ` : `<div style="font-size:.78rem;color:var(--text);white-space:pre-wrap">${escHtml(inc.observaciones||'—')}</div>`}
-      </div>
-      <!-- Relacionados -->
-      <div>
-        <div class="inc-section-title">🔗 Relacionados (${relacionados.length})</div>
-        ${relacionados.map(r => {
-          const rel = incidentesData.find(i => i.codigo === r);
-          return `<div class="rel-item">
-            <span class="rel-codigo" onclick="openDetalleIncidente('${escHtml(r)}')">${escHtml(r)}</span>
-            ${rel ? `<span style="font-size:.72rem;color:var(--muted)">${escHtml(rel.tipo||'')}${rel.lugar?' · '+rel.lugar:''}</span>` : ''}
-            ${canEdit ? `<button class="rel-del" onclick="desrelacionarIncidente('${inc.codigo}','${escHtml(r)}')" title="Quitar relación">✕</button>` : ''}
-          </div>`;
-        }).join('') || '<div style="color:var(--muted);font-size:.75rem;margin-bottom:.3rem">Sin incidentes relacionados</div>'}
-        ${canEdit ? `
-          <div style="display:flex;gap:.35rem;margin-top:.4rem;align-items:center;">
-            <input type="text" id="rel-input" placeholder="INC-XXX" style="width:90px;${IS}">
-            <button class="inc-btn inc-btn-detail" onclick="relacionarIncidente('${inc.codigo}')">Relacionar</button>
-          </div>` : ''}
-      </div>
-      <!-- Historial -->
-      <div>
-        <div class="inc-section-title">📋 Historial (${historial.length})</div>
-        ${historial.length ? historial.map(h => `
-          <div class="hist-entry ${histClass(h.accion)}">
-            <span class="hist-time">${new Date(h.timestamp).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</span>
-            <span class="hist-user">${escHtml(h.usuario||'?')}</span>
-            <span class="hist-accion">${escHtml(h.accion||'')}</span>
-          </div>`).join('') : '<div style="color:var(--muted);font-size:.75rem">Sin historial registrado</div>'}
-      </div>
-      <!-- Footer -->
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.3rem;border-top:1px solid var(--border);flex-wrap:wrap;">
-        <button class="inc-btn" style="background:#1e3a5f33;border-color:#378ADD55;color:#60a5fa;padding:.2rem .6rem;font-size:.7rem;" onclick="exportarDocx('${inc.codigo}')">📄 Exportar DOCX</button>
-        <div style="display:flex;gap:.4rem;">
-          ${userRole==='admin' ? `<button class="inc-btn" style="background:#3f0f0f44;border-color:#7f1d1d;color:#f87171;padding:.2rem .55rem" onclick="eliminarIncidente('${inc.codigo}')">🗑️ Eliminar</button>` : ''}
-          <button class="inc-btn" style="background:none;border-color:var(--border);color:var(--muted)" onclick="closeDetalleIncidente()">✕ Cerrar</button>
-        </div>
-      </div>`;
-  }
+  // Formularios y detalle de incidentes: ver incidentes.js
 
   async function exportarDocx(codigo) {
     showToast('Generando documento…', 'info');
@@ -5455,209 +4825,7 @@ ${SEP}`;
     } catch (e) { showToast('Error: ' + e.message, 'error'); }
   }
 
-  async function eliminarIncidente(codigo) {
-    if (!confirm(`¿Eliminar el incidente ${codigo}? Esta acción no se puede deshacer.`)) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/incidentes/${encodeURIComponent(codigo)}`, {
-        method:'DELETE', headers:{'Authorization':`Bearer ${token}`},
-      });
-      if (res.ok) { showToast(`${codigo} eliminado`, 'info'); closeDetalleIncidente(); loadIncidentes(); }
-      else { showToast('Error al eliminar', 'error'); }
-    } catch (e) { showToast('Error: ' + e.message, 'error'); }
-  }
-
-  // ── Tour guiado ───────────────────────────────────────────────────────────
-  let tourActive = false, tourStepIdx = 0, tourStepList = [];
-
-  const TOUR_STEPS_BASE = [
-    // 1 — Bienvenida
-    { sel:'header', title:'Bienvenido a ARGOS', panel:null,
-      text:'Sistema de Monitoreo Electoral del Departamento Especializado en Cibercrimen. Este tour te guiará por las 15 funciones principales del sistema.' },
-    // 2 — Monitor
-    { sel:'#nav-monitor', title:'Monitor Electoral', panel:null,
-      text:'Panel principal de monitoreo. Aquí verás el mapa de actividad, noticias en tiempo real y alertas electorales.' },
-    // 3 — Mapa
-    { sel:'#map-wrap', title:'Mapa de Actividad', panel:'monitor',
-      text:'Paraguay dividido en 17 departamentos. Los colores indican nivel de actividad electoral. Rojo = alertas críticas. Los 6 municipios estratégicos están marcados.' },
-    // 4 — Feed
-    { sel:'#feed-container', title:'Feed en Tiempo Real', panel:'monitor',
-      text:'Noticias electorales de ABC Color, La Nación, Última Hora y otros medios. Se actualiza cada 30 segundos automáticamente. Las noticias críticas aparecen primero.' },
-    // 5 — Tabs
-    { sel:'.feed-tabs', title:'Noticias vs Incidentes', panel:'monitor',
-      text:'Tab 📰 Noticias muestra cobertura periodística. Tab 🚨 Incidentes filtra automáticamente eventos operativos detectados en los medios.' },
-    // 6 — Reportar desde noticia (NUEVO)
-    { sel:'#feed-container', title:'Reportar desde Noticia', panel:'monitor',
-      text:'Cada noticia tiene un botón 🚨 Reportar. Presionalo para abrir el formulario de incidentes pre-cargado con los datos de la noticia. El tipo de incidente se detecta automáticamente.' },
-    // 7 — Reportar desde Red Social (NUEVO)
-    { sel:'#btn-reportar-social', title:'Reportar desde Red Social', panel:'monitor',
-      text:'Botón 📱 para registrar incidentes detectados en redes sociales. Elegí la plataforma (Facebook, X, TikTok, Instagram, YouTube, WhatsApp), ingresá la URL y describí el evento.' },
-    // 8 — Resumen Operativo
-    { sel:'#resumen-operativo', title:'Resumen Operativo', panel:'monitor',
-      text:'Métricas ejecutivas del día: incidentes totales, cerrados, abiertos y críticos, municipios afectados, riesgo nacional y tendencia. Las alertas OSINT (keywords que superan el umbral) ahora aparecen como notificación emergente.' },
-    // 9 — Keywords compartidas (NUEVO)
-    { sel:'#scan-group', title:'Keywords Compartidas', panel:'monitor',
-      text:'Las palabras clave de monitoreo son compartidas entre todos los usuarios. Los operadores pueden agregar o quitar keywords y los cambios se aplican a todos en tiempo real.' },
-    // 10 — Centro de Incidentes (NUEVO texto)
-    { sel:'#nav-incidentes', title:'Centro de Incidentes', panel:null,
-      text:'Gestión formal de incidentes. Creá uno nuevo con ➕ o reportá directamente desde una noticia o red social. Cada incidente tiene código único, nivel de confianza y trazabilidad completa.' },
-    // 11 — Cronología
-    { sel:'.crono-panel', title:'Cronología Operacional', panel:'monitor',
-      text:'Registro cronológico de eventos del día. Se llena automáticamente con alertas y permite agregar eventos manuales. Al final del día exportás el informe.' },
-    // 12 — OSINT-PY
-    { sel:'#nav-osint', title:'Repositorio OSINT-PY', panel:null,
-      text:'Acceso directo a 25+ fuentes oficiales paraguayas e internacionales. Padrón electoral, registros, bases de datos públicas y herramientas de inteligencia.' },
-    // 13 — Búsqueda rápida redes
-    { sel:'.search-panel', title:'Búsqueda en Redes Sociales', panel:'monitor',
-      text:'Abrí búsquedas en Facebook, TikTok, YouTube y X con un clic usando las keywords activas. Los botones de emergencia buscan en las 4 redes simultáneamente.' },
-    // 14 — SITREP (solo operadores)
-    { sel:'.btn-sitrep-header', title:'Generador de SITREP', panel:null, operadorOnly:true,
-      text:'Genera automáticamente un informe situacional en formato Word (.docx) con 8 secciones: resumen ejecutivo, evaluación de riesgo, incidentes consolidados, cronología y más. Listo para enviar al mando.' },
-    // 15 — Cuenta
-    { sel:'#btn-account', title:'Tu cuenta', panel:null,
-      text:'Cambiá tu contraseña inicial por una personal desde aquí. La sesión dura 8 horas por seguridad. Si es tu primer acceso, el administrador te habrá asignado la contraseña PNP2026*.' },
-  ];
-
-  function initTour() {
-    if (!userName || userRole === 'admin') return;
-    if (localStorage.getItem(`argos_tour_${userName}`) === 'completado') return;
-    setTimeout(startTour, 900); // esperar render inicial
-  }
-
-  function startTour() {
-    tourStepList = TOUR_STEPS_BASE.filter(step => {
-      if (step.operadorOnly && userRole !== 'operador') return false;
-      return true;
-    });
-    tourStepIdx = 0;
-    tourActive  = true;
-    // Crear DOM
-    if (!document.getElementById('tour-overlay')) {
-      const ov = document.createElement('div');
-      ov.id = 'tour-overlay'; ov.className = 'tour-overlay';
-      document.body.appendChild(ov);
-    }
-    if (!document.getElementById('tour-spotlight')) {
-      const sp = document.createElement('div');
-      sp.id = 'tour-spotlight'; sp.className = 'tour-spotlight';
-      document.body.appendChild(sp);
-    }
-    if (!document.getElementById('tour-card')) {
-      const cd = document.createElement('div');
-      cd.id = 'tour-card'; cd.className = 'tour-card';
-      document.body.appendChild(cd);
-    }
-    document.addEventListener('keydown', tourKeyDown);
-    showTourStep(0);
-  }
-
-  function tourKeyDown(e) { if (e.key === 'Escape') skipTour(); }
-
-  function showTourStep(idx) {
-    if (idx < 0 || idx >= tourStepList.length) { completeTour(); return; }
-    tourStepIdx = idx;
-    const step = tourStepList[idx];
-    // Cambiar panel si hace falta
-    if (step.panel) showPanel(step.panel);
-    // Renderizar contenido de la card primero (para medir altura)
-    renderTourCard(idx);
-    // Esperar render del panel antes de posicionar
-    setTimeout(() => {
-      const el = document.querySelector(step.sel);
-      if (!el) { showTourStep(idx + 1); return; }
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      setTimeout(() => {
-        positionSpotlight(el);
-        positionCard(el, idx);
-      }, 160);
-    }, step.panel ? 220 : 60);
-  }
-
-  function renderTourCard(idx) {
-    const card = document.getElementById('tour-card');
-    if (!card) return;
-    const step  = tourStepList[idx];
-    const total = tourStepList.length;
-    const pct   = Math.round(((idx + 1) / total) * 100);
-    card.innerHTML = `
-      <div class="tour-step-num">Paso ${idx + 1} de ${total}</div>
-      <div class="tour-progress"><div class="tour-progress-bar" style="width:${pct}%"></div></div>
-      <div class="tour-title">${step.title}</div>
-      <div class="tour-text">${step.text}</div>
-      <div class="tour-actions">
-        <button class="tour-btn-skip" onclick="skipTour()">Saltar tour</button>
-        ${idx > 0 ? '<button class="tour-btn-prev" onclick="prevTourStep()">← Anterior</button>' : ''}
-        <button class="tour-btn-next" onclick="nextTourStep()">${idx === total - 1 ? 'Finalizar ✓' : 'Siguiente →'}</button>
-      </div>`;
-  }
-
-  function positionSpotlight(el) {
-    const sp  = document.getElementById('tour-spotlight');
-    if (!sp) return;
-    const pad = 8;
-    const r   = el.getBoundingClientRect();
-    sp.style.left   = (r.left   - pad) + 'px';
-    sp.style.top    = (r.top    - pad) + 'px';
-    sp.style.width  = (r.width  + pad * 2) + 'px';
-    sp.style.height = (r.height + pad * 2) + 'px';
-  }
-
-  function positionCard(el, idx) {
-    const card = document.getElementById('tour-card');
-    if (!card) return;
-    const r     = el.getBoundingClientRect();
-    const pad   = 14;
-    const sp    = 12; // spotlight padding
-    const vw    = window.innerWidth;
-    const vh    = window.innerHeight;
-    const cw    = card.offsetWidth  || 300;
-    const ch    = card.offsetHeight || 200;
-
-    const belowRoom = vh - (r.bottom + sp);
-    const aboveRoom = r.top - sp;
-    const rightRoom = vw - (r.right  + sp);
-
-    let top, left, arrCls;
-    if (belowRoom >= ch + pad) {
-      top = r.bottom + sp + pad * .5; left = r.left; arrCls = 'arr-top';
-    } else if (aboveRoom >= ch + pad) {
-      top = r.top - sp - ch - pad * .5; left = r.left; arrCls = 'arr-bottom';
-    } else if (rightRoom >= cw + pad) {
-      top = r.top; left = r.right + sp + pad * .5; arrCls = 'arr-left';
-    } else {
-      top = r.top; left = r.left - sp - cw - pad * .5; arrCls = 'arr-right';
-    }
-    top  = Math.max(pad, Math.min(top,  vh - ch - pad));
-    left = Math.max(pad, Math.min(left, vw - cw - pad));
-    card.style.top  = top  + 'px';
-    card.style.left = left + 'px';
-    // Flecha
-    card.querySelectorAll('.tour-arrow').forEach(a => a.remove());
-    const arr = document.createElement('div');
-    arr.className = `tour-arrow ${arrCls}`;
-    card.appendChild(arr);
-  }
-
-  function nextTourStep() { showTourStep(tourStepIdx + 1); }
-  function prevTourStep() { showTourStep(tourStepIdx - 1); }
-  function skipTour()     { completeTour(); }
-
-  function completeTour() {
-    tourActive = false;
-    if (userName) localStorage.setItem(`argos_tour_${userName}`, 'completado');
-    ['tour-overlay','tour-spotlight','tour-card'].forEach(id => document.getElementById(id)?.remove());
-    document.removeEventListener('keydown', tourKeyDown);
-  }
-
-  async function adminResetTour(username) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/admin/reset-tour`, {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({ username }),
-      });
-      if (res.ok) showAdminMsg(`✅ Tour de ${username} reseteado — verá el tour en su próximo login`, 'ok');
-      else showAdminMsg('Error al resetear tour', 'error');
-    } catch (e) { showAdminMsg('Error: ' + e.message, 'error'); }
-  }
+  // Guía «¿Cómo se usa?»: ver guia.js (reemplaza al recorrido antiguo).
 
   async function guardarUbicacion(codigo) {
     const dpto  = document.getElementById('ub-dpto')?.value;
@@ -5745,7 +4913,7 @@ ${SEP}`;
   let _liveCfgVideoId = '';
 
   async function loadLiveConfig() {
-    if (!token) return;
+    if (!token || !videoRequested) return;
     try {
       const res = await fetch(`${BACKEND_URL}/config/live`, {
         headers: { 'Authorization': 'Bearer ' + token },
@@ -5756,7 +4924,7 @@ ${SEP}`;
       const widget = document.getElementById('live-widget');
       if (!iframe || !widget) return;
       if (data.activo && data.videoId) {
-        const newSrc = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&mute=1`;
+        const newSrc = `https://www.youtube.com/embed/${data.videoId}?autoplay=0&mute=1`;
         if (iframe.src !== newSrc) iframe.src = newSrc;
         widget.style.display = '';
       } else {
@@ -5937,6 +5105,8 @@ ${SEP}`;
   }
 
   function closeLive() {
+    videoRequested=false;
+    const frame=document.getElementById('live-iframe-1');if(frame)frame.src='';
     document.getElementById('live-widget').style.display = 'none';
     document.getElementById('live-overlay').style.display = 'none';
   }
@@ -5961,6 +5131,20 @@ ${SEP}`;
 
 </script>
 <div class="toast-container" id="toast-container"></div>
+<div id="guide-layer" class="guide-layer" hidden>
+  <div id="guide-spotlight" class="guide-spotlight" hidden></div>
+  <div id="guide-card" class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-text">
+    <p class="guide-step" id="guide-step"></p>
+    <div class="guide-progress" aria-hidden="true"><div class="guide-progress-bar" id="guide-progress-bar"></div></div>
+    <h2 class="guide-title" id="guide-title"></h2>
+    <p class="guide-text" id="guide-text" aria-live="polite"></p>
+    <div class="guide-actions">
+      <button type="button" class="incx-link" id="guide-skip">Saltar guía</button>
+      <button type="button" class="incx-btn" id="guide-prev">Anterior</button>
+      <button type="button" class="incx-btn incx-btn-primary" id="guide-next">Siguiente</button>
+    </div>
+  </div>
+</div>
 
 <!-- Overlay para live expandido -->
 <div id="live-overlay" onclick="expandLive()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;"></div>
@@ -5988,5 +5172,9 @@ ${SEP}`;
     </iframe>
   </div>
 </div>
+<script src="simple.js"></script>
+<script src="incidentes.js"></script>
+<script src="usuarios.js"></script>
+<script src="guia.js"></script>
 </body>
 </html>

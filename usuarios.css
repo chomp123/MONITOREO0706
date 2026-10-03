@@ -1,0 +1,73 @@
+/* ARGOS · Administración de usuarios (vista de prueba). Usa los componentes .incx-* de incidentes.css */
+.admin-tabs-bar{gap:4px;padding:0 16px!important;flex-wrap:wrap}
+.admin-tab{font-size:14px!important;letter-spacing:0!important;padding:12px 14px!important;min-height:44px}
+.admin-tab-pane{padding:20px 24px!important;gap:16px!important}
+.admin-msg{font-size:14px!important;padding:10px 12px!important;border-radius:9px!important}
+.admin-pane-hdr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.admin-filter{min-height:36px;font-size:13px!important}
+.usrx-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.usrx-title{margin:0 0 4px;font-size:20px;font-weight:650;color:var(--text)}
+.usrx-roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}
+.usrx-roles>div{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#121a28;display:flex;flex-direction:column;gap:6px}
+.usrx-roles dt{margin:0}.usrx-roles dd{margin:0;font-size:13px;color:#bdc9d9;line-height:1.45}
+.usrx-role{display:inline-flex;font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;border:1px solid}
+.usrx-role-visualizador{color:#9fe3f0;border-color:#2c6673;background:#11262c}
+.usrx-role-operador{color:#ffd28a;border-color:#7d5a26;background:#2b2010}
+.usrx-role-admin{color:#ffb0c0;border-color:#87394b;background:#2c141b}
+.usrx-role-otro{color:var(--muted);border-color:var(--border)}
+.usrx-online{color:#93dfb4;border-color:#2f6a4a;background:#10261a}
+.usrx-online::before{content:'';width:7px;height:7px;border-radius:50%;background:#4fd18b;margin-right:6px;align-self:center}
+.usrx-self{color:#d6cfff;border-color:#4a4386;background:#262249}
+.usrx-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.usrx-list,#sessions-wrap{display:flex;flex-direction:column;gap:10px}
+.usrx-card{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;border:1px solid var(--border);border-radius:12px;background:#151e2d;padding:14px 16px}
+.usrx-inactive{opacity:.72}
+.usrx-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#262249;color:#d6cfff;font-weight:700;font-size:15px}
+.usrx-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.usrx-name{font-size:16px;font-weight:650;overflow-wrap:anywhere}
+.usrx-username{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#9eb0c8}
+.usrx-main .incx-chips{margin-top:4px}
+.usrx-last{font-size:12px}
+.usrx-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.usrx-self-note{max-width:240px;font-size:12px}
+.usrx-menu{position:relative}
+.usrx-menu>summary{list-style:none}.usrx-menu>summary::-webkit-details-marker{display:none}
+.usrx-menu>summary::after{content:'▾';margin-left:6px;font-size:11px}
+.usrx-menu-list{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:290px;display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid #3b4660;border-radius:12px;background:#182235;box-shadow:0 14px 40px #0009}
+.usrx-menu-list .incx-confirm{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.usrx-menu-list .incx-confirm-q{font-weight:500;line-height:1.45;padding:4px 6px}
+.usrx-menu-list .incx-confirm .incx-btn{white-space:normal}
+.usrx-menu-item{width:100%;justify-content:flex-start;text-align:left;background:transparent;border-color:transparent;white-space:normal}
+.usrx-menu-item:hover{background:#212d43}
+.usrx-menu-note{padding:6px 8px;font-size:12px}
+.usrx-secret{border:1px solid #5d4fb0;background:#1d1a3a;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.usrx-secret p{margin:4px 0 0}
+.usrx-secret>.incx-btn{align-self:flex-start}
+.usrx-secret-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.usrx-secret-code{font-family:ui-monospace,Consolas,monospace;font-size:18px;letter-spacing:.04em;background:#0f1726;border:1px solid #34425a;border-radius:9px;padding:10px 14px;color:#fff;user-select:all;overflow-wrap:anywhere}
+.usrx-role-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+.usrx-pwd-choice{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;font-size:14px}
+.usrx-pwd-choice label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.usrx-pwd-row{display:flex;gap:8px}.usrx-pwd-row .incx-input{flex:1;min-width:0}
+.incx-input[readonly]{opacity:.7;cursor:not-allowed}
+#activity-wrap{border:1px solid var(--border);border-radius:12px}
+.log-table{width:100%;border-collapse:collapse;font-size:13px;font-family:inherit}
+.log-table td,.log-table th{font-family:inherit}
+.log-table th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border);letter-spacing:0;text-transform:none}
+.log-table td{padding:10px 12px;border-bottom:1px solid #222d40;vertical-align:top}
+.log-table tr:last-child td{border-bottom:0}
+.usrx-when{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.usrx-act-alerta td:nth-child(3){color:#ffb0b0;font-weight:600}
+.usrx-act-usuarios td:nth-child(3){color:#d6cfff}
+.usrx-td-error{color:#ffb0b0}
+@media(max-width:760px){
+  .admin-tab-pane{padding:16px!important}
+  .usrx-roles{grid-template-columns:1fr}
+  .usrx-card{grid-template-columns:40px minmax(0,1fr);gap:12px}
+  .usrx-avatar{width:40px;height:40px}
+  .usrx-actions{grid-column:1/-1;justify-content:flex-start}
+  .usrx-actions>.incx-btn,.usrx-menu{flex:1}.usrx-menu>summary{width:100%;box-sizing:border-box}
+  .usrx-menu-list{right:0;left:auto;width:min(290px,calc(100vw - 48px))}
+  .usrx-role-options{grid-template-columns:1fr}
+  .usrx-tools .incx-search{flex-basis:100%}
+}

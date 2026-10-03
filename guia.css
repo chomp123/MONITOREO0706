@@ -1,0 +1,28 @@
+/* ARGOS · Guía «¿Cómo se usa?» (vista de prueba) */
+.btn-guide{display:inline-flex;align-items:center;min-height:38px;padding:8px 13px;border-radius:8px;border:1px solid #4a4386;background:#262249;color:#e2dcff;font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
+.btn-guide:hover{background:#2f2a5c}
+.guide-short{display:none}
+.guide-invite{display:flex;justify-content:space-between;align-items:center;gap:12px 20px;flex-wrap:wrap;border:1px solid #4a4386;background:#1d1a3a;border-radius:12px;padding:14px 18px;margin:4px 0 8px}
+.guide-invite p{margin:0;font-size:14px;color:#ddd5ff;line-height:1.5}
+.guide-invite-actions{display:flex;gap:8px;flex-wrap:wrap}
+.guide-layer{position:fixed;inset:0;z-index:99990}
+.guide-layer::before{content:'';position:absolute;inset:0;background:#05080fb3}
+.guide-spotlight{position:fixed;border-radius:12px;box-shadow:0 0 0 3px #9787ff,0 0 0 9999px #05080fb3;pointer-events:none;transition:all .2s ease}
+.guide-layer:has(.guide-spotlight:not([hidden]))::before{background:transparent}
+.guide-card{position:fixed;width:min(380px,calc(100vw - 24px));box-sizing:border-box;background:#182235;border:1px solid #5d4fb0;border-radius:14px;padding:18px 18px 14px;box-shadow:0 20px 60px #000a;color:var(--text)}
+.guide-card-center{left:50%!important;top:50%!important;transform:translate(-50%,-50%)}
+.guide-card-sheet{left:12px!important;right:12px;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;transform:none}
+.guide-step{margin:0 0 8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.guide-progress{height:4px;border-radius:99px;background:#2b374c;overflow:hidden;margin-bottom:12px}
+.guide-progress-bar{height:100%;background:#9787ff;border-radius:99px;transition:width .2s ease}
+.guide-title{margin:0 0 6px;font-size:17px;font-weight:650}
+.guide-text{margin:0 0 14px;font-size:14px;line-height:1.55;color:#cdd6e4}
+.guide-actions{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.guide-actions .incx-link{margin-right:auto;color:var(--muted);font-weight:500}
+@media(max-width:760px){
+  .mb-right .btn-guide{padding:7px 9px;font-size:11px;min-height:32px}
+  .guide-long{display:none}.guide-short{display:inline}
+  .guide-invite{padding:12px 14px}
+  .guide-invite-actions{width:100%}.guide-invite-actions .incx-btn{flex:1}
+}
+@media(prefers-reduced-motion:reduce){.guide-spotlight,.guide-progress-bar{transition:none}}
