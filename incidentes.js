@@ -530,7 +530,8 @@ function renderDetalleIncidente(inc) {
         ? confirmButton('Eliminar incidente', `¿Eliminar ${inc.codigo}? No se puede deshacer.`, () => eliminarIncidente(inc.codigo, true), 'incx-btn incx-btn-danger-soft')
         : null));
 
-  body.replaceChildren(progreso, incNode('section', { class: 'incx-section' }, datos), descripcion, pruebas, obs, hist, advanced);
+  const prepararInforme = editor ? incNode('button', { type: 'button', class: 'incx-btn', text: 'Preparar informe con imágenes', onclick: () => { location.href = 'reporte.html?incidente=' + encodeURIComponent(inc.codigo); } }) : null;
+  body.replaceChildren(...(prepararInforme ? [prepararInforme] : []), progreso, incNode('section', { class: 'incx-section' }, datos), descripcion, pruebas, obs, hist, advanced);
   body.dataset.loaded = inc.codigo;
   document.getElementById('dm-tools-btn').hidden = false;
 }
