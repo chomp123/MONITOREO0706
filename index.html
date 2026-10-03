@@ -4096,7 +4096,7 @@
     });
     const tendenciasOrdenadas = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
     const tendenciaPrincipal  = tendenciasOrdenadas[0]?.[0] || 'Sin datos';
-    const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))].slice(0, 8);
+    const fuentes = [...new Set(rssAllItems.map(i => i.portalName).filter(Boolean))];
 
     // Ranking departamentos
     const rankingDepts = topDepts
@@ -4117,6 +4117,8 @@
     // Cronología consolidada (sin duplicados de texto)
     const seenCrono = new Set();
     const cronoUnica = cronologiaEvents.filter(e => {
+      const timestamp = new Date(e.iso).getTime();
+      if (!Number.isFinite(timestamp) || timestamp < now.getTime() - 48 * 3600000 || timestamp > now.getTime()) return false;
       const key = (e.desc||'').slice(0, 60).toLowerCase().trim();
       if (seenCrono.has(key)) return false;
       seenCrono.add(key); return true;
