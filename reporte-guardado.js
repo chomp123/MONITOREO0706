@@ -3,7 +3,7 @@ let draftReady=false,draftDirty=false,draftRevision=0,draftSaving=false;
 const incidentCode=new URLSearchParams(location.search).get('incidente');
 const draftToken=sessionStorage.getItem('argos_token');
 const apiBase=window.ARGOS_CONFIG.backendUrl;
-const saveBar=document.createElement('div');saveBar.className='card';saveBar.innerHTML='<button id="guardarBorrador" type="button" disabled>Guardar borrador e imágenes</button><p id="estadoGuardado" role="status">Cargando borrador…</p><a href="index.html">Volver a ARGOS</a>';
+const saveBar=document.createElement('div');saveBar.className='card save-bar';saveBar.innerHTML='<button id="guardarBorrador" type="button" disabled>Guardar borrador e imágenes</button><p id="estadoGuardado" role="status">Cargando borrador…</p><a href="index.html">Volver a ARGOS</a>';
 document.querySelector('main').before(saveBar);saveBar.style.maxWidth='1152px';saveBar.style.margin='20px auto';
 document.querySelector('.editor').inert=true;document.querySelector('.preview').inert=true;
 document.querySelector('.demo').textContent='ARGOS · Borrador privado del incidente · Guarda antes de salir';
