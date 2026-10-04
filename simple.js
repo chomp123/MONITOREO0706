@@ -10,6 +10,9 @@ function toggleDetailedView(force) {
     else initD3Map();
   }
 }
+// Momento (reloj de ESTE equipo) de la última respuesta válida del servidor. Se compara con el mismo reloj,
+// así un reloj de PC adelantado o atrasado no muestra «Datos sin actualizar» por error.
+let dashboardRecibidoEn=0;
 async function loadDashboard() {
   if(!token||dashboardLoading)return;
   dashboardLoading=true;const generation=monitorGeneration;
@@ -19,7 +22,7 @@ async function loadDashboard() {
     const data=await response.json();
     if(generation!==monitorGeneration||!token)return;
     if(!Array.isArray(data.incidentesAbiertos)||!Number.isFinite(data.abiertos))throw new Error('El servidor no devolvió un resumen válido.');
-    dashboardData=data;dashboardError='';
+    dashboardData=data;dashboardError='';dashboardRecibidoEn=Date.now();
   } catch(error){dashboardError=error.message;}
   finally{dashboardLoading=false;renderSimpleDashboard();}
 }
@@ -27,7 +30,7 @@ function renderSimpleDashboard(){
   const status=document.getElementById('home-status');if(!status)return;
   const d=dashboardData;
   const generated=d?new Date(d.generatedAt):null;
-  const stale=generated&&Date.now()-generated.getTime()>120000;
+  const stale=!!d&&dashboardRecibidoEn>0&&Date.now()-dashboardRecibidoEn>120000;
   status.textContent=dashboardError|| (stale?'Datos sin actualizar. Comprueba la conexión.':d?'Actualizado a las '+generated.toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit',timeZone:'America/Asuncion'})+' · Paraguay':'Cargando información del servidor…');
   status.classList.toggle('status-warning',!!dashboardError||!!stale);
   const risk=document.getElementById('home-risk');risk.textContent=computeNivelNacional().label;risk.style.color=computeNivelNacional().color;
