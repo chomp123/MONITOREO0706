@@ -19,8 +19,8 @@ refresh=function(){
  refreshExecutiveBase();
  const photos=Array.from($('borrador').querySelectorAll('figure'));const paper=$('borrador');paper.replaceChildren();
  function add(tag,t){const e=document.createElement(tag);e.textContent=t;paper.append(e);}
- add('h2','INFORME DE SUPUESTO INCIDENTE');add('p','Registro: '+incidentCode+' · BORRADOR PARA REVISIÓN');add('p','Supuesto hecho: '+value('asuntoInforme'));add('h3','AFECTADO/S');add('p',value('afectadoNombre'));add('h3','INCIDENTE');add('p',$('resumenEjecutivo').value||'Prepara el resumen ejecutivo con las seis preguntas.');paper.append(...photos);add('h3','CONCLUSIÓN');add('p',$('conclusionInforme').value||'Pendiente de completar.');
- report='INFORME DE SUPUESTO INCIDENTE\nRegistro: '+incidentCode+'\nSupuesto hecho: '+value('asuntoInforme')+'\n\nAFECTADO/S\n'+value('afectadoNombre')+'\n\nINCIDENTE\n'+value('resumenEjecutivo')+photos.map(f=>'\n[Imagen: '+f.querySelector('figcaption').textContent+']').join('')+'\n\nCONCLUSIÓN\n'+value('conclusionInforme');
+ add('h2','INFORME DE SUPUESTO INCIDENTE');add('p','Registro: '+incidentCode+' · BORRADOR PARA REVISIÓN');add('p','Supuesto hecho: '+value('asuntoInforme'));add('h3','AFECTADO/S');add('p',value('afectadoNombre'));add('h3','INCIDENTE');add('p',$('resumenEjecutivo').value||'Prepara el resumen ejecutivo con las seis preguntas.');add('p','Detenidos: '+detenidosTexto());paper.append(...photos);add('h3','CONCLUSIÓN');add('p',$('conclusionInforme').value||'Pendiente de completar.');
+ report='INFORME DE SUPUESTO INCIDENTE\nRegistro: '+incidentCode+'\nSupuesto hecho: '+value('asuntoInforme')+'\n\nAFECTADO/S\n'+value('afectadoNombre')+'\n\nINCIDENTE\n'+value('resumenEjecutivo')+'\nDetenidos: '+detenidosTexto()+photos.map(f=>'\n[Imagen: '+f.querySelector('figcaption').textContent+']').join('')+'\n\nCONCLUSIÓN\n'+value('conclusionInforme');
  if(!$('resumenEjecutivo').value.trim()||!$('conclusionInforme').value.trim())$('descargar').disabled=$('imprimir').disabled=true;
 };
 $('revisado').addEventListener('change',()=>refresh());

@@ -1,4 +1,4 @@
-const draftFieldIds=['hecho','certeza','persona','papel','identidad','identidadFuente','secuencia','fechaHecho','fechaPublicacion','fechaReporte','lugar','precision','fuente','enlace','respaldo','pendientes','departamentoHecho','municipioHecho','referenciaLugar','respaldoLugar'];
+const draftFieldIds=['hecho','certeza','huboDetenidos','cantidadDetenidos','persona','papel','identidad','identidadFuente','secuencia','fechaHecho','fechaPublicacion','fechaReporte','lugar','precision','fuente','enlace','respaldo','pendientes','departamentoHecho','municipioHecho','referenciaLugar','respaldoLugar'];
 let draftReady=false,draftDirty=false,draftRevision=0,draftSaving=false;
 const incidentCode=new URLSearchParams(location.search).get('incidente');
 const draftToken=sessionStorage.getItem('argos_token');
@@ -33,6 +33,7 @@ async function requestDraft(method,body){
 function toBase64(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error('No se pudo leer la imagen'));reader.onload=()=>resolve(reader.result.split(',')[1]);reader.readAsDataURL(blob);});}
 $('guardarBorrador').onclick=async()=>{
  if(!draftReady||draftSaving||loading)return;
+ if(!validarDetenidosInforme()){$('estadoGuardado').textContent='Revisa la cantidad de detenidos antes de guardar.';$('cantidadDetenidos').focus();return;}
  draftSaving=true;$('guardarBorrador').disabled=true;document.querySelector('.editor').inert=true;$('estadoGuardado').textContent='Guardando borrador e imágenes…';
  try{
   const savedImages=[];for(const i of images){const blob=await (await fetch(i.url)).blob();savedImages.push({kind:i.kind,caption:i.caption,source:i.source,date:i.date,include:i.include,mime:blob.type,data:await toBase64(blob)});}
