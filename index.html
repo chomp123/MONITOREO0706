@@ -1137,6 +1137,15 @@
             <option>Violencia</option><option>Fraude</option><option>Acarreo</option>
             <option>Compra de votos</option><option>Irregularidad</option><option>Otro</option>
           </select>
+          <label class="incx-sr" for="inc-filter-detenidos">Filtrar por detenidos</label>
+          <select class="inc-filter-select" id="inc-filter-detenidos">
+            <option value="">Detenidos: todos</option>
+            <option value="con">Con detenidos</option>
+            <option value="sin">Sin detenidos</option>
+            <option value="por_confirmar">Detenidos por confirmar</option>
+          </select>
+          <label class="incx-sr" for="inc-filter-min-detenidos">Cantidad mínima de detenidos</label>
+          <input type="number" class="inc-filter-select" id="inc-filter-min-detenidos" min="1" max="999" step="1" inputmode="numeric" placeholder="al menos…" title="Cantidad mínima de detenidos" style="width:6.5rem" hidden/>
         </div>
         <div class="inc-list" id="inc-list">
           <div style="color:var(--muted);text-align:center;padding:2rem;font-size:.85rem">Cargando incidentes…</div>
@@ -4401,10 +4410,16 @@ ${SEP}`;
   async function downloadInformeEjecutivoUbicacion() {
     const btn = document.getElementById('btn-informe-ubicacion');
     const historial = document.getElementById('inc-filter-periodo')?.value === 'todos';
+    const detenidos = incFiltroDetenidos();
+    const params = new URLSearchParams();
+    if (historial) params.set('periodo', 'todos');
+    if (detenidos.estado) params.set('detenidos', detenidos.estado);
+    if (detenidos.minimo) params.set('minDetenidos', String(detenidos.minimo));
+    const textoDetenidos = { con: detenidos.minimo > 1 ? `con al menos ${detenidos.minimo} detenidos` : 'con detenidos', sin: 'sin detenidos', por_confirmar: 'detenidos por confirmar' }[detenidos.estado];
     if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
-    showToast(`Generando corte ejecutivo (${historial ? 'historial completo' : 'últimas 48 horas'})…`, 'info');
+    showToast(`Generando corte ejecutivo (${historial ? 'historial completo' : 'últimas 48 horas'}${textoDetenidos ? ' · ' + textoDetenidos : ''})…`, 'info');
     try {
-      const query = historial ? '?periodo=todos' : '';
+      const query = params.toString() ? '?' + params : '';
       const res = await fetch(`${BACKEND_URL}/incidentes/informe-ejecutivo-ubicacion/docx${query}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -4417,7 +4432,7 @@ ${SEP}`;
       const fecha = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `ARGOS_CORTE_MONITOREO_${historial ? 'HISTORICO' : '48H'}_${fecha}.docx`;
+      a.download = `ARGOS_CORTE_MONITOREO_${historial ? 'HISTORICO' : '48H'}${detenidos.estado ? '_DETENIDOS-' + detenidos.estado.toUpperCase() + (detenidos.minimo > 1 ? '-' + detenidos.minimo : '') : ''}_${fecha}.docx`;
       a.click();
       URL.revokeObjectURL(a.href);
       showToast('Corte ejecutivo descargado', 'success');

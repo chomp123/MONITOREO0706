@@ -88,9 +88,35 @@ function incVisiblePorAntiguedad(inc, incluirAntiguos, now = Date.now()) {
   const fecha = new Date(inc.created_at).getTime();
   return !Number.isFinite(fecha) || fecha >= now - 48 * 3600000;
 }
+// Filtro de detenidos: estado '' (todos) | con | sin | por_confirmar; con «con», mínimo opcional (1-999).
+// Un mínimo vacío o inválido se ignora en la lista y no se envía al servidor.
+function incFiltroDetenidos() {
+  const estado = document.getElementById('inc-filter-detenidos')?.value || '';
+  const texto = (document.getElementById('inc-filter-min-detenidos')?.value || '').trim();
+  const minimo = estado === 'con' && /^[1-9][0-9]{0,2}$/.test(texto) ? Number(texto) : null;
+  return { estado, minimo };
+}
+function incCumpleDetenidos(inc, { estado, minimo }) {
+  if (estado === 'sin') return inc.hubo_detenidos === false;
+  if (estado === 'por_confirmar') return inc.hubo_detenidos !== true && inc.hubo_detenidos !== false;
+  if (estado === 'con') return inc.hubo_detenidos === true && (Number(inc.cantidad_detenidos) || 0) >= (minimo || 1);
+  return true;
+}
+function incDetenidosTexto(inc) {
+  if (inc.hubo_detenidos !== true) return '';
+  const n = Number(inc.cantidad_detenidos) || 0;
+  return ` · ${n} detenido${n !== 1 ? 's' : ''}`;
+}
+function syncFiltroDetenidos() {
+  const con = document.getElementById('inc-filter-detenidos')?.value === 'con';
+  const min = document.getElementById('inc-filter-min-detenidos');
+  if (min) { min.hidden = !con; if (!con) min.value = ''; }
+  renderIncidentes();
+}
 function renderIncidentes() {
   const list = document.getElementById('inc-list');
   if (!list) return;
+  const fDetenidos = incFiltroDetenidos();
   const fDept = (document.getElementById('inc-filter-dept')?.value || '').toLowerCase();
   const fTipo = (document.getElementById('inc-filter-tipo')?.value || '').toLowerCase();
   const q = ArgosText(incSearch);
@@ -100,6 +126,7 @@ function renderIncidentes() {
     (incFiltroEstado === 'todos' || i.estado === incFiltroEstado) &&
     (!fDept || (i.departamento || '').toLowerCase() === fDept) &&
     (!fTipo || (i.tipo || '').toLowerCase() === fTipo) &&
+    incCumpleDetenidos(i, fDetenidos) &&
     (!q || ArgosText([i.codigo, i.tipo, i.descripcion, i.lugar, i.municipio, i.departamento, i.local_votacion].join(' ')).includes(q))
   );
   const label = document.getElementById('inc-total-label');
@@ -109,7 +136,7 @@ function renderIncidentes() {
 
   list.replaceChildren();
   if (!filtered.length) {
-    const hayFiltros = !incluirAntiguos || incFiltroEstado !== 'todos' || fDept || fTipo || q;
+    const hayFiltros = !incluirAntiguos || incFiltroEstado !== 'todos' || fDept || fTipo || fDetenidos.estado || q;
     list.append(incNode('div', { class: 'incx-empty' },
       incNode('strong', { text: hayFiltros ? 'No hay incidentes con estos filtros.' : 'Todavía no hay incidentes registrados.' }),
       hayFiltros ? incNode('button', { type: 'button', class: 'incx-link', text: 'Quitar filtros', onclick: limpiarFiltrosIncidentes }) : null));
@@ -128,7 +155,7 @@ function renderIncidentes() {
         incNode('span', { class: 'incx-card-place', text: incLugar(inc) || 'Ubicación por confirmar' })),
       incNode('div', { class: 'incx-card-side' },
         incNode('div', { class: 'incx-chips' }, incEstadoChip(inc.estado), incGravedadChip(inc)),
-        incNode('span', { class: 'incx-card-small', text: `${evCount} prueba${evCount !== 1 ? 's' : ''} o fuente${evCount !== 1 ? 's' : ''} · ${nombreOperador(inc.responsable)}` }),
+        incNode('span', { class: 'incx-card-small', text: `${evCount} prueba${evCount !== 1 ? 's' : ''} o fuente${evCount !== 1 ? 's' : ''} · ${nombreOperador(inc.responsable)}${incDetenidosTexto(inc)}` }),
         incNode('div', { class: 'incx-card-actions' },
           editor && siguiente && siguiente.estado !== 'cerrado'
             ? incNode('button', { type: 'button', class: 'incx-btn incx-btn-soft', text: siguiente.short, title: siguiente.label,
@@ -143,7 +170,8 @@ function limpiarFiltrosIncidentes() {
   incSearch = '';
   const search = document.getElementById('inc-search'); if (search) search.value = '';
   const periodo = document.getElementById('inc-filter-periodo'); if (periodo) periodo.value = 'todos';
-  ['inc-filter-dept', 'inc-filter-tipo'].forEach(id => { const s = document.getElementById(id); if (s) s.value = ''; });
+  ['inc-filter-dept', 'inc-filter-tipo', 'inc-filter-detenidos', 'inc-filter-min-detenidos'].forEach(id => { const s = document.getElementById(id); if (s) s.value = ''; });
+  const minDetenidos = document.getElementById('inc-filter-min-detenidos'); if (minDetenidos) minDetenidos.hidden = true;
   setIncFiltroEstado('todos');
 }
 
@@ -636,6 +664,8 @@ async function eliminarIncidente(codigo, confirmado = false) {
   }
   const search = document.getElementById('inc-search');
   search?.addEventListener('input', () => { incSearch = search.value; renderIncidentes(); });
+  document.getElementById('inc-filter-detenidos')?.addEventListener('change', syncFiltroDetenidos);
+  document.getElementById('inc-filter-min-detenidos')?.addEventListener('input', renderIncidentes);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && document.getElementById('modal-crear-inc')?.classList.contains('open')) closeCrearIncidente();
   });
