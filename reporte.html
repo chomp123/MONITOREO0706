@@ -19,7 +19,7 @@
 <li><strong>Agrega las fuentes.</strong> Incluye el documento o enlace, explica qué permite afirmar y anota lo que falta verificar.</li>
 <li><strong>Adjunta las imágenes.</strong> Elige el tipo (persona o noticia) antes de seleccionar los archivos. Puedes agregar hasta cinco JPG, PNG o WebP, de hasta 5 MB cada uno, juntos o en varias tandas. Completa descripción, procedencia y fecha; marca «Incluir esta imagen en el informe» en las que deseas mostrar. Las seleccionadas necesitan descripción y fuente para exportar.</li>
 <li><strong>Guarda.</strong> Pulsa «Guardar borrador e imágenes» y espera «Guardado. Puedes cerrar y continuar después». No hay guardado automático. Para retomarlo, vuelve al mismo incidente y abre «Preparar informe con imágenes».</li>
-<li><strong>Revisa y descarga.</strong> Lee el borrador y marca «Revisé el borrador y sus puntos sin confirmar». TXT descarga solo texto y referencias. «Imprimir / PDF» incluye las imágenes seleccionadas: en la ventana de impresión puedes elegir guardar como PDF. El DOCX del detalle es un informe separado y no incorpora este borrador.</li>
+<li><strong>Revisa y descarga.</strong> Lee el borrador y marca «Revisé el borrador y sus puntos sin confirmar». Prepara y revisa el resumen ejecutivo y la conclusión, guarda y marca la casilla de revisión. «Descargar Word institucional» usa la plantilla oficial: el resumen y las imágenes van dentro de INCIDENTE, seguidos de CONCLUSIÓN. Para PDF, abre el Word y expórtalo a PDF. TXT descarga solo texto y referencias.</li>
 </ol>
 <p><strong>Si algo no funciona:</strong> si la descarga está deshabilitada, revisa la casilla de confirmación, los enlaces y la descripción y fuente de las imágenes seleccionadas. Si otro operador guardó una versión nueva, conserva tu texto antes de recargar para no sobrescribir su trabajo. Si venció tu sesión, conserva lo escrito y vuelve a entrar en ARGOS.</p>
 <p><strong>Antes de salir:</strong> guarda otra vez si hiciste cambios. Descargar o imprimir no guarda el borrador en ARGOS.</p>
@@ -50,4 +50,4 @@ function refresh(){
 }
 document.querySelector('.editor').addEventListener('input',()=>{$('revisado').checked=false;$('notice').textContent='';refresh()});$('revisado').addEventListener('change',refresh);
 $('descargar').onclick=()=>{const url=URL.createObjectURL(new Blob([report],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='ARGOS_DEMO_borrador.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$('notice').textContent='Borrador ficticio descargado.'};$('imprimir').onclick=()=>window.print();refresh();
-</script><script src="reporte-adjuntos.js"></script><script src="reporte-guardado.js"></script></html>
+</script><script src="reporte-adjuntos.js"></script><script src="reporte-guardado.js"></script><script src="reporte-ejecutivo.js"></script></html>
