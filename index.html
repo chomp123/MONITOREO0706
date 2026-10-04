@@ -1111,7 +1111,7 @@
           </div>
         </div>
         <div class="inc-filter-bar">
-          <label for="inc-filter-periodo">Mostrar:</label><select class="inc-filter-select" id="inc-filter-periodo" onchange="renderIncidentes()"><option value="recientes">Últimas 48 h + abiertos anteriores</option><option value="todos">Incluir cerrados antiguos</option></select>
+          <label for="inc-filter-periodo">Mostrar:</label><select class="inc-filter-select" id="inc-filter-periodo" onchange="renderIncidentes()"><option value="recientes">Últimas 48 horas</option><option value="todos">Ver todos (historial)</option></select>
           <label class="incx-sr" for="inc-search">Buscar incidentes</label>
           <input type="search" id="inc-search" class="incx-search" placeholder="Buscar por código, tipo o lugar…" autocomplete="off"/>
           <button class="inc-filter-btn active" data-fest="todos"       onclick="setIncFiltroEstado('todos')">Todos</button>
@@ -1346,7 +1346,7 @@
             <article class="home-metric"><span>Noticias de hoy</span><strong id="home-news-count">—</strong><small>Fecha de Paraguay · archivo de noticias</small></article>
           </div>
           <div class="home-columns">
-            <section class="home-card"><div class="home-card-heading"><div><h2>Qué necesita atención</h2><p>Primero los incidentes de mayor gravedad</p></div><button class="home-link" onclick="showPanel('incidentes')">Ver todos →</button></div><div id="home-pending" class="home-list" aria-live="polite"></div></section>
+            <section class="home-card"><div class="home-card-heading"><div><h2>Qué necesita atención</h2><p>Últimas 48 horas · Primero los de mayor gravedad</p></div><button class="home-link" onclick="showPanel('incidentes')">Ver todos →</button></div><div id="home-pending" class="home-list" aria-live="polite"></div></section>
             <section class="home-card"><div class="home-card-heading"><div><h2>Últimas noticias</h2><p>Información de fuentes externas, pendiente de verificación</p></div><button class="home-link" onclick="toggleDetailedView(true)">Explorar →</button></div><div id="home-news" class="home-list"></div><div class="home-card-footer" id="home-news-status">Esperando actualización de fuentes</div></section>
           </div>
           <div class="home-footer"><span>Una alerta de noticia no equivale a un incidente confirmado.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
@@ -3980,7 +3980,7 @@
     await loadDashboard();
     const el=document.getElementById('active-alerts-list');if(!el)return;
     el.replaceChildren();
-    (dashboardData?.incidentesAbiertos||[]).slice(0,5).forEach(inc=>{
+    (dashboardData?.incidentesAbiertos||[]).filter(i=>incVisiblePorAntiguedad(i,false)).slice(0,5).forEach(inc=>{
       const row=document.createElement('button');row.className='active-alert-row';row.textContent=inc.codigo+' · '+(inc.lugar||'Ubicación pendiente')+' · '+prioridadNivel(inc);
       row.addEventListener('click',()=>openDetalleIncidente(inc.codigo));el.append(row);
     });

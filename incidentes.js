@@ -83,7 +83,7 @@ async function leerJson(res) {
 
 // ── Lista de incidentes ──────────────────────────────────────────────────
 function incVisiblePorAntiguedad(inc, incluirAntiguos, now = Date.now()) {
-  if (incluirAntiguos || inc.estado !== 'cerrado') return true;
+  if (incluirAntiguos) return true;
   const fecha = new Date(inc.created_at).getTime();
   return !Number.isFinite(fecha) || fecha >= now - 48 * 3600000;
 }

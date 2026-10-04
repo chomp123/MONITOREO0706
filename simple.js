@@ -36,8 +36,8 @@ function renderSimpleDashboard(){
   document.getElementById('home-news-count').textContent=d?d.noticiasHoy:'—';
   const pending=document.getElementById('home-pending');pending.replaceChildren();
   const weight={critico:3,alto:2,medio:1,info:0};
-  const items=[...(d?.incidentesAbiertos||[])].sort((a,b)=>weight[ArgosDomain.incidentLevel(b)]-weight[ArgosDomain.incidentLevel(a)]||new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
-  if(!items.length)appendEmpty(pending,d?'No hay incidentes pendientes.':'Esperando datos de incidentes.');
+  const items=[...(d?.incidentesAbiertos||[])].filter(i=>incVisiblePorAntiguedad(i,false)).sort((a,b)=>weight[ArgosDomain.incidentLevel(b)]-weight[ArgosDomain.incidentLevel(a)]||new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+  if(!items.length)appendEmpty(pending,d?'No hay incidentes pendientes de las últimas 48 horas.':'Esperando datos de incidentes.');
   items.forEach(inc=>{
     const row=document.createElement('button');row.type='button';row.className='home-incident';
     const level=ArgosDomain.incidentLevel(inc);row.dataset.level=level;
