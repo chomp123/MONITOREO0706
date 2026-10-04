@@ -1109,7 +1109,7 @@
             </button>
             <button class="inc-btn" onclick="downloadInformeEjecutivoUbicacion()" id="btn-informe-ubicacion"
               style="padding:.25rem .7rem;background:#14532d33;border:1px solid #22c55e66;color:#4ade80;font-size:.75rem;font-weight:600;border-radius:5px;cursor:pointer;">
-              📍 Ejecutivo por lugares
+              📄 Generar corte ejecutivo
             </button>
             <button class="inc-btn inc-btn-detail" onclick="loadIncidentes()" style="padding:.25rem .6rem">↺</button>
           </div>
@@ -4402,7 +4402,7 @@ ${SEP}`;
     const btn = document.getElementById('btn-informe-ubicacion');
     const historial = document.getElementById('inc-filter-periodo')?.value === 'todos';
     if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
-    showToast(`Generando ejecutivo por lugares (${historial ? 'historial completo' : 'últimas 48 horas'})…`, 'info');
+    showToast(`Generando corte ejecutivo (${historial ? 'historial completo' : 'últimas 48 horas'})…`, 'info');
     try {
       const query = historial ? '?periodo=todos' : '';
       const res = await fetch(`${BACKEND_URL}/incidentes/informe-ejecutivo-ubicacion/docx${query}`, {
@@ -4417,14 +4417,14 @@ ${SEP}`;
       const fecha = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `ARGOS_EJECUTIVO_UBICACION_${historial ? 'HISTORICO' : '48H'}_${fecha}.docx`;
+      a.download = `ARGOS_CORTE_MONITOREO_${historial ? 'HISTORICO' : '48H'}_${fecha}.docx`;
       a.click();
       URL.revokeObjectURL(a.href);
-      showToast('Informe ejecutivo por lugares descargado', 'success');
+      showToast('Corte ejecutivo descargado', 'success');
     } catch (e) {
       showToast('Error: ' + e.message, 'error');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '📍 Ejecutivo por lugares'; }
+      if (btn) { btn.disabled = false; btn.textContent = '📄 Generar corte ejecutivo'; }
     }
   }
 
