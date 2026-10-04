@@ -1605,13 +1605,28 @@
                     <input type="text" id="cinc-lugar" class="incx-input" maxlength="200" placeholder="Ej.: Luque, escuela central" autocomplete="off"/></div>
                 </div>
               </fieldset>
+              <fieldset class="incx-fieldset">
+                <legend>4. ¿Hubo detenidos?</legend>
+                <div class="incx-row">
+                  <div class="incx-field"><label for="cinc-hubo-detenidos">Resultado</label>
+                    <select id="cinc-hubo-detenidos" class="incx-input"><option value="por_confirmar">— Por confirmar —</option><option value="no">No</option><option value="si">Sí</option></select></div>
+                  <div class="incx-field"><label for="cinc-cantidad-detenidos">Cantidad</label>
+                    <input type="number" id="cinc-cantidad-detenidos" class="incx-input" min="1" max="999" step="1" inputmode="numeric" placeholder="Ej.: 2" disabled aria-describedby="cinc-cantidad-detenidos-error"/>
+                    <span class="incx-error-text" id="cinc-cantidad-detenidos-error" hidden></span></div>
+                </div>
+                <div class="incx-field" id="cinc-datos-detenidos-row" hidden>
+                  <label for="cinc-datos-detenidos">Datos de las personas detenidas <span class="incx-opt">(si están disponibles)</span></label>
+                  <textarea id="cinc-datos-detenidos" class="incx-input" rows="3" maxlength="5000" placeholder="Una persona por línea: nombre y apellido — cédula — edad — lugar o dependencia de detención"></textarea>
+                  <small class="incx-hint">Registra únicamente datos confirmados. Puedes completar esta información después en el informe.</small>
+                </div>
+              </fieldset>
               <div class="incx-field">
-                <label for="cinc-evidencia">4. Enlace a foto, video o publicación <span class="incx-opt">(opcional)</span></label>
+                <label for="cinc-evidencia">5. Enlace a foto, video o publicación <span class="incx-opt">(opcional)</span></label>
                 <input type="url" id="cinc-evidencia" class="incx-input" inputmode="url" placeholder="https://…" autocomplete="off" aria-describedby="cinc-evidencia-error"/>
                 <span class="incx-error-text" id="cinc-evidencia-error" hidden></span>
               </div>
               <div class="incx-field">
-                <label>5. Imágenes del incidente <span class="incx-opt">(opcional, hasta 5)</span></label>
+                <label>6. Imágenes del incidente <span class="incx-opt">(opcional, hasta 5)</span></label>
                 <label class="incx-image-picker" for="cinc-images">📷 Adjuntar imágenes</label>
                 <input type="file" id="cinc-images" accept="image/jpeg,image/png,image/webp" multiple hidden aria-describedby="cinc-images-hint cinc-images-error"/>
                 <small class="incx-hint" id="cinc-images-hint">JPG, PNG o WebP. Máximo 5 MB por imagen.</small>

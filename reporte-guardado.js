@@ -1,4 +1,4 @@
-const draftFieldIds=['hecho','certeza','huboDetenidos','cantidadDetenidos','persona','papel','identidad','identidadFuente','secuencia','fechaHecho','fechaPublicacion','fechaReporte','lugar','precision','fuente','enlace','respaldo','pendientes','departamentoHecho','municipioHecho','referenciaLugar','respaldoLugar'];
+const draftFieldIds=['hecho','certeza','huboDetenidos','cantidadDetenidos','datosDetenidos','persona','papel','identidad','identidadFuente','secuencia','fechaHecho','fechaPublicacion','fechaReporte','lugar','precision','fuente','enlace','respaldo','pendientes','departamentoHecho','municipioHecho','referenciaLugar','respaldoLugar'];
 let draftReady=false,draftDirty=false,draftRevision=0,draftSaving=false;
 const incidentCode=new URLSearchParams(location.search).get('incidente');
 const draftToken=sessionStorage.getItem('argos_token');
@@ -49,7 +49,7 @@ $('descargar').onclick=()=>{const url=URL.createObjectURL(new Blob([report],{typ
   const me=await fetch(apiBase+'/api/me',{headers:{Authorization:'Bearer '+draftToken}});if(!me.ok)throw Error('Tu sesión venció. Vuelve a ingresar en ARGOS.');
   const account=await me.json();if(!['admin','operador'].includes(account.role)||account.mustChangePassword)throw Error('Se requiere una cuenta de administrador u operador habilitada.');
   const data=await requestDraft('GET');draftRevision=data.revision;
-  const initial=data.fields||{hecho:data.incident.descripcion||'',lugar:data.incident.lugar||'',departamentoHecho:data.incident.departamento||'',municipioHecho:data.incident.municipio||''};
+  const initial=data.fields||{hecho:data.incident.descripcion||'',lugar:data.incident.lugar||'',departamentoHecho:data.incident.departamento||'',municipioHecho:data.incident.municipio||'',huboDetenidos:data.incident.hubo_detenidos===true?'Sí':data.incident.hubo_detenidos===false?'No':'Por confirmar',cantidadDetenidos:data.incident.cantidad_detenidos==null?'':String(data.incident.cantidad_detenidos),datosDetenidos:data.incident.datos_detenidos||''};
   for(const id of draftFieldIds)if(typeof initial[id]==='string')$(id).value=initial[id];
   for(const i of data.images){const bytes=Uint8Array.from(atob(i.data),c=>c.charCodeAt(0));images.push({...i,url:URL.createObjectURL(new Blob([bytes],{type:i.mime}))});}
   renderImages();refresh();draftReady=true;document.querySelector('.editor').inert=false;document.querySelector('.preview').inert=false;$('guardarBorrador').disabled=false;

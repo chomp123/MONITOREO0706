@@ -172,7 +172,8 @@ function resetCrearIncidente() {
   limpiarCrearImagenes();
   form.reset();
   document.getElementById('cinc-confianza').value = '2';
-  ['cinc-desc', 'cinc-evidencia', 'cinc-evidencias', 'cinc-fuentes', 'cinc-tipos', 'cinc-images'].forEach(id => setFieldError(id, ''));
+  ['cinc-desc', 'cinc-evidencia', 'cinc-evidencias', 'cinc-fuentes', 'cinc-tipos', 'cinc-images', 'cinc-cantidad-detenidos'].forEach(id => setFieldError(id, ''));
+  syncCrearDetenidos();
   updateDescCounter();
 }
 function openCrearIncidente(prefill = {}) {
@@ -234,6 +235,14 @@ function setCrearEnviando(sending) {
 function linksDesde(texto) {
   return String(texto || '').split('\n').map(s => s.trim()).filter(Boolean);
 }
+function syncCrearDetenidos() {
+  const si=document.getElementById('cinc-hubo-detenidos')?.value==='si';
+  const cantidad=document.getElementById('cinc-cantidad-detenidos');
+  const datos=document.getElementById('cinc-datos-detenidos-row');
+  if(cantidad)cantidad.disabled=!si;
+  if(datos)datos.hidden=!si;
+  if(!si)setFieldError('cinc-cantidad-detenidos','');
+}
 function limpiarCrearImagenes() {
   crearImagenes.forEach(image => { if (image.preview) URL.revokeObjectURL(image.preview); });
   crearImagenes = [];
@@ -270,6 +279,10 @@ function validarCrearIncidente() {
   const urlError = (value) => value && !ArgosDomain.safeUrl(value) ? 'El enlace debe empezar con http:// o https://' : '';
   const ev = document.getElementById('cinc-evidencia').value.trim();
   setFieldError('cinc-evidencia', urlError(ev)); if (urlError(ev)) errores.push('cinc-evidencia');
+  const detenidos=document.getElementById('cinc-hubo-detenidos').value;
+  const cantidad=document.getElementById('cinc-cantidad-detenidos').value.trim();
+  const cantidadError=detenidos==='si'&&!/^[1-9][0-9]{0,2}$/.test(cantidad)?'Indica una cantidad entre 1 y 999.':'';
+  setFieldError('cinc-cantidad-detenidos',cantidadError);if(cantidadError)errores.push('cinc-cantidad-detenidos');
   if (incCanEdit()) {
     for (const id of ['cinc-evidencias', 'cinc-fuentes']) {
       const lines = linksDesde(document.getElementById(id).value);
@@ -300,7 +313,12 @@ async function saveIncidente(event) {
   const departamento = document.getElementById('cinc-dept').value;
   const isViz = userRole === 'visualizador';
   const evPrincipal = ArgosDomain.safeUrl(document.getElementById('cinc-evidencia').value.trim());
-  const body = { tipo, descripcion, lugar, departamento };
+  const huboDetenidos=document.getElementById('cinc-hubo-detenidos').value;
+  const body = { tipo, descripcion, lugar, departamento, huboDetenidos };
+  if(huboDetenidos==='si'){
+    body.cantidadDetenidos=parseInt(document.getElementById('cinc-cantidad-detenidos').value,10);
+    body.datosDetenidos=document.getElementById('cinc-datos-detenidos').value.trim();
+  }
   if (evPrincipal) body.urlEvidencia = evPrincipal; // el backend lo usa para visualizadores
   if (!isViz) {
     body.confianza = parseInt(document.getElementById('cinc-confianza').value, 10);
@@ -484,6 +502,8 @@ function renderDetalleIncidente(inc) {
     [['Reportado', incFecha(inc.created_at)],
      ['Lugar', [inc.municipio || inc.lugar, inc.departamento].filter(Boolean).join(' · ') || 'Por confirmar'],
      ['Local de votación', inc.local_votacion || '—'],
+     ['Detenidos', inc.hubo_detenidos===true?`Sí · Cantidad: ${inc.cantidad_detenidos}`:inc.hubo_detenidos===false?'No · Cantidad: 0':'Por confirmar'],
+     ...(inc.hubo_detenidos===true?[['Datos de detenidos',inc.datos_detenidos||'Pendientes de confirmar']]:[]),
      ['Responsable', nombreOperador(inc.responsable)],
      ['Confianza', `${CONF_LABELS[conf]} (${conf} de 5)`],
      ['Gravedad', (INC_PRIORIDADES.find(p => p[0] === inc.prioridad) || [, 'Media'])[1]]]
@@ -608,6 +628,8 @@ async function eliminarIncidente(codigo, confirmado = false) {
   crearForm()?.addEventListener('submit', saveIncidente);
   document.getElementById('cinc-desc')?.addEventListener('input', () => { updateDescCounter(); setFieldError('cinc-desc', ''); });
   document.getElementById('cinc-evidencia')?.addEventListener('input', () => setFieldError('cinc-evidencia', ''));
+  document.getElementById('cinc-hubo-detenidos')?.addEventListener('change', syncCrearDetenidos);
+  document.getElementById('cinc-cantidad-detenidos')?.addEventListener('input', () => setFieldError('cinc-cantidad-detenidos', ''));
   document.getElementById('cinc-images')?.addEventListener('change', seleccionarCrearImagenes);
   for (const [id, fn] of [['modal-crear-inc', closeCrearIncidente], ['modal-detalle-inc', closeDetalleIncidente]]) {
     document.getElementById(id)?.addEventListener('mousedown', e => { if (e.target === e.currentTarget) fn(); });
