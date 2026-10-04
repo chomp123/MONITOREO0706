@@ -38,6 +38,7 @@ let detalleRequest = 0;
 let detalleOpener = null;
 let crearOpener = null;
 let crearEnviando = false;
+let crearImagenes = [];
 
 const incCanEdit = () => ['admin', 'operador'].includes(userRole);
 
@@ -117,7 +118,7 @@ function renderIncidentes() {
   const editor = incCanEdit();
   for (const inc of filtered) {
     const siguiente = INC_SIGUIENTE[inc.estado];
-    const evCount = (Array.isArray(inc.fuentes) ? inc.fuentes.length : 0) + (Array.isArray(inc.evidencias) ? inc.evidencias.length : 0);
+    const evCount = (Array.isArray(inc.fuentes) ? inc.fuentes.length : 0) + (Array.isArray(inc.evidencias) ? inc.evidencias.length : 0) + (Number(inc.attachment_count) || 0);
     const card = incNode('article', { class: 'incx-card incx-card-' + (inc.estado || 'otro') },
       incNode('button', { type: 'button', class: 'incx-card-main', 'aria-label': `Ver ${inc.codigo}: ${inc.tipo || 'incidente'}`,
           onclick: e => openDetalleIncidente(inc.codigo, e.currentTarget) },
@@ -168,9 +169,10 @@ function setFieldError(id, message) {
 }
 function resetCrearIncidente() {
   const form = crearForm(); if (!form) return;
+  limpiarCrearImagenes();
   form.reset();
   document.getElementById('cinc-confianza').value = '2';
-  ['cinc-desc', 'cinc-evidencia', 'cinc-evidencias', 'cinc-fuentes', 'cinc-tipos'].forEach(id => setFieldError(id, ''));
+  ['cinc-desc', 'cinc-evidencia', 'cinc-evidencias', 'cinc-fuentes', 'cinc-tipos', 'cinc-images'].forEach(id => setFieldError(id, ''));
   updateDescCounter();
 }
 function openCrearIncidente(prefill = {}) {
@@ -206,7 +208,7 @@ function closeCrearIncidente() {
   if (crearEnviando) return;
   const form = crearForm();
   const hasContent = form && !document.getElementById('cinc-form-view').hidden &&
-    ['cinc-desc', 'cinc-lugar', 'cinc-evidencia'].some(id => document.getElementById(id).value.trim());
+    (['cinc-desc', 'cinc-lugar', 'cinc-evidencia'].some(id => document.getElementById(id).value.trim()) || crearImagenes.length > 0);
   if (form) form.dataset.draft = hasContent ? '1' : '';
   document.getElementById('modal-crear-inc').classList.remove('open');
   if (crearOpener && document.contains(crearOpener)) crearOpener.focus();
@@ -232,6 +234,34 @@ function setCrearEnviando(sending) {
 function linksDesde(texto) {
   return String(texto || '').split('\n').map(s => s.trim()).filter(Boolean);
 }
+function limpiarCrearImagenes() {
+  crearImagenes.forEach(image => { if (image.preview) URL.revokeObjectURL(image.preview); });
+  crearImagenes = [];
+  const input=document.getElementById('cinc-images');if(input)input.value='';
+  renderCrearImagenes();
+}
+function renderCrearImagenes() {
+  const preview=document.getElementById('cinc-image-preview');if(!preview)return;
+  preview.replaceChildren(...crearImagenes.map((image,index)=>incNode('figure',{class:'incx-image-item'},
+    incNode('img',{src:image.preview,alt:`Vista previa ${index+1}: ${image.file.name}`}),
+    incNode('figcaption',{},incNode('span',{text:image.file.name}),incNode('button',{type:'button',class:'incx-image-remove','aria-label':`Quitar ${image.file.name}`,text:'Quitar',onclick:()=>{
+      URL.revokeObjectURL(image.preview);crearImagenes.splice(index,1);renderCrearImagenes();
+    }})))));
+}
+async function seleccionarCrearImagenes(event) {
+  setFieldError('cinc-images','');
+  const files=[...(event.target.files||[])];
+  if(files.length>5){setFieldError('cinc-images','Puedes adjuntar hasta 5 imágenes.');event.target.value='';return;}
+  const valid=[];
+  for(const file of files){
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){setFieldError('cinc-images',`${file.name}: usa JPG, PNG o WebP de hasta 5 MB.`);event.target.value='';return;}
+    try{const bitmap=await createImageBitmap(file);if(bitmap.width*bitmap.height>40000000){bitmap.close();throw Error('La imagen supera 40 megapíxeles.');}bitmap.close();}
+    catch(error){setFieldError('cinc-images',`${file.name}: ${error.message||'no se pudo leer la imagen.'}`);event.target.value='';return;}
+    valid.push({file,preview:URL.createObjectURL(file)});
+  }
+  crearImagenes.forEach(image=>URL.revokeObjectURL(image.preview));crearImagenes=valid;renderCrearImagenes();
+}
+function archivoBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error(`No se pudo leer ${file.name}`));reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.readAsDataURL(file);});}
 function validarCrearIncidente() {
   const errores = [];
   const desc = document.getElementById('cinc-desc').value.trim();
@@ -280,6 +310,7 @@ async function saveIncidente(event) {
   }
   setCrearEnviando(true);
   try {
+    body.images = await Promise.all(crearImagenes.map(async image=>({filename:image.file.name,mime:image.file.type,data:await archivoBase64(image.file)})));
     const res = await fetch(`${BACKEND_URL}/incidentes/crear`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -416,6 +447,7 @@ function renderDetalleIncidente(inc) {
   const body = document.getElementById('dm-body');
   const fuentes = Array.isArray(inc.fuentes) ? inc.fuentes : [];
   const evidencias = Array.isArray(inc.evidencias) ? inc.evidencias : [];
+  const adjuntos = Array.isArray(inc.adjuntos) ? inc.adjuntos : [];
   const historial = Array.isArray(inc.historial) ? inc.historial : [];
   const relacionados = Array.isArray(inc.relacionados) ? inc.relacionados : [];
   const conf = Math.min(5, Math.max(1, Number(inc.confianza) || 1));
@@ -459,8 +491,11 @@ function renderDetalleIncidente(inc) {
 
   // 3. Descripción, pruebas y observaciones
   const descripcion = seccion('Qué pasó', incNode('p', { class: 'incx-desc', text: inc.descripcion || 'Sin descripción.' }));
-  const pruebas = seccion(`Pruebas y fuentes (${fuentes.length + evidencias.length})`,
+  const imagenes = adjuntos.length ? incNode('div',{class:'incx-detail-images'},adjuntos.map((image,index)=>
+    incNode('figure',{class:'incx-detail-image'},incNode('img',{src:`data:${image.mime};base64,${image.data}`,alt:`Imagen adjunta ${index+1}: ${image.filename}`}),incNode('figcaption',{text:image.filename})))) : null;
+  const pruebas = seccion(`Pruebas y fuentes (${fuentes.length + evidencias.length + adjuntos.length})`,
     linkList([...evidencias, ...fuentes], 'Todavía no se agregaron enlaces, fotos ni fuentes.'),
+    imagenes,
     editor ? incNode('p', { class: 'incx-muted', text: 'Para agregar enlaces, abre «Herramientas avanzadas».' }) : null);
   const obs = editor
     ? seccion('Observaciones',
@@ -573,6 +608,7 @@ async function eliminarIncidente(codigo, confirmado = false) {
   crearForm()?.addEventListener('submit', saveIncidente);
   document.getElementById('cinc-desc')?.addEventListener('input', () => { updateDescCounter(); setFieldError('cinc-desc', ''); });
   document.getElementById('cinc-evidencia')?.addEventListener('input', () => setFieldError('cinc-evidencia', ''));
+  document.getElementById('cinc-images')?.addEventListener('change', seleccionarCrearImagenes);
   for (const [id, fn] of [['modal-crear-inc', closeCrearIncidente], ['modal-detalle-inc', closeDetalleIncidente]]) {
     document.getElementById(id)?.addEventListener('mousedown', e => { if (e.target === e.currentTarget) fn(); });
   }
