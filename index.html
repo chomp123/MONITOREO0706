@@ -1111,6 +1111,7 @@
           </div>
         </div>
         <div class="inc-filter-bar">
+          <label for="inc-filter-periodo">Mostrar:</label><select class="inc-filter-select" id="inc-filter-periodo" onchange="renderIncidentes()"><option value="recientes">Últimas 48 h + abiertos anteriores</option><option value="todos">Incluir cerrados antiguos</option></select>
           <label class="incx-sr" for="inc-search">Buscar incidentes</label>
           <input type="search" id="inc-search" class="incx-search" placeholder="Buscar por código, tipo o lugar…" autocomplete="off"/>
           <button class="inc-filter-btn active" data-fest="todos"       onclick="setIncFiltroEstado('todos')">Todos</button>

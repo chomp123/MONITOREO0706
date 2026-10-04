@@ -82,13 +82,20 @@ async function leerJson(res) {
 }
 
 // ── Lista de incidentes ──────────────────────────────────────────────────
+function incVisiblePorAntiguedad(inc, incluirAntiguos, now = Date.now()) {
+  if (incluirAntiguos || inc.estado !== 'cerrado') return true;
+  const fecha = new Date(inc.created_at).getTime();
+  return !Number.isFinite(fecha) || fecha >= now - 48 * 3600000;
+}
 function renderIncidentes() {
   const list = document.getElementById('inc-list');
   if (!list) return;
   const fDept = (document.getElementById('inc-filter-dept')?.value || '').toLowerCase();
   const fTipo = (document.getElementById('inc-filter-tipo')?.value || '').toLowerCase();
   const q = ArgosText(incSearch);
+  const incluirAntiguos = document.getElementById('inc-filter-periodo')?.value === 'todos';
   const filtered = incidentesData.filter(i =>
+    incVisiblePorAntiguedad(i, incluirAntiguos) &&
     (incFiltroEstado === 'todos' || i.estado === incFiltroEstado) &&
     (!fDept || (i.departamento || '').toLowerCase() === fDept) &&
     (!fTipo || (i.tipo || '').toLowerCase() === fTipo) &&
@@ -101,7 +108,7 @@ function renderIncidentes() {
 
   list.replaceChildren();
   if (!filtered.length) {
-    const hayFiltros = incFiltroEstado !== 'todos' || fDept || fTipo || q;
+    const hayFiltros = !incluirAntiguos || incFiltroEstado !== 'todos' || fDept || fTipo || q;
     list.append(incNode('div', { class: 'incx-empty' },
       incNode('strong', { text: hayFiltros ? 'No hay incidentes con estos filtros.' : 'Todavía no hay incidentes registrados.' }),
       hayFiltros ? incNode('button', { type: 'button', class: 'incx-link', text: 'Quitar filtros', onclick: limpiarFiltrosIncidentes }) : null));
@@ -134,6 +141,7 @@ function ArgosText(s) { return String(s || '').toLowerCase().normalize('NFD').re
 function limpiarFiltrosIncidentes() {
   incSearch = '';
   const search = document.getElementById('inc-search'); if (search) search.value = '';
+  const periodo = document.getElementById('inc-filter-periodo'); if (periodo) periodo.value = 'todos';
   ['inc-filter-dept', 'inc-filter-tipo'].forEach(id => { const s = document.getElementById(id); if (s) s.value = ''; });
   setIncFiltroEstado('todos');
 }
