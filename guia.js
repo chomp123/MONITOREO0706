@@ -6,11 +6,11 @@
 // (`argos_tour_<usuario>`, ver verifyToken/resetTour), así que «Mostrar de nuevo el recorrido guiado»
 // de Usuarios vuelve a mostrar la invitación.
 
-const GUIA_VISTA = 'visto-v2';
+const GUIA_VISTA = 'visto-ueno-v1';
 const guiaEditor = () => ['admin', 'operador'].includes(userRole);
 const GUIA_PASOS = [
   { titulo: 'Bienvenido a ARGOS',
-    texto: () => 'En dos minutos te mostramos lo esencial: ver la situación, cargar un reporte y darle seguimiento. Puedes salir cuando quieras con «Saltar guía» o la tecla Esc.' },
+    texto: () => 'ARGOS monitorea Ueno Bank, manifestaciones y pedidos de juicio político en Paraguay. Una publicación no confirma los hechos. En dos minutos te mostramos lo esencial: ver la situación, cargar un reporte y darle seguimiento. Puedes salir cuando quieras con «Saltar guía» o la tecla Esc.' },
   { panel: 'monitor', sel: '.home-metrics', titulo: 'Lo importante, en un vistazo',
     texto: () => '«Situación actual» resume la gravedad de los incidentes abiertos. «Incidentes pendientes» te lleva a la lista. «Noticias de hoy» cuenta noticias de fuentes externas: no son incidentes confirmados.' },
   { panel: 'monitor', sel: '.home-primary', titulo: 'Reportar un incidente',

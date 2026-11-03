@@ -7,10 +7,11 @@
 
 const INC_TIPOS = [
   { value: 'Violencia',       help: 'Agresiones, amenazas o disturbios' },
-  { value: 'Compra de votos', help: 'Ofrecer dinero o bienes a cambio del voto' },
-  { value: 'Acarreo',         help: 'Traslado organizado de votantes' },
-  { value: 'Fraude',          help: 'Alteración de actas, padrones o resultados' },
-  { value: 'Irregularidad',   help: 'Fallas en el local o en el procedimiento' },
+  { value: 'Ueno Bank',       help: 'Información o reclamos sobre Ueno; requieren verificación' },
+  { value: 'Manifestación',   help: 'Convocatoria, protesta, cacerolazo o movilización' },
+  { value: 'Juicio político', help: 'Pedido o trámite de juicio político' },
+  { value: 'Fraude',          help: 'Presunta estafa o irregularidad; requiere verificación' },
+  { value: 'Irregularidad',   help: 'Reclamos o fallas en servicios y procedimientos' },
   { value: 'Otro',            help: 'Otro hecho, o no estás seguro' },
 ];
 const INC_ESTADOS = {

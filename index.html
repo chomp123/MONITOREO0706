@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ARGOS · Monitor Electoral Paraguay</title>
+  <title>ARGOS · Ueno y actualidad Paraguay</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -569,7 +569,7 @@
       border-radius: 999px; align-self: center;
     }
 
-    /* ── MONITOR ELECTORAL ─────────────────────────────── */
+    /* ── MONITOR UENO Y ACTUALIDAD ─────────────────────────────── */
     #panel-monitor { flex: 1; display: none; flex-direction: column; overflow: hidden; }
     .monitor-toolbar {
       padding: .7rem 1.2rem; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -1138,8 +1138,8 @@
           </select>
           <select class="inc-filter-select" id="inc-filter-tipo" onchange="renderIncidentes()">
             <option value="">Todos los tipos</option>
-            <option>Violencia</option><option>Fraude</option><option>Acarreo</option>
-            <option>Compra de votos</option><option>Irregularidad</option><option>Otro</option>
+            <option>Violencia</option><option>Fraude</option><option>Manifestación</option><option>Ueno Bank</option><option>Juicio político</option>
+            <option>Irregularidad</option><option>Otro</option>
           </select>
           <label class="incx-sr" for="inc-filter-detenidos">Filtrar por detenidos</label>
           <select class="inc-filter-select" id="inc-filter-detenidos">
@@ -1347,10 +1347,10 @@
         </div>
       </div>
 
-      <!-- Monitor Electoral -->
+      <!-- Monitor Ueno y actualidad -->
       <div id="panel-monitor">
         <section id="simple-dashboard" aria-label="Resumen de monitoreo">
-          <div class="home-heading"><div><p class="eyebrow">CENTRO DE MONITOREO</p><h1>Lo importante, en un vistazo.</h1><p class="home-subtitle">Revisa la situación y da seguimiento a los reportes.</p></div>
+          <div class="home-heading"><div><p class="eyebrow">CENTRO DE MONITOREO</p><h1>Lo importante, en un vistazo.</h1><p class="home-subtitle">Ueno Bank · Manifestaciones · Juicio político en Paraguay.</p></div>
             <button class="home-primary" onclick="openCrearIncidente()">+ Reportar incidente</button></div>
           <div id="guide-invite" class="guide-invite" hidden>
             <p><strong>¿Primera vez en ARGOS?</strong> Una guía de un minuto te muestra lo esencial.</p>
@@ -1364,9 +1364,9 @@
           </div>
           <div class="home-columns">
             <section class="home-card"><div class="home-card-heading"><div><h2>Qué necesita atención</h2><p>Últimas 48 horas · Primero los de mayor gravedad</p></div><button class="home-link" onclick="showPanel('incidentes')">Ver todos →</button></div><div id="home-pending" class="home-list" aria-live="polite"></div></section>
-            <section class="home-card"><div class="home-card-heading"><div><h2>Últimas noticias</h2><p>Información de fuentes externas, pendiente de verificación</p></div><button class="home-link" onclick="toggleDetailedView(true)">Explorar →</button></div><div id="home-news" class="home-list"></div><div class="home-card-footer" id="home-news-status">Esperando actualización de fuentes</div></section>
+            <section class="home-card"><div class="home-card-heading"><div><h2>Últimas noticias</h2><p>Noticias y convocatorias de fuentes externas, pendientes de verificación</p></div><button class="home-link" onclick="toggleDetailedView(true)">Explorar →</button></div><div id="home-news" class="home-list"></div><div class="home-card-footer" id="home-news-status">Esperando actualización de fuentes</div></section>
           </div>
-          <div class="home-footer"><span>Una alerta de noticia no equivale a un incidente confirmado.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
+          <div class="home-footer"><span>Una convocatoria o afirmación sobre Ueno no confirma que haya ocurrido. Los incidentes históricos se conservan.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
         </section>
         <div class="monitor-toolbar"><button class="source-btn" onclick="toggleDetailedView(false)">← Volver al resumen</button><button class="source-btn" onclick="videoRequested=true;loadLiveConfig()">Abrir transmisión</button>
           <button class="source-btn active-all" id="src-all"      onclick="toggleSource('all')">🌐 Todas</button>
@@ -1580,8 +1580,8 @@
           <div class="sp-divider"></div>
           <span class="sp-label">Emergencia:</span>
           <button class="sp-emerg sp-critico" onclick="searchEmergency('pelea')"            title="Abrir en las 4 redes">🔴 PELEA</button>
-          <button class="sp-emerg sp-alto"    onclick="searchEmergency('fraude electoral')" title="Abrir en las 4 redes">🟠 FRAUDE ELECTORAL</button>
-          <button class="sp-emerg sp-alto"    onclick="searchEmergency('acarreo')"          title="Abrir en las 4 redes">🟠 ACARREO</button>
+          <button class="sp-emerg sp-alto"    onclick="searchEmergency('Ueno Bank')" title="Abrir en las 4 redes">🟠 UENO BANK</button>
+          <button class="sp-emerg sp-alto"    onclick="searchEmergency('manifestaciones Paraguay')"          title="Abrir en las 4 redes">🟠 MANIFESTACIONES</button>
           <button class="sp-emerg sp-medio"   onclick="searchEmergency('irregularidad')"    title="Abrir en las 4 redes">🟡 IRREGULARIDAD</button>
         </div>
       </div>
@@ -1734,8 +1734,8 @@
           <div class="modal-field">
             <label>Tipo de incidente</label>
             <select id="rs-tipo" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;color:var(--text);font-size:.9rem;outline:none;width:100%;">
-              <option>Violencia</option><option>Fraude</option><option>Acarreo</option>
-              <option>Compra de votos</option><option>Irregularidad</option><option>Otro</option>
+              <option>Violencia</option><option>Fraude</option><option>Manifestación</option><option>Ueno Bank</option><option>Juicio político</option>
+              <option>Irregularidad</option><option>Otro</option>
             </select>
           </div>
           <div class="modal-field">
@@ -1846,8 +1846,8 @@
 
         <div class="osint-category-title">── Identidad y Personas ──</div>
         <div class="osint-grid" data-cat="identidad">
-          <a class="osint-card" href="https://tsje.gov.py/consulta-padron.html" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
-            <div class="osint-card-top"><span class="osint-card-name">Padrón Electoral</span><span class="osint-card-ext">↗</span></div>
+          <a class="osint-card" href="https://www.bcp.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
+            <div class="osint-card-top"><span class="osint-card-name">Banco Central del Paraguay</span><span class="osint-card-ext">↗</span></div>
             <span class="osint-badge">Público</span>
           </a>
           <a class="osint-card" href="https://mec.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #7C3AED">
@@ -1884,14 +1884,14 @@
           </a>
         </div>
 
-        <div class="osint-category-title">── Fuentes Electorales ──</div>
-        <div class="osint-grid" data-cat="electoral">
-          <a class="osint-card" href="https://tsje.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
-            <div class="osint-card-top"><span class="osint-card-name">TSJE Resultados</span><span class="osint-card-ext">↗</span></div>
+        <div class="osint-category-title">── Fuentes del monitoreo ──</div>
+        <div class="osint-grid" data-cat="monitoreo">
+          <a class="osint-card" href="https://www.ueno.com.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
+            <div class="osint-card-top"><span class="osint-card-name">Ueno Bank · fuente institucional</span><span class="osint-card-ext">↗</span></div>
             <span class="osint-badge">Público</span>
           </a>
-          <a class="osint-card" href="https://www.anr.org.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
-            <div class="osint-card-top"><span class="osint-card-name">Padrón ANR</span><span class="osint-card-ext">↗</span></div>
+          <a class="osint-card" href="https://www.senado.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
+            <div class="osint-card-top"><span class="osint-card-name">Cámara de Senadores</span><span class="osint-card-ext">↗</span></div>
             <span class="osint-badge">Público</span>
           </a>
           <a class="osint-card" href="https://www.cde.gov.py" target="_blank" rel="noopener" style="border-top:2px solid #1D9E75">
@@ -2391,7 +2391,7 @@
   document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   document.getElementById('btn-logout').addEventListener('click', doLogout);
 
-  // ── MONITOR ELECTORAL ────────────────────────────────────────────────────
+  // ── MONITOR UENO Y ACTUALIDAD ────────────────────────────────────────────────────
 
   const DEPTS = [
     { id:'dept-central',       name:'Central',        base:8 },
@@ -2530,11 +2530,7 @@
 
   let activeSources      = new Set(['all']);
 
-  const DEFAULT_KEYWORDS = [
-    'internas','fraude electoral','acarreo','compra de votos',
-    'mesa electoral','apoderado','seccional','irregularidad',
-    'urnas','denuncia electoral','tiros','pelea','agresión','TSJE','ANR internas',
-  ];
+  const DEFAULT_KEYWORDS = ['Ueno Bank','Ueno','manifestación','manifestaciones','protesta','cacerolazo','movilización','juicio político'];
   let scanKeywords = [];
   let feedInterval       = null;
   let heatData           = {};
@@ -2552,10 +2548,7 @@
   let deptAlertTimes     = {};      // deptId → timestamp del último item alto/crítico
   const KNOWN_VERIFIED_PORTALS = ['abc','ultimahora','lanacion','nacion','c9n','adndigital','cronica','hoy','unicanal','a24'];
 
-  const INCIDENT_KEYWORDS = [
-    'pelea','agresion','agresión','fraude','acarreo','compra de votos',
-    'denuncia','irregularidad','violencia','tiros','amenaza','conflicto',
-  ];
+  const INCIDENT_KEYWORDS = ['manifestacion','protesta','cacerolazo','movilizacion','juicio politico','denuncia','reclamo','violencia','amenaza'];
 
   // ── Municipios estratégicos ────────────────────────────────────────────────
   const STRATEGIC_CITIES = [
@@ -2568,7 +2561,7 @@
   ];
 
   // ── Indicadores OSINT ─────────────────────────────────────────────────────
-  const OSINT_KWS       = ['fraude','acarreo','pelea','denuncia','compra de votos'];
+  const OSINT_KWS = ['ueno','manifestacion','protesta','cacerolazo','juicio politico'];
   const OSINT_WINDOW_MS = 10 * 60 * 1000;  // 10 minutos
   const OSINT_THRESHOLD = 5;
   const osintLog        = {};   // keyword → [timestamp, ...]
@@ -2759,12 +2752,11 @@
   const TWO_HOURS = 2 * 60 * 60 * 1000;
 
   const CATEGORIAS_OSINT = {
-    'Violencia Electoral':     ['pelea','agresión','tiros','batalla','herido','violencia','campal'],
-    'Fraude Electoral':        ['fraude','compra de votos','acarreo','coacción','cédula ajena'],
-    'Irregularidad':           ['irregularidad','denuncia','impugnación','reclamo','suspensión','acreditación'],
-    'Operaciones TSJE':        ['tsje','máquina','padrón','habilitado','mesa','escrutinio','trep','kit'],
-    'Participación Electoral': ['candidato','intendente','concejal','partido','anr','plra','lista','municipales','internas'],
-    'Violación de Derechos':   ['coerción','intimidación','policías','funcionarios','advertidos'],
+    'Ueno Bank': ['ueno bank','ueno','uenobank'],
+    'Manifestaciones': ['manifestacion','manifestante','protesta','cacerolazo','movilizacion','autoconvocad','huelga'],
+    'Juicio político': ['juicio politico','destitucion'],
+    'Reclamos': ['denuncia','reclamo','irregularidad'],
+    'Violencia': ['agresion','herido','tiros','violencia'],
   };
 
   function updateHotKeywords() {
@@ -2819,7 +2811,7 @@
     'honduras','guatemala','el salvador',
   ];
   const _LUGARES_PY_FE = [
-    'paraguay','asuncion','tsje','anr','plra',
+    'paraguay','asuncion','ueno','manifestacion','juicio politico',
     'luque','san lorenzo','cde','encarnacion',
     'pedro juan','caaguazu','concepcion','villarrica',
     'itapua','central','amambay','paraguari',
@@ -3724,7 +3716,7 @@
   function getSocialQuery() {
     return scanKeywords.length
       ? scanKeywords.slice(0, 4).join(' ')
-      : 'elecciones paraguay 2026';
+      : 'Ueno Bank Paraguay';
   }
 
   function searchSocial(platform) {
@@ -4096,7 +4088,7 @@
     } else if (nivelNorm.includes('atencion')) {
       apertura = `🟡 ATENCIÓN: Eventos de nivel alto bajo monitoreo continuo.`;
     } else {
-      apertura = `🟢 NORMAL: Jornada electoral dentro de parámetros normales. Sin incidentes críticos activos.`;
+      apertura = `🟢 NORMAL: Jornada de monitoreo dentro de parámetros normales. Sin incidentes críticos activos.`;
     }
     const cuerpo = `Procesadas: ${totalRSS} noticias de ${numFuentes} fuentes — ${incAbiertos} incidentes abiertos, ${incCerrados} cerrados.` +
       (topDept ? ` Mayor actividad: ${topDept.name}.` : '') +
@@ -4173,7 +4165,7 @@
     const narrativa = generarNarrativaFrontend();
 
     return `${SEP}
-SITUACIÓN ELECTORAL — ARGOS
+SITUACIÓN DEL MONITOREO — ARGOS
 ${fecha}  ${hora}
 Generado por: ${usr}
 ${SEP}
@@ -4667,11 +4659,12 @@ ${SEP}`;
 
   // ── Reportar desde noticia ───────────────────────────────────────────────
   function detectarTipoIncidente(text) {
-    const t = (text||'').toLowerCase();
+    const t = (text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     if (['pelea','agresión','agresion','violencia','herido','tiros','disparos'].some(w=>t.includes(w))) return 'Violencia';
-    if (['compra de votos','compra de voto','compran votos'].some(w=>t.includes(w))) return 'Compra de votos';
     if (['fraude','coaccion','coacción'].some(w=>t.includes(w))) return 'Fraude';
-    if (['acarreo','transporte de votantes'].some(w=>t.includes(w))) return 'Acarreo';
+    if (['manifestacion','protesta','cacerolazo'].some(w=>t.includes(w))) return 'Manifestación';
+    if (t.includes('juicio politico')) return 'Juicio político';
+    if (/\bueno\b/.test(t)) return 'Ueno Bank';
     if (['irregularidad','denuncia','reclamo','impugnacion','impugnación'].some(w=>t.includes(w))) return 'Irregularidad';
     return 'Otro';
   }
