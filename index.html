@@ -2764,6 +2764,14 @@
     'Violencia': ['agresion','herido','tiros','violencia'],
   };
 
+function hasFireSignal(value) {
+ const text=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ')
+   .replace(/\b(?:quemar|quema|quemas|queman|quemando|quemaron|quemamos|quemaremos|quemarian|quemen|quemo|quemado|quemada)\s+(?:etapas?|calorias?|grasas?|tiempo)\b/g,' ')
+   .replace(/\b(?:quemar|incendiar|prender fuego)(?: a)? (?:las )?redes(?: sociales)?\b/g,' ');
+ return FIRE_KEYWORDS.some(key => new RegExp('(?:^|[^a-z0-9ñ])'+key+'(?=$|[^a-z0-9ñ])').test(text)) || /\b(?:quemar|quema|quemas|queman|quemando|quemaron|quemaremos|quemarian|quemen|quemo|quemado|quemada|quemados|quemadas|incendio|incendios|incendiar|incendian|incendiaron|incendiando|incendiado|incendiada|incendiados|incendiadas|prender fuego|prenden fuego|prendieron fuego|prendio fuego)\b/.test(text);
+}
+
+  const FIRE_KEYWORDS = ['quemar','quema','incendio','prender fuego'];
   const CONTEXTOS_OSINT = {
     'Santiago Peña': ['santiago pena','presidente pena'],
     'BCP': ['bcp','banco central del paraguay'],
@@ -2792,7 +2800,11 @@
       if (!clave) return;
       const categorias = Object.entries(CATEGORIAS_OSINT).filter(([, kws]) => kws.some(kw => coincideHotKeyword(txt, kw))).map(([cat]) => cat);
       categorias.forEach(cat => contar(cat, item, clave));
-      if (categorias.some(cat => ['Ueno Bank','Manifestaciones','Juicio político'].includes(cat))) {
+      const temaPrincipal = categorias.some(cat => ['Ueno Bank','Manifestaciones','Juicio político'].includes(cat));
+      const contexto = Object.values(CONTEXTOS_OSINT).some(palabras => palabras.some(kw => coincideHotKeyword(txt, kw)));
+      const fuego = hasFireSignal(txt) && (temaPrincipal || contexto);
+      if (fuego) contar('Fuego · por verificar', item, clave);
+      if (temaPrincipal || fuego) {
         for (const [contexto, palabras] of Object.entries(CONTEXTOS_OSINT)) {
           if (palabras.some(kw => coincideHotKeyword(txt, kw))) contar(contexto, item, clave);
         }
