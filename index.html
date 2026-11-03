@@ -1119,7 +1119,9 @@
           </div>
         </div>
         <div class="inc-filter-bar">
-          <label for="inc-filter-periodo">Mostrar:</label><select class="inc-filter-select" id="inc-filter-periodo" onchange="renderIncidentes()"><option value="recientes">Últimas 48 horas</option><option value="todos">Ver todos (historial)</option></select>
+          <label for="inc-filter-periodo">Mostrar:</label><label class="incx-sr" for="inc-filter-archivo">Monitoreo o archivo</label>
+          <select class="inc-filter-select" id="inc-filter-archivo" onchange="cambiarArchivoIncidentes()"><option value="actual">Monitoreo Ueno</option><option value="archivo">Archivo anterior</option></select>
+          <select class="inc-filter-select" id="inc-filter-periodo" onchange="renderIncidentes()"><option value="recientes">Últimas 48 horas</option><option value="todos">Todo el período</option></select>
           <label class="incx-sr" for="inc-search">Buscar incidentes</label>
           <input type="search" id="inc-search" class="incx-search" placeholder="Buscar por código, tipo o lugar…" autocomplete="off"/>
           <button class="inc-filter-btn active" data-fest="todos"       onclick="setIncFiltroEstado('todos')">Todos</button>
@@ -1366,7 +1368,7 @@
             <section class="home-card"><div class="home-card-heading"><div><h2>Qué necesita atención</h2><p>Últimas 48 horas · Primero los de mayor gravedad</p></div><button class="home-link" onclick="showPanel('incidentes')">Ver todos →</button></div><div id="home-pending" class="home-list" aria-live="polite"></div></section>
             <section class="home-card"><div class="home-card-heading"><div><h2>Últimas noticias</h2><p>Noticias y convocatorias de fuentes externas, pendientes de verificación</p></div><button class="home-link" onclick="toggleDetailedView(true)">Explorar →</button></div><div id="home-news" class="home-list"></div><div class="home-card-footer" id="home-news-status">Esperando actualización de fuentes</div></section>
           </div>
-          <div class="home-footer"><span>Una convocatoria o afirmación sobre Ueno no confirma que haya ocurrido. Los incidentes históricos se conservan.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
+          <div class="home-footer"><span>Una convocatoria o afirmación sobre Ueno no confirma que haya ocurrido. Los incidentes anteriores se consultan en Incidentes → Archivo anterior.</span><button class="home-link" onclick="showSITREP()">Generar informe</button><button class="home-link" onclick="toggleDetailedView(true)">Mapa y herramientas</button></div>
         </section>
         <div class="monitor-toolbar"><button class="source-btn" onclick="toggleDetailedView(false)">← Volver al resumen</button><button class="source-btn" onclick="videoRequested=true;loadLiveConfig()">Abrir transmisión</button>
           <button class="source-btn active-all" id="src-all"      onclick="toggleSource('all')">🌐 Todas</button>
@@ -2576,6 +2578,7 @@
     DEPTS.forEach(d => { heatData[d.id] = 0; });
     rssAllItems    = [];
     incidentesData = [];
+    if (typeof resetArchivoIncidentes === 'function') resetArchivoIncidentes();
     rssSeenTitles.clear();
     deptAlertTimes = {};
     trendingWords  = {};
@@ -4404,6 +4407,7 @@ ${SEP}`;
   }
 
   async function downloadInformeEjecutivoUbicacion() {
+    if (typeof archivoIncidentesActivo === 'function' && archivoIncidentesActivo()) { showToast('Este corte corresponde al monitoreo actual. En el archivo puedes consultar y exportar cada incidente desde su detalle.', 'info'); return; }
     const btn = document.getElementById('btn-informe-ubicacion');
     const corteInput = document.getElementById('inc-corte-desde');
     const corteLocal = corteInput?.value || '';
@@ -4626,6 +4630,7 @@ ${SEP}`;
       const items=await res.json();
       if(!Array.isArray(items))throw new Error('Respuesta de incidentes inválida');
       incidentesData=items;
+      if (typeof archivoIncidentesActivo === 'function' && archivoIncidentesActivo()) await cambiarArchivoIncidentes(false);
       await loadDashboard();
       renderIncidentes();
       updateIncidenteBadge();

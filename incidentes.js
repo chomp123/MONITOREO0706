@@ -83,6 +83,28 @@ async function leerJson(res) {
   try { return await res.json(); } catch { return {}; }
 }
 
+// Archivo separado: nunca sustituye los datos que alimentan mapa y contadores.
+let incidentesArchivoData = [], archivoIncidentesRequest = 0;
+function archivoIncidentesActivo() { return document.getElementById('inc-filter-archivo')?.value === 'archivo'; }
+function resetArchivoIncidentes() {
+ archivoIncidentesRequest++; incidentesArchivoData=[];
+ const selector=document.getElementById('inc-filter-archivo');if(selector)selector.value='actual';
+}
+async function cambiarArchivoIncidentes(cambiarPeriodo=true) {
+ const request=++archivoIncidentesRequest;
+ const archivo=archivoIncidentesActivo();
+ const periodo=document.getElementById('inc-filter-periodo');if(cambiarPeriodo&&periodo)periodo.value=archivo?'todos':'recientes';
+ if(!archivo){renderIncidentes();return;}
+ const list=document.getElementById('inc-list');if(list)list.replaceChildren(incNode('p',{class:'incx-muted',text:'Cargando archivo anterior…'}));
+ try {
+  const res=await fetch(BACKEND_URL+'/incidentes?archivo=1',{headers:{Authorization:'Bearer '+token}});
+  if(!res.ok)throw new Error('No se pudo cargar el archivo anterior.');
+  const rows=await res.json();if(!Array.isArray(rows))throw new Error('Respuesta de archivo inválida.');
+  if(request!==archivoIncidentesRequest||!archivoIncidentesActivo()||!token)return;
+  incidentesArchivoData=rows;renderIncidentes();
+ }catch(error){if(request===archivoIncidentesRequest&&list)list.replaceChildren(incNode('p',{class:'incx-error',role:'alert',text:error.message}));}
+}
+
 // ── Lista de incidentes ──────────────────────────────────────────────────
 function incVisiblePorAntiguedad(inc, incluirAntiguos, now = Date.now()) {
   if (incluirAntiguos) return true;
@@ -122,7 +144,9 @@ function renderIncidentes() {
   const fTipo = (document.getElementById('inc-filter-tipo')?.value || '').toLowerCase();
   const q = ArgosText(incSearch);
   const incluirAntiguos = document.getElementById('inc-filter-periodo')?.value === 'todos';
-  const filtered = incidentesData.filter(i =>
+  const archivo = archivoIncidentesActivo();
+  const lista = archivo ? incidentesArchivoData : incidentesData;
+  const filtered = lista.filter(i =>
     incVisiblePorAntiguedad(i, incluirAntiguos) &&
     (incFiltroEstado === 'todos' || i.estado === incFiltroEstado) &&
     (!fDept || (i.departamento || '').toLowerCase() === fDept) &&
@@ -131,9 +155,10 @@ function renderIncidentes() {
     (!q || ArgosText([i.codigo, i.tipo, i.descripcion, i.lugar, i.municipio, i.departamento, i.local_votacion].join(' ')).includes(q))
   );
   const label = document.getElementById('inc-total-label');
-  if (label) label.textContent = filtered.length === incidentesData.length
-    ? `${incidentesData.length} incidente${incidentesData.length !== 1 ? 's' : ''}`
-    : `Mostrando ${filtered.length} de ${incidentesData.length}`;
+  if (label) label.textContent = filtered.length === lista.length
+    ? `${lista.length} incidente${lista.length !== 1 ? 's' : ''}`
+    : `Mostrando ${filtered.length} de ${lista.length}`;
+  if(label && archivo) label.textContent += ' · Archivo anterior (no suma al monitoreo)';
 
   list.replaceChildren();
   if (!filtered.length) {
@@ -143,14 +168,14 @@ function renderIncidentes() {
       hayFiltros ? incNode('button', { type: 'button', class: 'incx-link', text: 'Quitar filtros', onclick: limpiarFiltrosIncidentes }) : null));
     return;
   }
-  const editor = incCanEdit();
+  const editor = incCanEdit() && !archivo;
   for (const inc of filtered) {
     const siguiente = INC_SIGUIENTE[inc.estado];
     const evCount = (Array.isArray(inc.fuentes) ? inc.fuentes.length : 0) + (Array.isArray(inc.evidencias) ? inc.evidencias.length : 0) + (Number(inc.attachment_count) || 0);
     const card = incNode('article', { class: 'incx-card incx-card-' + (inc.estado || 'otro') },
       incNode('button', { type: 'button', class: 'incx-card-main', 'aria-label': `Ver ${inc.codigo}: ${inc.tipo || 'incidente'}`,
           onclick: e => openDetalleIncidente(inc.codigo, e.currentTarget) },
-        incNode('span', { class: 'incx-card-meta', text: `${inc.codigo} · ${formatTimeAgo(inc.created_at)}` }),
+        incNode('span', { class: 'incx-card-meta', text: `${inc.codigo}${archivo ? ' · Archivo anterior' : ''} · ${formatTimeAgo(inc.created_at)}` }),
         incNode('strong', { class: 'incx-card-title', text: inc.tipo || 'Incidente reportado' }),
         incNode('span', { class: 'incx-card-desc', text: inc.descripcion || 'Sin descripción' }),
         incNode('span', { class: 'incx-card-place', text: incLugar(inc) || 'Ubicación por confirmar' })),
@@ -489,7 +514,7 @@ function linkList(items, emptyText) {
   }));
 }
 function renderDetalleIncidente(inc) {
-  const editor = incCanEdit();
+  const editor = incCanEdit() && !inc.archivado;
   const estado = INC_ESTADOS[inc.estado] ? inc.estado : 'detectado';
   const body = document.getElementById('dm-body');
   const fuentes = Array.isArray(inc.fuentes) ? inc.fuentes : [];
@@ -512,7 +537,8 @@ function renderDetalleIncidente(inc) {
       incNode('span', { text: INC_ESTADOS[s].label }))));
   const siguiente = INC_SIGUIENTE[estado];
   let accion;
-  if (estado === 'cerrado') accion = incNode('p', { class: 'incx-next-text', text: 'Este incidente está cerrado. No requiere más acciones.' });
+  if (inc.archivado) accion = incNode('p', {class:'incx-next-text',text:'Archivo anterior al monitoreo de Ueno. Conserva sus datos e historial y no suma al mapa ni a los contadores actuales.'});
+  else if (estado === 'cerrado') accion = incNode('p', { class: 'incx-next-text', text: 'Este incidente está cerrado. No requiere más acciones.' });
   else if (!editor) accion = incNode('p', { class: 'incx-next-text', text: 'Un operador dará seguimiento a este incidente. Puedes revisar aquí su avance.' });
   else accion = incNode('div', { class: 'incx-next' },
     incNode('div', {}, incNode('strong', { text: 'Siguiente paso: ' + siguiente.label.toLowerCase() }), incNode('p', { text: siguiente.help })),
@@ -625,7 +651,7 @@ function renderDetalleIncidente(inc) {
   const prepararInforme = editor ? incNode('button', { type: 'button', class: 'incx-btn', text: 'Preparar informe con imágenes', onclick: () => { location.href = 'reporte.html?incidente=' + encodeURIComponent(inc.codigo); } }) : null;
   body.replaceChildren(...(prepararInforme ? [prepararInforme] : []), progreso, incNode('section', { class: 'incx-section' }, datos), descripcion, pruebas, obs, hist, advanced);
   body.dataset.loaded = inc.codigo;
-  document.getElementById('dm-tools-btn').hidden = false;
+  document.getElementById('dm-tools-btn').hidden = !!inc.archivado;
 }
 function abrirHerramientasAvanzadas() {
   const adv = document.querySelector('#dm-body .incx-advanced');
