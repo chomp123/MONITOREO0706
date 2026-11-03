@@ -1495,7 +1495,7 @@
                   <div id="trending-list"></div>
                 </div>
                 <div class="widget-block">
-                  <div class="widget-title">🔥 Keywords Calientes</div>
+                  <div class="widget-title" title="Noticias únicas de las últimas 2 horas. Los términos de contexto requieren relación con Ueno, manifestaciones o juicio político.">🔥 Keywords Calientes · 2 h</div>
                   <div id="hotkeys-list"><div style="color:var(--muted);font-size:.75rem;text-align:center;padding:.5rem">Sin datos aún</div></div>
                 </div>
               </div>
@@ -2756,29 +2756,43 @@
 
   const CATEGORIAS_OSINT = {
     'Ueno Bank': ['ueno bank','ueno','uenobank'],
-    'Manifestaciones': ['manifestacion','manifestante','protesta','cacerolazo','movilizacion','autoconvocad','huelga'],
-    'Juicio político': ['juicio politico','destitucion'],
+    'Manifestaciones': ['manifestacion','manifestaciones','manifestante','manifestantes','protesta','protestas','protestan','cacerolazo','cacerolazos','movilizacion','movilizaciones','autoconvocados','autoconvocadas','huelga','huelgas','marcha','marchas','corte de ruta'],
+    'Juicio político': ['juicio politico','juicios politicos','pedido de destitucion'],
     'Reclamos': ['denuncia','reclamo','irregularidad'],
     'Violencia': ['agresion','herido','tiros','violencia'],
   };
 
+  const CONTEXTOS_OSINT = {
+    'Santiago Peña': ['santiago pena','presidente pena'],
+    'BCP': ['bcp','banco central del paraguay'],
+    'Plaza de la Democracia': ['plaza de la democracia','plaza democracia'],
+  };
+  function coincideHotKeyword(texto, palabra) {
+    const clave = palabra.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9ñ ]/g,'');
+    return !!clave && new RegExp('(?:^|[^a-z0-9ñ])'+clave+'(?=$|[^a-z0-9ñ])').test(texto);
+  }
+
   function updateHotKeywords() {
     const now = Date.now();
-    // Intentar con ventana de 2h; si no hay noticias recientes usar todas
-    let pool2h = rssAllItems.filter(i => {
+    const source = rssAllItems.filter(i => {
       const ts = new Date(i.fecha || i.pubDate || 0).getTime();
-      return ts > 0 && now - ts < TWO_HOURS;
+      return Number.isFinite(ts) && ts > 0 && ts <= now && now - ts < TWO_HOURS;
     });
-    const source = pool2h.length > 0 ? pool2h : rssAllItems;
-
-    const counts = {};
+    const counts = {}, noticiasPorCategoria = {}, fuentesPorCategoria = {};
+    function contar(cat, item, clave) {
+      (noticiasPorCategoria[cat] ||= new Set()).add(clave);
+      (fuentesPorCategoria[cat] ||= new Set()).add((item.portalName || item.portal || 'Fuente sin identificar').trim().toLowerCase());
+      counts[cat] = noticiasPorCategoria[cat].size;
+    }
     source.forEach(item => {
-      const txt = ((item.title || '') + ' ' + (item.description || '')).toLowerCase()
-                  .normalize('NFD').replace(/[̀-ͯ]/g, '');
-      for (const [cat, kws] of Object.entries(CATEGORIAS_OSINT)) {
-        for (const kw of kws) {
-          const kwn = kw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-          if (txt.includes(kwn)) { counts[cat] = (counts[cat] || 0) + 1; break; }
+      const txt = ((item.title || '') + ' ' + (item.description || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+      const clave = (item.title || item.description || item.url || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+      if (!clave) return;
+      const categorias = Object.entries(CATEGORIAS_OSINT).filter(([, kws]) => kws.some(kw => coincideHotKeyword(txt, kw))).map(([cat]) => cat);
+      categorias.forEach(cat => contar(cat, item, clave));
+      if (categorias.some(cat => ['Ueno Bank','Manifestaciones','Juicio político'].includes(cat))) {
+        for (const [contexto, palabras] of Object.entries(CONTEXTOS_OSINT)) {
+          if (palabras.some(kw => coincideHotKeyword(txt, kw))) contar(contexto, item, clave);
         }
       }
     });
@@ -2797,7 +2811,7 @@
     el.innerHTML = sorted.map(([cat, n]) => {
       const pct = Math.round(n / max * 100);
       return `<div class="hotkey-item">
-        <div class="hotkey-top"><span class="hotkey-kw">${escHtml(cat)}</span><span class="hotkey-cnt">(${n})</span></div>
+        <div class="hotkey-top"><span class="hotkey-kw">${escHtml(cat)}</span><span class="hotkey-cnt">${n} noticia${n === 1 ? '' : 's'} · ${fuentesPorCategoria[cat].size} fuente${fuentesPorCategoria[cat].size === 1 ? '' : 's'}</span></div>
         <div class="hotkey-bar-wrap"><div class="hotkey-bar" style="width:${pct}%"></div></div>
       </div>`;
     }).join('');
