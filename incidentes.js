@@ -231,6 +231,7 @@ function resetCrearIncidente() {
   updateDescCounter();
 }
 function openCrearIncidente(prefill = {}) {
+  if(userName === 'monitoreador'){showToast('Esta cuenta permite consultar el monitoreo. Para cargar un reporte, utiliza una cuenta individual.', 'info');return;}
   buildCrearIncidenteForm();
   const isPrefill = prefill && Object.keys(prefill).length > 0;
   const form = crearForm();

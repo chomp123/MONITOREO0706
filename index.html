@@ -2025,9 +2025,10 @@
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('screen-app').style.display  = 'flex';
     document.getElementById('user-info').textContent = userName;
+    document.querySelectorAll('.home-primary').forEach(el => { el.style.display = userName === 'monitoreador' ? 'none' : ''; });
 
     const badge = document.getElementById('role-badge');
-    badge.textContent = userRole;
+    badge.textContent = userName === 'monitoreador' ? 'Monitoreador · consulta' : userRole;
     badge.className   = `badge badge-${userRole}`;
 
     // Ocultar Usuarios para roles no-admin
@@ -2294,6 +2295,7 @@
 
   // ── Cambio de contraseña ─────────────────────────────────────────────────
   function openPasswordModal() {
+    if(userName === 'monitoreador' && !mustChangePassword){showToast('La contraseña de esta cuenta compartida la administra un administrador.', 'info');return;}
     document.getElementById('pwd-actual').value    = '';
     document.getElementById('pwd-nueva').value     = '';
     document.getElementById('pwd-confirmar').value = '';
@@ -4616,7 +4618,9 @@ ${SEP}`;
     // Mostrar/ocultar botón según rol
     const btnNew = document.getElementById('btn-new-inc');
     if (btnNew) {
-      if (userRole === 'visualizador') {
+      if (userName === 'monitoreador') {
+        btnNew.style.display = 'none';
+      } else if (userRole === 'visualizador') {
         btnNew.style.display = '';
         btnNew.textContent = '🚨 Reportar Incidente';
         btnNew.style.background = 'rgba(226,75,74,0.12)';
