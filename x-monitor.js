@@ -69,6 +69,6 @@ function renderBandejaX(){
 async function revisarPublicacionX(id,estado){
  try{
   const response=await fetch(BACKEND_URL+'/api/x-posts/'+id+'/review',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({estado})});
-  if(!response.ok)throw new Error('No se pudo guardar la revisión. Comprueba tus permisos.');await cargarBandejaX();
+  if(!response.ok)throw new Error('No se pudo guardar la revisión. Comprueba tus permisos.');await cargarBandejaX();if(typeof fetchXNews==='function')await fetchXNews();
  }catch(error){document.getElementById('x-inbox-status').textContent=error.message;}
 }

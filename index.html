@@ -1430,6 +1430,13 @@
                   <button class="feed-tab active" id="feed-tab-noticias"   onclick="switchFeedTab('noticias')">📰 Noticias <span id="feed-tab-cnt-noticias" style="font-size:.6rem;color:var(--muted)"></span></button>
                   <button class="feed-tab feed-tab-incidents" id="feed-tab-incidentes" onclick="switchFeedTab('incidentes')">Alertas de noticias <span id="feed-tab-cnt-incidentes" style="font-size:.6rem;color:var(--muted)"></span></button>
                 </div>
+                <div style="display:flex;gap:.5rem;align-items:center;padding:.4rem .6rem;flex-wrap:wrap;">
+                  <label for="feed-source-filter">Fuentes</label>
+                  <select id="feed-source-filter" onchange="setNewsSource(this.value)">
+                    <option value="all">Todas</option><option value="web">Medios web</option><option value="x">X</option>
+                  </select>
+                  <span id="x-news-status" role="status" style="font-size:.7rem;color:var(--muted);"></span>
+                </div>
                 <div id="feed-container">
                   <div class="feed-list" id="feed-list"></div>
                 </div>
@@ -2579,6 +2586,7 @@
   // sesión — nunca con datos de una sesión anterior.
   function resetMonitorState() {
     if (typeof cerrarBandejaX === 'function') cerrarBandejaX();
+    if (typeof resetXNews === 'function') resetXNews();
     DEPTS.forEach(d => { heatData[d.id] = 0; });
     rssAllItems    = [];
     incidentesData = [];
@@ -2616,6 +2624,8 @@
     fbPollInterval = setInterval(fetchFacebookPosts, 60000);
 
     fetchRSSNews();
+    fetchXNews();
+    startMonitorTimer(fetchXNews,60000);
     rssInterval = setInterval(fetchRSSNews, 30000);
 
     // Hot keywords cada 30 s
@@ -4501,7 +4511,8 @@ ${SEP}`;
     if (!list) return;
 
     const showIncidents = activeFeedTab === 'incidentes';
-    const filtered = rssAllItems.filter(i =>
+    const newsItems = getFeedNews();
+    const filtered = newsItems.filter(i =>
       isIncidentItem(i) === showIncidents &&
       (activeLevelFilter === null || i.alertLevel === activeLevelFilter)
     );
@@ -4509,8 +4520,8 @@ ${SEP}`;
     // Actualizar contadores en tabs
     const cntN = document.getElementById('feed-tab-cnt-noticias');
     const cntI = document.getElementById('feed-tab-cnt-incidentes');
-    const totalNot = rssAllItems.filter(i => !isIncidentItem(i)).length;
-    const totalInc = rssAllItems.filter(i => isIncidentItem(i)).length;
+    const totalNot = newsItems.filter(i => !isIncidentItem(i)).length;
+    const totalInc = newsItems.filter(i => isIncidentItem(i)).length;
     if (cntN) cntN.textContent = totalNot ? `(${totalNot})` : '';
     if (cntI) cntI.textContent = totalInc ? `(${totalInc})` : '';
 
@@ -4554,7 +4565,7 @@ ${SEP}`;
           <div class="feed-text noticia-texto" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
           <div class="feed-expand-extra">
             <div style="display:flex;align-items:center;gap:.28rem;flex-wrap:wrap;margin-bottom:.2rem;">
-              <span class="rss-real">● REAL</span>
+              <span class="rss-real">${item.platform === 'x' ? 'X · Por verificar' : '● REAL'}</span>
               ${relBadge}
               ${isMatch ? '<span style="font-size:.6rem;background:#16504422;border:1px solid #4ade8066;color:#4ade80;border-radius:3px;padding:1px 5px;font-weight:600;">🔍</span>' : ''}
               ${item.posibleDuplicado ? `<span class="dup-badge" onclick="event.stopPropagation();openDetalleIncidente('${escJs(item.posibleDuplicado)}')">⚠️ Dup → ${escHtml(item.posibleDuplicado)}</span>` : ''}
@@ -5255,5 +5266,6 @@ ${SEP}`;
 <script src="usuarios.js"></script>
 <script src="guia.js"></script>
 <script src="x-monitor.js"></script>
+<script src="x-news.js"></script>
 </body>
 </html>
