@@ -4534,7 +4534,9 @@ ${SEP}`;
       const el = document.createElement('div');
       el.className = `feed-item feed-source-noticias feed-item-link${isIncident ? ' feed-item-incident' : ''}`;
       el.style.borderLeftColor = isIncident ? '#e24b4a' : (item.portalColor || '#f59e0b');
-      el.addEventListener('click', () => el.classList.toggle('expanded'));
+      el.addEventListener('click', event => {
+        if (!event.target.closest('a,button')) el.classList.toggle('expanded');
+      });
 
       el.innerHTML = `
         <span class="feed-icon">${isIncident ? '🚨' : '📰'}</span>
@@ -4546,7 +4548,7 @@ ${SEP}`;
             </div>
             <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
               <span style="font-size:.63rem;color:var(--muted);white-space:nowrap;">${timeAgo}</span>
-              ${item.url ? `<span class="feed-open-link" title="Abrir artículo" onclick="event.stopPropagation();window.open('${escJs(safeLink(item.url))}','_blank','noopener,noreferrer')">↗</span>` : ''}
+              <span class="feed-source-link-slot"></span>
             </div>
           </div>
           <div class="feed-text noticia-texto" style="font-weight:600;color:var(--text);margin-top:.22rem;line-height:1.35;">${escHtml(item.title)}</div>
@@ -4564,6 +4566,25 @@ ${SEP}`;
             </div>
           </div>
         </div>`;
+      const sourceUrl = safeLink(item.url);
+      if (sourceUrl) {
+        const title = el.querySelector('.noticia-texto');
+        const titleLink = document.createElement('a');
+        titleLink.href = sourceUrl;
+        titleLink.target = '_blank';
+        titleLink.rel = 'noopener noreferrer';
+        titleLink.style.color = 'inherit';
+        titleLink.textContent = item.title || 'Abrir noticia';
+        titleLink.setAttribute('aria-label', (item.title || 'Abrir noticia') + ' (abre otra pestaña)');
+        title.replaceChildren(titleLink);
+        const sourceLink = document.createElement('a');
+        sourceLink.className = 'feed-open-link';
+        sourceLink.href = sourceUrl;
+        sourceLink.target = '_blank';
+        sourceLink.rel = 'noopener noreferrer';
+        sourceLink.textContent = 'Abrir publicación ↗';
+        el.querySelector('.feed-source-link-slot').replaceWith(sourceLink);
+      }
       frag.appendChild(el);
     });
 
