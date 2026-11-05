@@ -50,7 +50,7 @@ function renderSimpleDashboard(){
     row.append(meta,title,detail);row.addEventListener('click',()=>openDetalleIncidente(inc.codigo));pending.append(row);
   });
   const news=document.getElementById('home-news');news.replaceChildren();
-  const recent=ArgosDomain.recentNews(typeof getFeedNews === 'function' ? getFeedNews(false) : rssAllItems).slice(0,5);
+  const recent=ArgosDomain.recentNews(typeof getFeedNews === 'function' ? getFeedNews() : rssAllItems).slice(0,5);
   if(!recent.length)appendEmpty(news,newsError||'Todavía no se recibieron noticias recientes.');
   recent.forEach(item=>{
     const row=document.createElement('article');row.className='home-news-item';

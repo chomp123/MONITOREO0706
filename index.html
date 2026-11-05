@@ -1430,13 +1430,7 @@
                   <button class="feed-tab active" id="feed-tab-noticias"   onclick="switchFeedTab('noticias')">📰 Noticias <span id="feed-tab-cnt-noticias" style="font-size:.6rem;color:var(--muted)"></span></button>
                   <button class="feed-tab feed-tab-incidents" id="feed-tab-incidentes" onclick="switchFeedTab('incidentes')">Alertas de noticias <span id="feed-tab-cnt-incidentes" style="font-size:.6rem;color:var(--muted)"></span></button>
                 </div>
-                <div style="display:flex;gap:.5rem;align-items:center;padding:.4rem .6rem;flex-wrap:wrap;">
-                  <label for="feed-source-filter">Fuentes</label>
-                  <select id="feed-source-filter" onchange="setNewsSource(this.value)">
-                    <option value="all">Todas</option><option value="web">Medios web</option><option value="x">X</option>
-                  </select>
-                  <span id="x-news-status" role="status" style="font-size:.7rem;color:var(--muted);"></span>
-                </div>
+                <p id="x-news-status" role="status" hidden style="font-size:.7rem;color:var(--muted);padding:.4rem .6rem;"></p>
                 <div id="feed-container">
                   <div class="feed-list" id="feed-list"></div>
                 </div>
@@ -4585,6 +4579,7 @@ ${SEP}`;
         titleLink.target = '_blank';
         titleLink.rel = 'noopener noreferrer';
         titleLink.style.color = 'inherit';
+        titleLink.style.textDecoration = 'none';
         titleLink.textContent = item.title || 'Abrir noticia';
         titleLink.setAttribute('aria-label', (item.title || 'Abrir noticia') + ' (abre otra pestaña)');
         title.replaceChildren(titleLink);

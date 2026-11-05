@@ -1,10 +1,9 @@
 'use strict';
-let xNewsItems=[],xNewsRequest=0,xNewsLoadingGeneration=null,newsSource='all';
-function resetXNews(){xNewsRequest++;xNewsLoadingGeneration=null;xNewsItems=[];newsSource='all';const filter=document.getElementById('feed-source-filter');if(filter)filter.value='all';const state=document.getElementById('x-news-status');if(state)state.textContent='';}
-function setNewsSource(value){newsSource=['all','web','x'].includes(value)?value:'all';renderFeedFromCache();}
-function getFeedNews(applyFilter=true){
+let xNewsItems=[],xNewsRequest=0,xNewsLoadingGeneration=null;
+function resetXNews(){xNewsRequest++;xNewsLoadingGeneration=null;xNewsItems=[];const state=document.getElementById('x-news-status');if(state){state.textContent='';state.hidden=true;}}
+function getFeedNews(){
  const byUrl=new Map();
- for(const item of [...rssAllItems,...xNewsItems]){if(applyFilter&&((newsSource==='web'&&item.platform==='x')||(newsSource==='x'&&item.platform!=='x')))continue;const key=item.url||item.title;if(!byUrl.has(key))byUrl.set(key,item);}
+ for(const item of [...rssAllItems,...xNewsItems]){const key=item.url||item.title;if(!byUrl.has(key))byUrl.set(key,item);}
  return [...byUrl.values()].sort((a,b)=>new Date(b.pubDate||b.fecha)-new Date(a.pubDate||a.fecha));
 }
 async function fetchXNews(){
@@ -22,14 +21,14 @@ async function fetchXNews(){
    for(const item of data.items){
     if(typeof item.id!=='string'||!/^\d{1,30}$/.test(item.id)||seen.has(item.id)||!['pendiente','revisado'].includes(item.status)||typeof item.text!=='string'||!item.text.trim())continue;
     const date=new Date(item.publishedAt);if(!Number.isFinite(date.getTime())||date>Date.now()||Date.now()-date>48*3600000)continue;
-    seen.add(item.id);items.push({platform:'x',id:'x-'+item.id,title:item.text,description:'Publicación de X. '+(item.status==='revisado'?'Revisada por operador; no implica confirmación del hecho.':'Pendiente de verificación.'),url:'https://x.com/i/web/status/'+item.id,pubDate:date.toISOString(),fecha:date.toISOString(),portalName:'X · fuente por verificar',portalColor:'#a78bfa',alertLevel:'info'});
+    seen.add(item.id);items.push({platform:'x',id:'x-'+item.id,title:item.text,description:'Publicación de X. '+(item.status==='revisado'?'Revisada por operador; no implica confirmación del hecho.':'Pendiente de verificación.'),url:'https://x.com/i/web/status/'+item.id,pubDate:date.toISOString(),fecha:date.toISOString(),portalName:'X',portalColor:'#a78bfa',alertLevel:'info'});
    }
    hasMore=!!data.nextCursor;if(!hasMore)break;
    if(typeof data.nextCursor!=='string'||!/^\d{1,30}$/.test(data.nextCursor)||data.nextCursor===before)throw Error('X: paginación no válida.');
    before=data.nextCursor;
   }
-  xNewsItems=items;if(state)state.textContent='X: '+items.length+' publicaciones'+(hasMore?' · más disponibles en la bandeja':'');
+  xNewsItems=items;if(state){state.textContent='';state.hidden=true;}
   renderFeedFromCache();if(typeof renderSimpleDashboard==='function')renderSimpleDashboard();
- }catch(error){if(request===xNewsRequest&&generation===monitorGeneration&&token===authToken&&state)state.textContent=error.message+' No se han actualizado las publicaciones de X.';}
+ }catch(error){if(request===xNewsRequest&&generation===monitorGeneration&&token===authToken&&state){state.textContent=error.message+' No se han actualizado las publicaciones de X.';state.hidden=false;}}
  finally{if(request===xNewsRequest)xNewsLoadingGeneration=null;}
 }
