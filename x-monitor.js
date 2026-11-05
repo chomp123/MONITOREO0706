@@ -43,7 +43,7 @@ async function cargarBandejaX(more=false){
   if(!Array.isArray(data.items))throw new Error('No se pudo leer la respuesta de la bandeja.');
   xInboxItems=more?[...xInboxItems,...data.items]:data.items;xInboxPages=more?xInboxPages+1:1;xInboxNext=data.nextCursor||null;
   const status=data.status||{};state.textContent=status.message||'Estado no disponible.';
-  const usage=status.usage||{};document.getElementById('x-inbox-usage').textContent=status.configured?'Leídas hoy: '+(usage.postsRead||0)+' · Cupo utilizado o reservado: '+(usage.readsReserved||0)+' / '+status.dailyPostLimit+' · Consultas: '+(usage.requests||0)+' / '+status.dailyRequestLimit:'La administración debe habilitar el acceso de aplicación de X y el cupo de lecturas. No hay consultas automáticas activas.';
+  const usage=status.usage||{};document.getElementById('x-inbox-usage').textContent=status.configured?'Leídas hoy: '+(usage.postsRead||0)+' · Cupo utilizado o reservado: '+(usage.readsReserved||0)+' / '+status.dailyPostLimit+' · Piloto acumulado: '+(status.totalReadsReserved||0)+' / '+status.totalPostLimit+' · Consultas: '+(usage.requests||0)+' / '+status.dailyRequestLimit:'La administración debe habilitar el acceso de aplicación de X y el cupo de lecturas. No hay consultas automáticas activas.';
   renderBandejaX();
  }catch(error){if(request===xInboxRequest&&!xInboxOverlay.hidden)state.textContent=error.message;}
 }
